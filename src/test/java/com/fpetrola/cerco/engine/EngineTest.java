@@ -165,4 +165,33 @@ class EngineTest {
     assertEquals(1, engine.store().read("no-switch").total());
     assertTrue(engine.store().read("no-switch").keys().iterator().next().startsWith("src/main/java/p/A.java"));
   }
+
+  @Test
+  void aSignedExemptionReleasesTheFrozenFindingsItCoversFromTheBaseline(@TempDir Path root) throws IOException {
+    write(root, "A.java", SWITCHY);
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true).files());
+    Path yaml = root.resolve(".cerco/exemptions.yaml");
+    Files.writeString(yaml, """
+        exemptions:
+          - rule: no-switch
+            target: src/main/java/p/A.java
+            reason: a human decided the switch stays here, and said so
+            category: decision
+            budget: 1
+        """);
+    String digest = new Digest(Files.readAllBytes(yaml)).hex();
+    Approval.of(Optional.of(digest), engine.configDigest(), true, "fernando", LocalDate.of(2026, 11, 9))
+        .write(engine.approvalFile());
+
+    Outcome full = engine.run(scope(root, true));
+    assertTrue(full.green(), full.toString());
+    assertEquals(1, full.exempted().size());
+    assertEquals(0, full.frozen());
+    assertEquals(0, engine.store().read("no-switch").total());
+
+    Outcome again = engine.run(scope(root, true));
+    assertTrue(again.green(), again.toString());
+    assertEquals(1, again.exempted().size());
+  }
 }

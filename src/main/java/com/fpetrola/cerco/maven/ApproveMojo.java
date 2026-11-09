@@ -39,7 +39,8 @@ public final class ApproveMojo extends AbstractCercoMojo {
     console.printf("  configuration: %s%n", settings().isDefault() ? "defaults" : settings().fingerprint());
     String answer = Optional.ofNullable(console.readLine("Type 'yes' to approve: ")).orElse("");
     if (!answer.strip().equalsIgnoreCase("yes")) {
-      throw new MojoFailureException("cerco: not approved");
+      throw new MojoFailureException("cerco: not approved, nothing was written to " + engine.approvalFile()
+          + " (the answer has to be exactly 'yes')");
     }
     Approval.of(loaded.digest(), engine.configDigest(), settings().isDefault(), approver(), LocalDate.now())
         .write(engine.approvalFile());

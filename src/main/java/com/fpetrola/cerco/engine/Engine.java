@@ -7,12 +7,10 @@ import com.fpetrola.cerco.baseline.Multiset;
 import com.fpetrola.cerco.baseline.Reconciler;
 import com.fpetrola.cerco.baseline.Reconciliation;
 import com.fpetrola.cerco.exemptions.Applied;
-import com.fpetrola.cerco.exemptions.Approval;
 import com.fpetrola.cerco.exemptions.Context;
 import com.fpetrola.cerco.exemptions.Digest;
 import com.fpetrola.cerco.exemptions.Exempting;
 import com.fpetrola.cerco.exemptions.ExemptionsFile;
-import com.fpetrola.cerco.exemptions.Loaded;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.Measure;
 import com.fpetrola.cerco.model.Settings;
@@ -83,14 +81,16 @@ public final class Engine {
     Runs runs = new Runs(active);
     int parsed = feed.each(scope.files(), runs::visit);
     Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
+    Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();
     for (Rule rule : active) {
+      Kept kept = new Kept(inScope, scope.full(), signed, rule.id());
       rule.asBudget().ifPresentOrElse(
-          budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, scope.full())),
-          () -> tally.add(reconcile(rule, runs.findings(rule), inScope, scope.full())));
+          budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, kept)),
+          () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept)));
     }
-    List<String> problems = new ArrayList<>();
-    Applied applied = exempt(tally.fresh(), scope.full(), problems);
+    List<String> problems = new ArrayList<>(signed.problems());
+    Applied applied = exempt(signed, tally.fresh(), scope.full());
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
     if (!store.exists()) {
@@ -139,35 +139,32 @@ public final class Engine {
     return store.exists() && !store.frozenRules().contains(rule.id());
   }
 
-  private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope, boolean full) {
+  private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope, Kept kept) {
     if (adopting(rule)) {
       freeze(rule, findings);
       store.extendFrozen(List.of(rule.id()));
     }
     Multiset stored = store.read(rule.id());
-    Multiset baseline = full ? stored.where(key -> inScope.contains(new Key(key).file())) : stored;
+    Multiset baseline = stored.where(kept::entry);
     Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings)
-        .plusSolved(stored.total() - baseline.total());
+        .plusSolved(stored.where(kept::gone).total());
     if (store.exists() && !reconciliation.updated().sameAs(stored)) {
       store.write(rule.id(), reconciliation.updated());
     }
     return reconciliation;
   }
 
-  /** In a full run, a frozen entry whose file is gone is solved: the file went, and its findings with it. */
   private CeilingReconciler.Outcome reconcile(BudgetRule rule, List<Measure> measures, Set<String> inScope,
-      boolean full) {
+      Kept kept) {
     if (adopting(rule)) {
       freeze(rule, measures);
       store.extendFrozen(List.of(rule.id()));
     }
     Map<String, Integer> stored = store.readCeilings(rule.id());
-    Map<String, Integer> kept = new TreeMap<>(stored);
-    if (full) {
-      kept.keySet().removeIf(key -> !inScope.contains(new Key(key).file()));
-    }
-    CeilingReconciler.Outcome outcome = ceilings.reconcile(rule, kept, inScope, measures)
-        .plusSolved(stored.size() - kept.size());
+    Map<String, Integer> baseline = new TreeMap<>(stored);
+    baseline.keySet().removeIf(key -> !kept.entry(key));
+    int gone = (int) stored.keySet().stream().filter(kept::gone).count();
+    CeilingReconciler.Outcome outcome = ceilings.reconcile(rule, baseline, inScope, measures).plusSolved(gone);
     if (store.exists() && !outcome.updated().equals(stored)) {
       store.writeCeilings(rule.id(), outcome.updated());
     }
@@ -186,15 +183,28 @@ public final class Engine {
     return frozen.size();
   }
 
-  private Applied exempt(List<Finding> fresh, boolean fullScope, List<String> problems) {
-    Loaded loaded = exemptionsFile.load();
-    problems.addAll(loaded.problems());
-    problems.addAll(Approval.read(approvalFile).problems(loaded.digest(), configDigest(), settings.isDefault()));
-    if (!problems.isEmpty()) {
+  private Applied exempt(Signed signed, List<Finding> fresh, boolean fullScope) {
+    if (!signed.valid()) {
       return Applied.untouched(fresh);
     }
     Context context = new Context(LocalDate.now(clock), projectVersion, 0);
-    return new Exempting(loaded.exemptions(), context).apply(fresh, fullScope);
+    return new Exempting(signed.exemptions(), context).apply(fresh, fullScope);
+  }
+
+  /**
+   * Which frozen entries of one rule stay in the baseline for this run. In a full run an entry whose file is gone
+   * is solved, and one a signed exemption covers is released, to come back as a finding that exemption covers.
+   */
+  private record Kept(Set<String> inScope, boolean full, Signed signed, String ruleId) {
+
+    boolean entry(String key) {
+      String file = new Key(key).file();
+      return !full || (inScope.contains(file) && !signed.releases(ruleId, file));
+    }
+
+    boolean gone(String key) {
+      return full && !inScope.contains(new Key(key).file());
+    }
   }
 
   public String configDigest() {

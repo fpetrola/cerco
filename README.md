@@ -46,7 +46,9 @@ después de cada edición de un `.java` **y después de cada comando de shell qu
 `sed -i`, un script de Python: ahí el alcance son los `.java` que git ve cambiados), un hook `Stop` que corre la
 auditoría completa antes de que el agente pueda dar por terminado el trabajo, y reglas `deny` para que el editor del
 agente no pueda tocar `.cerco/` ni los hooks. Cuando el cerco está rojo, el agente recibe el reporte como instrucción
-y no puede seguir hasta arreglarlo. Un comando de shell que sólo lee (`cat`, `git diff`, `ls`, `find`, `2>/dev/null`)
+y no puede seguir hasta arreglarlo. Si lo único rojo es algo que sólo una persona puede resolver (un archivo de
+excepciones sin firma, una configuración sin firma), el hook lo informa y deja terminar: no hay código que arreglar
+y `.cerco/` no es del agente; el build, en cambio, sigue en rojo hasta que alguien firme. Un comando de shell que sólo lee (`cat`, `git diff`, `ls`, `find`, `2>/dev/null`)
 pasa, aunque nombre los archivos del cerco: el guard lee la línea como el shell, comando simple por comando simple, y
 decide por la escritura real, no por la mención.
 
@@ -121,6 +123,10 @@ menos 20 caracteres, una `category` (`false-positive`, `migration` o `decision`)
 - `budget`: cuántos hallazgos puede cubrir como máximo; uno más y es rojo.
 
 `mvn com.fpetrola:cerco-maven-plugin:explain` imprime un archivo de ejemplo completo con estas reglas.
+
+Una excepción firmada también alcanza a lo que ya estaba congelado: en la siguiente corrida completa, los hallazgos
+de la línea de base que cubre salen de ella y pasan a exceptuados. Así la deuda tolerada se convierte en decisión
+explícita, con motivo y vencimiento, y la línea de base se achica por eso.
 
 Hay un tope de 10 excepciones activas por proyecto. Una excepción vencida es rojo. Una excepción que ya no cubre
 nada también es rojo, porque sólo serviría para esconder la próxima violación. Las excepciones por falso positivo

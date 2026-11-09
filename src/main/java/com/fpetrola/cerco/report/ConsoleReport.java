@@ -35,9 +35,12 @@ public final class ConsoleReport {
       out.append("notes:\n");
       outcome.notes().forEach(note -> out.append("  - ").append(note).append('\n'));
     }
-    if (!outcome.green()) {
+    if (!outcome.fresh().isEmpty()) {
       out.append("Exemptions are a human's decision, signed with `mvn cerco:approve` at a terminal; .cerco/ is not "
           + "yours to edit, and the baseline only shrinks. Fix the code.\n");
+    } else if (!outcome.problems().isEmpty()) {
+      out.append("No new finding: what remains is a human's to settle (`mvn cerco:approve` at a terminal, or editing "
+          + ".cerco/exemptions.yaml). Not yours; tell them and carry on.\n");
     }
     return out.toString();
   }

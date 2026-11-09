@@ -32,6 +32,10 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   @Parameter(property = "cerco.skip", defaultValue = "false")
   private boolean skip;
 
+  /** Set by the Claude Code hooks. A red that only a human can clear (an unsigned exemptions file) then warns instead of blocking. */
+  @Parameter(property = "cerco.hook", defaultValue = "false")
+  private boolean hook;
+
   /** Lines a file may have before it is a finding (default 400). Changing it needs a signature (approve). */
   @Parameter
   private Integer fileCeiling;
@@ -135,6 +139,12 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
     String text = new ConsoleReport(engine.rules()).render(outcome);
     if (outcome.green()) {
       getLog().info(text.strip());
+      return;
+    }
+    if (hook && outcome.fresh().isEmpty()) {
+      getLog().warn(text.strip());
+      getLog().warn("cerco: nothing here is the agent's to fix, so the hook lets this pass; the build will not "
+          + "until a human signs with `mvn cerco:approve`");
       return;
     }
     getLog().error(text);
