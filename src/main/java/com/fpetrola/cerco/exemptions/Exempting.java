@@ -43,10 +43,12 @@ public final class Exempting {
     String line = exemption.describe() + ": covers " + count + ", " + verdict.note();
     if (verdict.expired()) {
       problems.add("exemption " + line + "; remove it or let a human renew it");
-    } else if (fullScope && count == 0) {
-      problems.add("exemption " + exemption.describe() + " covers nothing any more; remove it");
-    } else {
-      notes.add(line);
+      return;
     }
+    if (fullScope && count == 0) {
+      problems.add("exemption " + exemption.describe() + " covers nothing any more; remove it");
+      return;
+    }
+    notes.add(line);
   }
 }

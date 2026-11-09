@@ -15,7 +15,7 @@ Todo el código es Java. No hay scripts.
 <plugin>
   <groupId>com.fpetrola</groupId>
   <artifactId>cerco-maven-plugin</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <executions>
     <execution>
       <goals>
@@ -41,9 +41,13 @@ mvn com.fpetrola:cerco-maven-plugin:install-hooks
 
 Eso escribe en `.claude/settings.json`, sin tocar lo que ya hubiera: un hook `PreToolUse` que niega los comandos de
 shell que intentan escribir los archivos del cerco o apagarlo, un hook `PostToolUse` que corre el chequeo rápido
-después de cada edición de un `.java`, un hook `Stop` que corre la auditoría completa antes de que el agente pueda
-dar por terminado el trabajo, y reglas `deny` para que el editor del agente no pueda tocar `.cerco/` ni los hooks.
-Cuando el cerco está rojo, el agente recibe el reporte como instrucción y no puede seguir hasta arreglarlo.
+después de cada edición de un `.java` **y después de cada comando de shell que escribe algo** (un heredoc, un
+`sed -i`, un script de Python: ahí el alcance son los `.java` que git ve cambiados), un hook `Stop` que corre la
+auditoría completa antes de que el agente pueda dar por terminado el trabajo, y reglas `deny` para que el editor del
+agente no pueda tocar `.cerco/` ni los hooks. Cuando el cerco está rojo, el agente recibe el reporte como instrucción
+y no puede seguir hasta arreglarlo. Un comando de shell que sólo lee (`cat`, `git diff`, `ls`, `find`, `2>/dev/null`)
+pasa, aunque nombre los archivos del cerco: el guard lee la línea como el shell, comando simple por comando simple, y
+decide por la escritura real, no por la mención.
 
 ## Las reglas
 
@@ -54,16 +58,37 @@ Cuando el cerco está rojo, el agente recibe el reporte como instrucción y no p
 | `no-mutable-static` | encapsulamiento | un campo `static` que no es `final` |
 | `no-public-mutable-field` | encapsulamiento | un campo público de instancia que no es `final` |
 | `no-instanceof` | polimorfismo | `instanceof`, y comparar `getClass()` con `==` |
+| `no-type-code` | polimorfismo | `getClass()` para algo que no sea un nombre en un mensaje; un código de tipo (`getNodeType()`, `getKind()`, `getTagName()`, un nombre de clase) comparado con `==` o `equals` |
+| `no-cast` | polimorfismo | un cast a un tipo de referencia, `Tipo.class.cast(x)` o `Tipo.class::cast` |
+| `no-type-keyed-map` | polimorfismo | un `Map` cuya clave es una `Class`: un registro de manejadores por tipo, un service locator |
 | `no-switch` | polimorfismo | cualquier `switch`, sentencia o expresión |
+| `no-conditional-chain` | polimorfismo | una cadena `if` / `else if` de tres o más ramas |
 | `no-static-method` | objetos antes que procedimientos | un método `static` no privado que no es `main` ni una fábrica (`of`, `from`, `parse`, `create`, `valueOf`, `copyOf`, o que devuelve su propio tipo) |
 | `no-utility-class` | cohesión | un tipo cuyo nombre termina en Util, Utils, Helper, Helpers, Manager, Impl, Common, Misc o Tools |
+| `no-constant-holder` | cohesión | una clase o interfaz con campos y sin métodos, todos `static final`: una clase utilitaria con otro nombre |
 | `no-swallowed-exception` | honestidad | un `catch` que no relanza ni usa la excepción |
+| `no-ignored-result` | honestidad | una sentencia que llama a un método propio que devuelve `boolean` u `Optional` y tira el resultado (proyecto entero; los nombres que toda colección también tiene, como `add` o `remove`, no cuentan) |
+| `no-null-return` | honestidad | `return null` |
+| `no-suppressed-warning` | honestidad | cualquier `@SuppressWarnings` |
 | `no-repeated-statements` | abstracción | seis sentencias consecutivas que aparecen dos veces (proyecto entero) |
+| `no-cloned-methods` | abstracción | el mismo método, nombre y cuerpo, en tres o más tipos (proyecto entero) |
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 
 `mvn com.fpetrola:cerco-maven-plugin:explain` imprime cada regla con su principio, su remedio y cuánto de ella está
-congelado.
+congelado. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
+
+Las nueve reglas que no son de polimorfismo clásico ni de tamaño nacieron de un experimento: un agente al que se le
+pidió un framework nuevo sobre un proyecto con el cerco 0.1.0 instalado leyó las reglas del bytecode y diseñó contra
+ellas de antemano. No pasó nunca a rojo, y dejó casts como `Element.class.cast(x)`, un `getNodeType() ==` en vez de
+`instanceof`, una cadena de `if` en vez de un `switch`, clases de sólo constantes con un sufijo que no estaba en la
+lista, cinco clases con el mismo método de una línea, y un `boolean` descartado que escondió un bug real. Cada una
+de esas formas tiene ahora su regla.
+
+**Cuando una regla nueva llega a un proyecto que ya tiene línea de base**, la siguiente corrida completa (`audit`, o
+el `check` de un proyecto de un módulo) congela sus hallazgos actuales y lo anota en el reporte; las corridas
+parciales (`quick`, `check` de un módulo) la saltan hasta entonces, con una nota, para no tomar un módulo por el
+proyecto. El archivo `.cerco/baseline/frozen` lleva la fecha y la lista de reglas congeladas.
 
 Lo que se analiza son los *compile source roots* de cada módulo del reactor (`src/main/java`), no los tests ni los
 módulos apagados. Se excluye lo que está bajo `target/`, `generated-sources/` o `generated/`, y cualquier tipo
@@ -111,10 +136,11 @@ vuelva a firmar. Lo mismo vale para la configuración del plugin: cualquier dife
 defecto (techos, reglas apagadas, sufijos) es un aflojamiento y necesita firma.
 
 Tres capas evitan que el agente se tiente con la salida fácil: las reglas `deny` de Claude Code le niegan el editor
-sobre `.cerco/` y sobre los hooks; el `guard` le niega el shell para escribir esos archivos o para pasar
-`-Dcerco.skip`; y si la línea de base aparece borrada pero está en el `HEAD` de git, el plugin se niega a recongelar
-y pide restaurarla. Además, cada reporte en rojo le dice al agente, con todas las letras, que las excepciones no son
-suyas.
+sobre `.cerco/` y sobre los hooks; el `guard` le niega el shell para escribir esos archivos (`rm`, `mv`, `tee`,
+redirecciones, `sed -i`, intérpretes, `git checkout`, `find -delete`, `xargs rm`, o cualquier escritura tras un `cd`
+adentro) o para pasar `-Dcerco.skip`; y si la línea de base aparece borrada pero está en el `HEAD` de git, el plugin
+se niega a recongelar y pide restaurarla. Además, cada reporte en rojo le dice al agente, con todas las letras, que
+las excepciones no son suyas.
 
 ## Goals
 
@@ -122,7 +148,7 @@ suyas.
 |---|---|---|
 | `check` | en `verify`, por módulo | las reglas por archivo sobre el módulo; congela todo el reactor si no hay línea de base |
 | `audit` | hook `Stop`, CI, a mano | todo el reactor, todas las reglas, y detecta excepciones vencidas o vacías |
-| `quick` | hook `PostToolUse` | sólo el archivo recién editado, reglas por archivo; a mano, los archivos que git ve cambiados |
+| `quick` | hook `PostToolUse` | el archivo recién editado, o tras un comando de shell que escribe, los `.java` que git ve cambiados; reglas por archivo |
 | `approve` | un humano, en terminal | firma las excepciones y la configuración |
 | `install-hooks` | una vez por proyecto | escribe los hooks y las reglas `deny` en `.claude/settings.json` |
 | `explain` | a mano | las reglas, con su principio, su remedio y lo congelado |
@@ -143,7 +169,9 @@ requiere firma (`approve`): `fileCeiling` (400), `methodCeiling` (40), `utilityS
 | `audit` siguiente, verde | 16 s | |
 | `check` de los 38 módulos, como en `verify` | 9,6 s | |
 | `quick` desde el hook, Maven incluido | 1,7 s | |
+| `quick` tras un comando de shell que no escribe | 0,06 s | sin Maven |
 | `guard` por cada comando de shell | 0,06 s | |
+| `audit` de 0.2.0 adoptando nueve reglas nuevas (15.848 hallazgos más) | 34 s | |
 
 ## Lo que la versión cero no tiene todavía
 

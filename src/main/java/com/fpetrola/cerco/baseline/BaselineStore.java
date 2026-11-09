@@ -7,10 +7,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Stream;
 
 /**
  * The frozen state of the project on the day the gate arrived, one text file per rule under .cerco/baseline, written
@@ -32,11 +36,30 @@ public final class BaselineStore {
   }
 
   public Optional<String> frozenOn() {
-    return exists() ? Optional.of(read(dir.resolve("frozen")).strip()) : Optional.empty();
+    return exists() ? Optional.of(frozenLines().get(0)) : Optional.empty();
   }
 
-  public void markFrozen(LocalDate today) {
-    write(dir.resolve("frozen"), today + "\n");
+  /** The rules the freeze covered. A rule missing here arrived after the freeze and has no baseline yet. */
+  public Set<String> frozenRules() {
+    return exists() ? new TreeSet<>(frozenLines().subList(1, frozenLines().size())) : Set.of();
+  }
+
+  public void markFrozen(LocalDate today, Collection<String> ruleIds) {
+    StringBuilder out = new StringBuilder(today.toString()).append('\n');
+    new TreeSet<>(ruleIds).forEach(id -> out.append(id).append('\n'));
+    write(dir.resolve("frozen"), out.toString());
+  }
+
+  /** Adds rules to the freeze, keeping its date: how a rule that arrived later gets its baseline. */
+  public void extendFrozen(Collection<String> ruleIds) {
+    Set<String> all = new TreeSet<>(frozenRules());
+    all.addAll(ruleIds);
+    markFrozen(LocalDate.parse(frozenLines().get(0)), all);
+  }
+
+  private List<String> frozenLines() {
+    return Stream.of(read(dir.resolve("frozen")).split("\n")).map(String::strip).filter(line -> !line.isEmpty())
+        .toList();
   }
 
   public Multiset read(String ruleId) {

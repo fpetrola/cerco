@@ -115,4 +115,32 @@ class EngineTest {
     assertFalse(outcome.green());
     assertTrue(outcome.problems().get(0).contains("configuration"));
   }
+
+  @Test
+  void aRuleThatArrivesAfterTheFreezeIsFrozenByTheNextFullRunAndSkippedByPartialOnes(@TempDir Path root)
+      throws IOException {
+    Path a = write(root, "A.java", "package p; class A { Object f(Object o) { return (String) o; } }");
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true).files());
+    Files.writeString(root.resolve(".cerco/baseline/frozen"), "2026-11-01\nno-switch\n");
+    Files.deleteIfExists(root.resolve(".cerco/baseline/no-cast.txt"));
+
+    Outcome partial = engine.run(new Scope("quick", List.of(new SourceFile(root, a)), false));
+    assertTrue(partial.green(), partial.toString());
+    assertTrue(partial.notes().get(0).contains("skipped until a full run"));
+    assertTrue(partial.notes().get(0).contains("no-cast"));
+
+    Outcome full = engine.run(scope(root, true));
+    assertTrue(full.green(), full.toString());
+    assertTrue(full.notes().stream().anyMatch(note -> note.contains("rule no-cast is new to this project")));
+    assertEquals(1, engine.store().read("no-cast").total());
+    assertTrue(engine.store().frozenRules().contains("no-cast"));
+    assertEquals(Optional.of("2026-11-01"), engine.store().frozenOn());
+
+    Files.writeString(a, "package p; class A { Object f(Object o) { return (String) o; }"
+        + " Object g(Object o) { return (Integer) o; } }");
+    Outcome worse = engine.run(new Scope("quick", List.of(new SourceFile(root, a)), false));
+    assertFalse(worse.green());
+    assertEquals("no-cast", worse.fresh().get(0).rule());
+  }
 }

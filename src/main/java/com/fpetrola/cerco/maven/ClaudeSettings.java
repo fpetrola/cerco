@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Merges the gate's hooks and permission rules into an existing .claude/settings.json without touching what else
@@ -39,20 +38,14 @@ public final class ClaudeSettings {
       return mapper.createObjectNode();
     }
     try {
-      JsonNode node = mapper.readTree(existing);
-      if (!node.isObject()) {
-        throw new IllegalArgumentException(".claude/settings.json does not hold a JSON object");
-      }
-      return (ObjectNode) node;
+      return mapper.readValue(existing, ObjectNode.class);
     } catch (JsonProcessingException e) {
       throw new IllegalArgumentException(".claude/settings.json is not valid JSON: " + e.getOriginalMessage(), e);
     }
   }
 
   private void install(ArrayNode groups, HookSpec hook) {
-    Optional<ObjectNode> existing = existingCommand(groups, hook.marker());
-    if (existing.isPresent()) {
-      existing.get().put("command", hook.command()).put("timeout", hook.timeoutSeconds());
+    if (replaced(groups, hook)) {
       return;
     }
     ObjectNode group = groups.addObject();
@@ -61,15 +54,23 @@ public final class ClaudeSettings {
         .put("timeout", hook.timeoutSeconds());
   }
 
-  private Optional<ObjectNode> existingCommand(ArrayNode groups, String marker) {
-    for (JsonNode group : groups) {
-      for (JsonNode command : group.withArray("hooks")) {
-        if (command.path("command").asText("").contains(marker) && command.isObject()) {
-          return Optional.of((ObjectNode) command);
+  /** Finds the hook again by its marker and rewrites it in place, matcher included; false when it is not there. */
+  private boolean replaced(ArrayNode groups, HookSpec hook) {
+    for (int g = 0; g < groups.size(); g++) {
+      ObjectNode group = groups.get(g).deepCopy();
+      ArrayNode commands = group.withArray("hooks");
+      for (int i = 0; i < commands.size(); i++) {
+        if (commands.get(i).path("command").asText("").contains(hook.marker())) {
+          ObjectNode command = commands.get(i).deepCopy();
+          command.put("command", hook.command()).put("timeout", hook.timeoutSeconds());
+          commands.set(i, command);
+          hook.matcher().ifPresent(matcher -> group.put("matcher", matcher));
+          groups.set(g, group);
+          return true;
         }
       }
     }
-    return Optional.empty();
+    return false;
   }
 
   private boolean contains(ArrayNode array, String text) {

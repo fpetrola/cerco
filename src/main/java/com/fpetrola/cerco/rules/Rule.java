@@ -17,7 +17,9 @@ public interface Rule {
   String remedy();
 
   /** True when a change to one file can only move findings in that file, so the rule can run on a single edit. */
-  boolean perFile();
+  default boolean perFile() {
+    return true;
+  }
 
   /** A fresh, stateful run of the rule; the engine feeds it every file in name order. */
   Inspection inspection();

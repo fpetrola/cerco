@@ -14,8 +14,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 /**
- * The file just edited, or the files git sees as changed: the per-file rules only, fast enough to run after every
- * edit. The hook's JSON arrives on stdin; a person at a terminal gets the git fallback.
+ * The file just edited, or the files git sees as changed (after a shell command that wrote, or for a person at a
+ * terminal): the per-file rules only, fast enough to run after every edit. The hook's JSON arrives on stdin.
  */
 @Mojo(name = "quick", aggregator = true, threadSafe = true)
 public final class QuickMojo extends AbstractCercoMojo {
@@ -40,9 +40,9 @@ public final class QuickMojo extends AbstractCercoMojo {
 
   private List<Path> fromHook() {
     HookInput input = HookInput.parse(new StdinText(System.in).text());
-    if (input.blank()) {
+    if (input.blank() || input.filePath().isEmpty()) {
       return new ChangedFiles().under(root());
     }
-    return input.filePath().isEmpty() ? List.of() : List.of(Path.of(input.filePath()));
+    return List.of(Path.of(input.filePath()));
   }
 }

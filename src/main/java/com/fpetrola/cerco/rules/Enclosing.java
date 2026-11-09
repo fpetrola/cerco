@@ -25,6 +25,12 @@ public final class Enclosing {
     return type.getFullyQualifiedName().orElse(type.getNameAsString());
   }
 
+  /** The direct parent of a node when it is of that kind; empty otherwise. */
+  public <N extends Node> Optional<N> parentOf(Node node, Class<N> kind) {
+    Node parent = node.getParentNode().orElse(node);
+    return node.findAncestor(kind, ancestor -> ancestor == parent);
+  }
+
   public String signatureOf(CallableDeclaration<?> callable) {
     return typeOf(callable) + "." + callable.getSignature().asString();
   }

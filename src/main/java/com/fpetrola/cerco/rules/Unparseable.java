@@ -29,11 +29,6 @@ public final class Unparseable implements Rule {
   }
 
   @Override
-  public boolean perFile() {
-    return true;
-  }
-
-  @Override
   public Inspection inspection() {
     List<Finding> findings = new ArrayList<>();
     return new Inspection() {

@@ -62,12 +62,19 @@ public final class HookMain {
     return 0;
   }
 
+  /**
+   * After an edit of a .java file, or after a shell command that wrote something (a heredoc, an interpreter, an
+   * in-place sed): the files git sees as changed are then the scope, so the gate sees what the editor did not.
+   */
   private int quick(String input) {
     HookInput hook = HookInput.parse(input);
-    if (!hook.blank() && !hook.filePath().endsWith(".java")) {
-      return 0;
+    if (hook.blank()) {
+      return maven("quick", input);
     }
-    return maven("quick", input);
+    if (hook.tool().equals("Bash")) {
+      return new ShellCommand(hook.command()).writesAnything() ? maven("quick", input) : 0;
+    }
+    return hook.filePath().endsWith(".java") ? maven("quick", input) : 0;
   }
 
   private int maven(String goal, String input) {

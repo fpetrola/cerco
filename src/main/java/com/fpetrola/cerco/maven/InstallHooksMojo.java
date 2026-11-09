@@ -12,8 +12,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Wires the gate into Claude Code: a guard before every shell command, a quick run after every edit, an audit before
- * the agent may stop, and permission rules that keep the gate's own files out of the agent's hands.
+ * Wires the gate into Claude Code: a guard before every shell command, a quick run after every edit and after every
+ * shell command that writes (so a heredoc or a script is seen too), an audit before the agent may stop, and
+ * permission rules that keep the gate's own files out of the agent's hands.
  */
 @Mojo(name = "install-hooks", aggregator = true)
 public final class InstallHooksMojo extends AbstractCercoMojo {
@@ -30,7 +31,7 @@ public final class InstallHooksMojo extends AbstractCercoMojo {
         .map(home -> " --mvn " + quoted(home + "/bin/mvn")).orElse("");
     List<HookSpec> hooks = List.of(
         new HookSpec("PreToolUse", Optional.of("Bash"), launcher + "guard", 20, "HookMain guard"),
-        new HookSpec("PostToolUse", Optional.of("Edit|Write|MultiEdit"), launcher + "quick" + maven, 240,
+        new HookSpec("PostToolUse", Optional.of("Edit|Write|MultiEdit|Bash"), launcher + "quick" + maven, 240,
             "HookMain quick"),
         new HookSpec("Stop", Optional.empty(), launcher + "audit" + maven, 900, "HookMain audit"));
     List<String> denies = List.of("Edit(.cerco/**)", "Edit(.claude/settings.json)", "Bash(*-Dcerco.skip*)");
@@ -42,7 +43,8 @@ public final class InstallHooksMojo extends AbstractCercoMojo {
     } catch (IOException e) {
       throw new MojoExecutionException("could not write " + settings, e);
     }
-    getLog().info("cerco: hooks installed in " + settings + ": guard on every Bash call, quick after every edit, "
+    getLog().info("cerco: hooks installed in " + settings + ": guard on every Bash call, quick after every edit "
+        + "and after every shell command that writes, "
         + "audit before the agent stops; .cerco/ and the settings are denied to the agent's editor. Commit it.");
   }
 

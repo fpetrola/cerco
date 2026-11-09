@@ -13,7 +13,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /** Packages that depend on each other: no layer, no direction, nothing that can be understood alone. */
-public final class PackageCycles implements Rule {
+public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
 
   @Override
   public String id() {
@@ -38,17 +38,22 @@ public final class PackageCycles implements Rule {
   }
 
   @Override
-  public boolean perFile() {
-    return false;
-  }
-
-  @Override
-  public Inspection inspection() {
+  protected Graph start() {
     return new Graph();
   }
 
+  @Override
+  protected void gather(ParsedFile file, CompilationUnit unit, Graph graph) {
+    graph.visit(file);
+  }
+
+  @Override
+  protected List<Finding> conclude(Graph graph) {
+    return graph.findings();
+  }
+
   /** Remembers each package's first file and raw imports; resolves them against the package set at the end. */
-  private final class Graph implements Inspection {
+  final class Graph implements Inspection {
     private final Map<String, String> firstFileOf = new TreeMap<>();
     private final Map<String, List<String>> imports = new TreeMap<>();
 

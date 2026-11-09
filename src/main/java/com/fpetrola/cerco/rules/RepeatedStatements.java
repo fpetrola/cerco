@@ -15,12 +15,15 @@ import java.util.List;
 import java.util.Map;
 
 /** The same run of statements appearing twice: a method that was never extracted. */
-public final class RepeatedStatements implements Rule {
+public final class RepeatedStatements extends ProjectRule<RepeatedStatements.Seen> {
   private static final int WINDOW = 6;
-  private final Enclosing enclosing = new Enclosing();
 
   /** Where a run was first seen; the file and member strings are shared across every window of the same block. */
-  private record Site(String file, String member, int line) {
+  public record Site(String file, String member, int line) {
+  }
+
+  /** Every run seen so far by its digest, and the repeats found. */
+  public record Seen(Map<Long, Site> runs, List<Finding> repeats) {
   }
 
   @Override
@@ -46,28 +49,19 @@ public final class RepeatedStatements implements Rule {
   }
 
   @Override
-  public boolean perFile() {
-    return false;
+  protected Seen start() {
+    return new Seen(new HashMap<>(), new ArrayList<>());
   }
 
   @Override
-  public Inspection inspection() {
-    Map<Long, Site> seen = new HashMap<>();
-    List<Finding> findings = new ArrayList<>();
-    return new Inspection() {
-      @Override
-      public void visit(ParsedFile file) {
-        file.unit().ifPresent(unit -> scan(file, unit, seen, findings));
-      }
-
-      @Override
-      public List<Finding> findings() {
-        return List.copyOf(findings);
-      }
-    };
+  protected List<Finding> conclude(Seen seen) {
+    return List.copyOf(seen.repeats());
   }
 
-  private void scan(ParsedFile file, CompilationUnit unit, Map<Long, Site> seen, List<Finding> out) {
+  @Override
+  protected void gather(ParsedFile file, CompilationUnit unit, Seen state) {
+    Map<Long, Site> seen = state.runs();
+    List<Finding> out = state.repeats();
     String name = file.name();
     for (BlockStmt block : unit.findAll(BlockStmt.class)) {
       List<Statement> statements = block.getStatements();

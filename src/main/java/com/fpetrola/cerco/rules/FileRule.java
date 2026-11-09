@@ -12,11 +12,6 @@ public abstract class FileRule implements Rule {
   protected final Enclosing enclosing = new Enclosing();
 
   @Override
-  public boolean perFile() {
-    return true;
-  }
-
-  @Override
   public Inspection inspection() {
     List<Finding> findings = new ArrayList<>();
     return new Inspection() {

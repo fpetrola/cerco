@@ -28,30 +28,39 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project}", readonly = true, required = true)
   protected MavenProject project;
 
+  /** Skips the gate. The agent cannot pass it: the guard hook refuses the property, and the build logs the skip. */
   @Parameter(property = "cerco.skip", defaultValue = "false")
   private boolean skip;
 
+  /** Lines a file may have before it is a finding (default 400). Changing it needs a signature (approve). */
   @Parameter
   private Integer fileCeiling;
 
+  /** Lines a method or constructor may have (default 40). Changing it needs a signature (approve). */
   @Parameter
   private Integer methodCeiling;
 
+  /** Type-name suffixes that name a utility class (default Util, Utils, Helper, Helpers, Manager, Impl, Common, Misc, Tools). */
   @Parameter
   private List<String> utilitySuffixes;
 
+  /** Method-name prefixes that mark a static factory (default of, from, parse, create, valueOf, copyOf). */
   @Parameter
   private List<String> factoryPrefixes;
 
+  /** Globs, relative to the root, of generated sources the gate ignores (default target, generated-sources, generated). */
   @Parameter
   private List<String> generated;
 
+  /** How many exemptions .cerco/exemptions.yaml may hold at once (default 10). */
   @Parameter
   private Integer maxExemptions;
 
+  /** Whether test sources are gated too (default false). */
   @Parameter
   private Boolean includeTests;
 
+  /** Rule ids switched off for this project (default none). Needs a signature (approve), like every non-default. */
   @Parameter
   private List<String> disabledRules;
 

@@ -19,7 +19,7 @@ class BaselineStoreTest {
   void roundTripsAndRemovesEmptyFiles(@TempDir Path dir) {
     BaselineStore store = new BaselineStore(dir.resolve("baseline"));
     assertFalse(store.exists());
-    store.markFrozen(LocalDate.of(2026, 11, 9));
+    store.markFrozen(LocalDate.of(2026, 11, 9), java.util.List.of("no-switch"));
     assertTrue(store.exists());
     assertEquals(Optional.of("2026-11-09"), store.frozenOn());
     store.write("rule", Multiset.of(List.of("a|k", "a|k", "b|k with spaces")));

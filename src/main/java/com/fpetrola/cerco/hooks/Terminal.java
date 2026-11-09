@@ -23,7 +23,7 @@ public final class Terminal {
 
   private boolean ask(Method isTerminal, Console console) {
     try {
-      return (Boolean) isTerminal.invoke(console);
+      return Boolean.TRUE.equals(isTerminal.invoke(console));
     } catch (ReflectiveOperationException e) {
       throw new IllegalStateException("could not ask the console whether it is a terminal", e);
     }

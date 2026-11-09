@@ -74,6 +74,10 @@ public final class Engine {
   public Outcome run(Scope scope) {
     long start = System.nanoTime();
     List<Rule> active = rules.all().stream().filter(rule -> scope.full() || rule.perFile()).toList();
+    List<String> notes = new ArrayList<>();
+    if (store.exists()) {
+      active = adopt(active, scope.full(), notes);
+    }
     Runs runs = new Runs(active);
     int parsed = feed.each(scope.files(), runs::visit);
     Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
@@ -85,7 +89,7 @@ public final class Engine {
     List<String> problems = new ArrayList<>();
     Applied applied = exempt(tally.fresh(), scope.full(), problems);
     problems.addAll(applied.problems());
-    List<String> notes = new ArrayList<>(applied.notes());
+    notes.addAll(applied.notes());
     if (!store.exists()) {
       notes.add("no baseline is frozen yet: every finding counts as new until `mvn verify` freezes the project");
     }
@@ -104,11 +108,39 @@ public final class Engine {
       total += rule.asBudget().map(budget -> freeze(budget, runs.measures(budget)))
           .orElseGet(() -> freeze(rule, runs.findings(rule)));
     }
-    store.markFrozen(LocalDate.now(clock));
+    store.markFrozen(LocalDate.now(clock), active.stream().map(Rule::id).toList());
     return total;
   }
 
+  /**
+   * Rules the freeze never saw: in a full run they are frozen now, as the project stands, and noted; in a partial
+   * run they wait for the next full one, so that a module's worth of findings is not mistaken for the project's.
+   */
+  private List<Rule> adopt(List<Rule> active, boolean fullScope, List<String> notes) {
+    Set<String> frozen = store.frozenRules();
+    List<Rule> arrived = active.stream().filter(rule -> !frozen.contains(rule.id())).toList();
+    if (arrived.isEmpty()) {
+      return active;
+    }
+    if (!fullScope) {
+      notes.add("rules without a baseline yet, skipped until a full run (mvn cerco:audit) freezes them: "
+          + arrived.stream().map(Rule::id).collect(Collectors.joining(", ")));
+      return active.stream().filter(rule -> frozen.contains(rule.id())).toList();
+    }
+    arrived.forEach(rule -> notes.add("rule " + rule.id() + " is new to this project: its current findings were "
+        + "frozen into the baseline now, and only shrink from here"));
+    return active;
+  }
+
+  private boolean adopting(Rule rule) {
+    return store.exists() && !store.frozenRules().contains(rule.id());
+  }
+
   private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope) {
+    if (adopting(rule)) {
+      freeze(rule, findings);
+      store.extendFrozen(List.of(rule.id()));
+    }
     Multiset baseline = store.read(rule.id());
     Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings);
     if (store.exists() && !reconciliation.updated().sameAs(baseline)) {
@@ -118,6 +150,10 @@ public final class Engine {
   }
 
   private CeilingReconciler.Outcome reconcile(BudgetRule rule, List<Measure> measures, Set<String> inScope) {
+    if (adopting(rule)) {
+      freeze(rule, measures);
+      store.extendFrozen(List.of(rule.id()));
+    }
     Map<String, Integer> stored = store.readCeilings(rule.id());
     CeilingReconciler.Outcome outcome = ceilings.reconcile(rule, stored, inScope, measures);
     if (store.exists() && !outcome.updated().equals(stored)) {

@@ -22,11 +22,6 @@ public interface BudgetRule extends Rule {
     return measuring.measures();
   }
 
-  @Override
-  default boolean perFile() {
-    return true;
-  }
-
   /** Without a baseline, everything over the default ceiling is a finding. */
   @Override
   default Inspection inspection() {
