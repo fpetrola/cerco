@@ -16,6 +16,10 @@ import java.util.TreeMap;
 public final class CeilingReconciler {
 
   public record Outcome(List<Finding> fresh, int solved, int frozen, Map<String, Integer> updated) {
+
+    public Outcome plusSolved(int more) {
+      return new Outcome(fresh, solved + more, frozen, updated);
+    }
   }
 
   public Outcome reconcile(BudgetRule rule, Map<String, Integer> stored, Set<String> scopeFiles,

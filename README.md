@@ -31,7 +31,8 @@ Eso es todo. En un proyecto multi-módulo va en el pom raíz y corre en cada mó
 La primera vez que corre, no hay línea de base: el plugin recorre todo el reactor, anota cada violación y cada
 archivo o método que excede el techo, y lo guarda bajo `.cerco/baseline/`, un archivo de texto por regla, legible en
 un diff. Hay que **commitear `.cerco/`**: a partir de ahí lo que está anotado se tolera, lo nuevo no, y cuando una
-violación congelada desaparece el plugin la borra de la línea de base solo. Nunca la agranda.
+violación congelada desaparece el plugin la borra de la línea de base solo, también cuando desaparece el archivo
+entero (eso lo ve una corrida completa, no el `quick` de un archivo). Nunca la agranda.
 
 Para conectarlo a Claude Code, una vez por proyecto:
 
@@ -118,6 +119,8 @@ menos 20 caracteres, una `category` (`false-positive`, `migration` o `decision`)
 - `until`: una fecha; ese día la excepción muere y la regla vuelve a aplicar.
 - `untilVersion`: una versión del proyecto; al llegar, muere.
 - `budget`: cuántos hallazgos puede cubrir como máximo; uno más y es rojo.
+
+`mvn com.fpetrola:cerco-maven-plugin:explain` imprime un archivo de ejemplo completo con estas reglas.
 
 Hay un tope de 10 excepciones activas por proyecto. Una excepción vencida es rojo. Una excepción que ya no cubre
 nada también es rojo, porque sólo serviría para esconder la próxima violación. Las excepciones por falso positivo

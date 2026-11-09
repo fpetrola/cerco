@@ -2,6 +2,7 @@ package com.fpetrola.cerco.engine;
 
 import com.fpetrola.cerco.baseline.BaselineStore;
 import com.fpetrola.cerco.baseline.CeilingReconciler;
+import com.fpetrola.cerco.baseline.Key;
 import com.fpetrola.cerco.baseline.Multiset;
 import com.fpetrola.cerco.baseline.Reconciler;
 import com.fpetrola.cerco.baseline.Reconciliation;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -83,8 +85,9 @@ public final class Engine {
     Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
     Tally tally = new Tally();
     for (Rule rule : active) {
-      rule.asBudget().ifPresentOrElse(budget -> tally.add(reconcile(budget, runs.measures(budget), inScope)),
-          () -> tally.add(reconcile(rule, runs.findings(rule), inScope)));
+      rule.asBudget().ifPresentOrElse(
+          budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, scope.full())),
+          () -> tally.add(reconcile(rule, runs.findings(rule), inScope, scope.full())));
     }
     List<String> problems = new ArrayList<>();
     Applied applied = exempt(tally.fresh(), scope.full(), problems);
@@ -136,26 +139,35 @@ public final class Engine {
     return store.exists() && !store.frozenRules().contains(rule.id());
   }
 
-  private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope) {
+  private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope, boolean full) {
     if (adopting(rule)) {
       freeze(rule, findings);
       store.extendFrozen(List.of(rule.id()));
     }
-    Multiset baseline = store.read(rule.id());
-    Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings);
-    if (store.exists() && !reconciliation.updated().sameAs(baseline)) {
+    Multiset stored = store.read(rule.id());
+    Multiset baseline = full ? stored.where(key -> inScope.contains(new Key(key).file())) : stored;
+    Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings)
+        .plusSolved(stored.total() - baseline.total());
+    if (store.exists() && !reconciliation.updated().sameAs(stored)) {
       store.write(rule.id(), reconciliation.updated());
     }
     return reconciliation;
   }
 
-  private CeilingReconciler.Outcome reconcile(BudgetRule rule, List<Measure> measures, Set<String> inScope) {
+  /** In a full run, a frozen entry whose file is gone is solved: the file went, and its findings with it. */
+  private CeilingReconciler.Outcome reconcile(BudgetRule rule, List<Measure> measures, Set<String> inScope,
+      boolean full) {
     if (adopting(rule)) {
       freeze(rule, measures);
       store.extendFrozen(List.of(rule.id()));
     }
     Map<String, Integer> stored = store.readCeilings(rule.id());
-    CeilingReconciler.Outcome outcome = ceilings.reconcile(rule, stored, inScope, measures);
+    Map<String, Integer> kept = new TreeMap<>(stored);
+    if (full) {
+      kept.keySet().removeIf(key -> !inScope.contains(new Key(key).file()));
+    }
+    CeilingReconciler.Outcome outcome = ceilings.reconcile(rule, kept, inScope, measures)
+        .plusSolved(stored.size() - kept.size());
     if (store.exists() && !outcome.updated().equals(stored)) {
       store.writeCeilings(rule.id(), outcome.updated());
     }

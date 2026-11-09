@@ -21,6 +21,31 @@ import org.yaml.snakeyaml.error.YAMLException;
  * long enough to be one, a category, and exactly one limit; and the file may not hold more than the cap.
  */
 public final class ExemptionsFile {
+  /** A valid file, as `explain` prints it: the shape nobody should have to read from the bytecode. */
+  public static final String EXAMPLE = """
+      exemptions:
+        - rule: no-cast
+          target: vista-swing/src/main/java/com/fpetrola/vista/swing/ComponentKind.java
+          reason: the decoder between Swing's hierarchy, which is not ours, and our capabilities; the one cast
+          category: decision
+          until: 2027-06-30
+        - rule: no-type-keyed-map
+          target: vista-swing/**
+          reason: the registry of kinds by Swing class keeps template discovery automatic, a deliberate choice
+          category: decision
+          untilVersion: 2.0.0
+        - rule: no-instanceof
+          target: oop/zx-transform/**
+          reason: JavaParser nodes are dispatched by type until the visitors land, task T-77
+          category: migration
+          budget: 12
+
+      # rule: a rule id from `explain`. target: a glob over paths relative to the root (** spans directories).
+      # reason: at least 20 characters. category: false-positive | migration | decision.
+      # Exactly one limit: until (a date, YYYY-MM-DD), untilVersion (the project version that ends it) or
+      # budget (how many findings it may cover at most). At most 10 exemptions. Then: mvn cerco:approve
+      """;
+
   private static final Set<String> CATEGORIES = Set.of("false-positive", "migration", "decision");
   private final Path path;
   private final Set<String> knownRules;

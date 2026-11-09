@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.maven;
 
 import com.fpetrola.cerco.engine.Engine;
+import com.fpetrola.cerco.exemptions.ExemptionsFile;
 import com.fpetrola.cerco.rules.Rule;
 import org.apache.maven.plugins.annotations.Mojo;
 
@@ -23,7 +24,8 @@ public final class ExplainMojo extends AbstractCercoMojo {
     }
     out.append("\nExemptions: .cerco/exemptions.yaml, each with a rule, a target glob, a reason, a category "
         + "(false-positive, migration, decision) and one limit (until, untilVersion or budget), signed by a human "
-        + "with `mvn cerco:approve` at a terminal.\n");
+        + "with `mvn cerco:approve` at a terminal. The file looks like this:\n\n")
+        .append(ExemptionsFile.EXAMPLE);
     System.out.print(out);
   }
 }

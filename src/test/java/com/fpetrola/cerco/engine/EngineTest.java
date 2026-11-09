@@ -143,4 +143,26 @@ class EngineTest {
     assertFalse(worse.green());
     assertEquals("no-cast", worse.fresh().get(0).rule());
   }
+
+  @Test
+  void aFullRunDropsTheEntriesOfFilesThatAreGoneAndAPartialOneKeepsThem(@TempDir Path root) throws IOException {
+    Path a = write(root, "A.java", SWITCHY);
+    Path b = write(root, "B.java", SWITCHY.replace("class A", "class B"));
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true).files());
+    assertEquals(2, engine.store().read("no-switch").total());
+
+    Files.delete(b);
+    Outcome partial = engine.run(new Scope("quick", List.of(new SourceFile(root, a)), false));
+    assertTrue(partial.green());
+    assertEquals(0, partial.solved());
+    assertEquals(2, engine.store().read("no-switch").total());
+
+    Outcome full = engine.run(scope(root, true));
+    assertTrue(full.green());
+    assertEquals(1, full.solved());
+    assertEquals(1, full.frozen());
+    assertEquals(1, engine.store().read("no-switch").total());
+    assertTrue(engine.store().read("no-switch").keys().iterator().next().startsWith("src/main/java/p/A.java"));
+  }
 }
