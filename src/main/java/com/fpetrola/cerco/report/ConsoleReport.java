@@ -83,14 +83,18 @@ public final class ConsoleReport {
    * Which models the smell usually hides, so the fix starts from the design: the agent names the one it found in the
    * autopsy, and what earlier autopsies of this project found is said first.
    */
-  private String diagnosis(Rule rule) {
+  private String diagnosis(Rule rule, List<Finding> findings) {
     Diagnosis diagnosis = rule.diagnosis();
     if (!diagnosis.says()) {
       return "";
     }
-    StringBuilder out = new StringBuilder("  probably missing (find which in the code; the autopsy names it as `model: "
-        + "<id>`):\n");
-    diagnosis.hypotheses().forEach(hypothesis -> out.append("    ").append(hypothesis.line()).append('\n'));
+    StringBuilder out = new StringBuilder();
+    if (findings.stream().allMatch(finding -> finding.reading().isPresent())) {
+      out.append("  what is missing is said under each finding; the autopsy names it as `model: <id>`\n");
+    } else {
+      out.append("  probably missing (find which in the code; the autopsy names it as `model: <id>`):\n");
+      diagnosis.hypotheses().forEach(hypothesis -> out.append("    ").append(hypothesis.line()).append('\n'));
+    }
     out.append("  not a fix: ").append(diagnosis.notAFix()).append('\n');
     Map<String, Long> found = modelsByRule.getOrDefault(rule.id(), Map.of());
     if (!found.isEmpty()) {
@@ -100,6 +104,12 @@ public final class ConsoleReport {
     return out.toString();
   }
 
+  /** Which model the code at this finding is missing and what it asks for, when its rule could tell. */
+  private String reading(Finding finding) {
+    return finding.reading().map(reading -> "      missing: " + reading.model().id() + ", because "
+        + reading.because() + "\n      do: " + reading.then() + "\n").orElse("");
+  }
+
   private String section(String ruleId, List<Finding> findings) {
     StringBuilder out = new StringBuilder();
     Rule rule = rules.get(ruleId);
@@ -107,10 +117,10 @@ public final class ConsoleReport {
     if (rule != null) {
       out.append("  principle: ").append(rule.principle()).append('\n');
       out.append("  do: ").append(rule.remedy()).append('\n');
-      out.append(diagnosis(rule));
+      out.append(diagnosis(rule, findings));
     }
     findings.stream().limit(PER_RULE).forEach(finding -> out.append("  ").append(finding.file()).append(':')
-        .append(finding.line()).append("  ").append(finding.detail()).append('\n'));
+        .append(finding.line()).append("  ").append(finding.detail()).append('\n').append(reading(finding)));
     if (findings.size() > PER_RULE) {
       out.append("  ... and ").append(findings.size() - PER_RULE).append(" more\n");
     }

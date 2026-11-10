@@ -38,6 +38,11 @@ public abstract class GatheringRule<S> implements Rule {
 
   protected abstract List<Finding> conclude(S state, Project project);
 
+  /** A finding at a node, keyed under its file as the baseline remembers it. */
+  protected Finding finding(ParsedFile file, Node node, String key, String detail) {
+    return new Finding(id(), file.name(), line(node), file.name() + "|" + key, detail);
+  }
+
   protected int line(Node node) {
     return node.getBegin().map(position -> position.line).orElse(1);
   }

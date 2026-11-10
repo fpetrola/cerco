@@ -5,16 +5,27 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * A type of the project as its source declares it: its simple name, what it extends or implements, its fields with
- * their declared types, its methods, its constants when it is an enum, the top-level type it sits in and its file.
+ * A type of the project as its source declares it: its simple name and its full one, what it extends or implements,
+ * its fields with their declared types, its methods, its constants when it is an enum, the top-level type it sits in
+ * and its file.
  */
-public record Declared(String name, Kind kind, List<String> supertypes, Map<String, String> fields,
+public record Declared(String name, String qualified, Kind kind, List<String> supertypes, Map<String, String> fields,
     List<Operation> operations, List<String> constants, String top, String file) {
+
+  /** The package the type is declared in: its full name up to the first type in it. */
+  public String home() {
+    int own = qualified.lastIndexOf("." + top + (nested() ? "." : ""));
+    return own < 0 ? "" : qualified.substring(0, own);
+  }
+
+  /** Whether the type sits inside another, which can name it bare from anywhere it reaches. */
+  public boolean nested() {
+    return !top.equals(name);
+  }
 
   /** The Maven module the type lives in: what comes before the source root in its path. */
   public String module() {
-    int sources = file.indexOf("/src/");
-    return sources < 0 ? "" : file.substring(0, sources);
+    return new Location(file).module();
   }
 
   public boolean isInterface() {

@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 public final class Project {
   private final Map<String, Declared> types = new LinkedHashMap<>();
   private final List<Declared> everyone = new ArrayList<>();
+  private final Map<String, List<Declared>> homonyms = new HashMap<>();
   private final Map<String, Set<String>> under = new HashMap<>();
   private boolean whole;
 
@@ -32,6 +33,7 @@ public final class Project {
 
   private void declare(Declared type) {
     everyone.add(type);
+    homonyms.computeIfAbsent(type.name(), k -> new ArrayList<>()).add(type);
     if (types.putIfAbsent(type.name(), type) == null) {
       type.supertypes().forEach(parent -> under.computeIfAbsent(parent, k -> new TreeSet<>()).add(type.name()));
     }
@@ -50,8 +52,18 @@ public final class Project {
     return types.containsKey(type);
   }
 
+  /** Whether the type a file names is one of the project's, going by its full name when the file says it. */
+  public boolean declares(TypeName type) {
+    return homonyms.getOrDefault(type.simple(), List.of()).stream().anyMatch(type::means);
+  }
+
   public Optional<Declared> declared(String type) {
     return Optional.ofNullable(types.get(type));
+  }
+
+  /** The project types that extend or implement a type directly. */
+  public Set<String> directlyBelow(String type) {
+    return under.getOrDefault(type, Set.of());
   }
 
   /** A type and everything below it in the project. */

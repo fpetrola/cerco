@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.engine;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.SourceFile;
 import com.fpetrola.cerco.project.Project;
 import com.fpetrola.cerco.rules.Inspection;
@@ -55,6 +56,17 @@ public final class Survey {
 
     public List<Finding> of(String ruleId) {
       return findings.getOrDefault(ruleId, List.of());
+    }
+
+    /** How many of the module's findings, of every rule, read as that missing model. */
+    public long readAs(MissingModel model) {
+      return findings.values().stream().flatMap(List::stream)
+          .filter(finding -> finding.reading().filter(reading -> reading.model() == model).isPresent()).count();
+    }
+
+    /** How many of the module's findings their rule could not read. */
+    public long unread() {
+      return findings.values().stream().flatMap(List::stream).filter(finding -> finding.reading().isEmpty()).count();
     }
 
     public double perThousandLines(String ruleId) {

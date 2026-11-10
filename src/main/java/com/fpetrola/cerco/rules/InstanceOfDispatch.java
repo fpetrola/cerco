@@ -1,19 +1,23 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
-import com.fpetrola.cerco.model.MissingModel;
-import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.InstanceOfExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.ThisExpr;
+import com.github.javaparser.ast.visitor.GenericVisitor;
+import com.github.javaparser.ast.visitor.GenericVisitorWithDefaults;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /** Asking a value what type it is, with instanceof or by comparing classes, instead of letting the type answer. */
-public final class InstanceOfDispatch extends FileRule {
+public final class InstanceOfDispatch extends TypeTestRule {
 
   @Override
   public String id() {
@@ -38,42 +42,53 @@ public final class InstanceOfDispatch extends FileRule {
   }
 
   @Override
-  public Diagnosis diagnosis() {
-    return new Diagnosis("getClass(), a kind() enum and a switch, an isX() per subtype, a map keyed by Class, a "
-        + "sealed switch: the same test, moved",
-        new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
-            "the tested types are the project's and share a supertype",
-            "a method on the common type; a visitor when two or more operations test the same family, or when "
-                + "the hierarchy cannot see the caller's module"),
-        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
-            "you are picking elements out of a collection another object owns",
-            "its owner keeps or hands out the typed view"),
-        new Hypothesis(MissingModel.VARIATION_AS_DATA,
-            "the test stands for a capability rather than a kind",
-            "a method every element answers, or a role the owner knows its members by"));
+  protected String disguises() {
+    return "getClass(), a kind() enum and a switch, an isX() per subtype, a map keyed by Class, a sealed switch: the "
+        + "same test, moved";
   }
 
   @Override
-  protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
+  protected List<Node> suspects(CompilationUnit unit) {
     List<Node> suspects = new ArrayList<>(unit.findAll(InstanceOfExpr.class));
-    unit.findAll(MethodCallExpr.class).stream().filter(this::comparesClasses).forEach(suspects::add);
-    return suspects.stream().sorted(Node.NODE_BY_BEGIN_POSITION).map(node -> finding(file, node)).toList();
+    unit.findAll(MethodCallExpr.class).stream().filter(call -> comparison(call).isPresent()).forEach(suspects::add);
+    return suspects;
   }
 
-  private Finding finding(ParsedFile file, Node node) {
-    String where = enclosing.of(node);
-    String what = Stream.of(node).flatMap(n -> n.findFirst(InstanceOfExpr.class, candidate -> candidate == n).stream())
-        .findFirst().map(test -> "instanceof " + test.getTypeAsString()).orElse("getClass()==");
-    return finding(file, node, where + "|" + what, "`" + clipped(node.toString()) + "` in " + where);
+  @Override
+  protected GenericVisitor<TypeTest, In> asked() {
+    return new Asked();
   }
 
-  private boolean comparesClasses(MethodCallExpr call) {
+  /** The comparison a `getClass()` call sits in, when it is one side of an == or a !=. */
+  private Optional<BinaryExpr> comparison(MethodCallExpr call) {
     if (!call.getNameAsString().equals("getClass") || !call.getArguments().isEmpty()) {
-      return false;
+      return Optional.empty();
     }
     return call.findAncestor(BinaryExpr.class, binary -> binary.getLeft() == call || binary.getRight() == call)
-        .map(binary -> binary.getOperator() == BinaryExpr.Operator.EQUALS
-            || binary.getOperator() == BinaryExpr.Operator.NOT_EQUALS)
-        .orElse(false);
+        .filter(binary -> binary.getOperator() == BinaryExpr.Operator.EQUALS
+            || binary.getOperator() == BinaryExpr.Operator.NOT_EQUALS);
+  }
+
+  /** An instanceof names its type and its value; a compared `getClass()` has them on either side of the ==. */
+  private final class Asked extends GenericVisitorWithDefaults<TypeTest, In> {
+
+    @Override
+    public TypeTest visit(InstanceOfExpr test, In in) {
+      String where = enclosing.of(test);
+      return in.reader().of(finding(in.file(), test, where + "|instanceof " + test.getTypeAsString(),
+          "`" + clipped(test.toString()) + "` in " + where), test, test.getType(), test.getExpression());
+    }
+
+    @Override
+    public TypeTest visit(MethodCallExpr call, In in) {
+      String where = enclosing.of(call);
+      Finding finding = finding(in.file(), call, where + "|getClass()==", "`" + clipped(call.toString()) + "` in "
+          + where);
+      Expression subject = call.getScope().orElseGet(ThisExpr::new);
+      return comparison(call).stream().flatMap(binary -> Stream.of(binary.getLeft(), binary.getRight()))
+          .map(Expression::toClassExpr).flatMap(Optional::stream).map(ClassExpr::getType).findFirst()
+          .map(type -> in.reader().of(finding, call, type, subject))
+          .orElseGet(() -> in.reader().unread(finding, call));
+    }
   }
 }

@@ -15,8 +15,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 /**
- * Measures rules module by module without touching the baseline: the candidates by default, or the rules named with
- * -Dcerco.rules=a,b. It is how a rule earns its place: it has to find real cases, and tell modules apart.
+ * Measures rules module by module without touching the baseline: the candidates by default, the rules named with
+ * -Dcerco.rules=a,b, or every rule with -Dcerco.rules=all. It is how a rule earns its place: it has to find real cases, and tell modules apart.
  */
 @Mojo(name = "survey", aggregator = true, threadSafe = true)
 public final class SurveyMojo extends AbstractCercoMojo {
@@ -34,7 +34,7 @@ public final class SurveyMojo extends AbstractCercoMojo {
     Rules catalogue = new Rules(settings());
     List<Rule> chosen = rules == null || rules.isEmpty() ? catalogue.candidates()
         : Stream.concat(catalogue.all().stream(), catalogue.candidates().stream())
-            .filter(rule -> rules.contains(rule.id())).toList();
+            .filter(rule -> rules.contains(rule.id()) || rules.contains("all")).toList();
     if (chosen.isEmpty()) {
       throw new MojoFailureException("cerco: no rule to survey; known are " + catalogue.known());
     }

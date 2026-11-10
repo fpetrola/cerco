@@ -68,8 +68,9 @@ final class Declarations extends VoidVisitorAdapter<Consumer<Declared>> {
 
   private Declared declared(TypeDeclaration<?> type, Kind kind, Stream<ClassOrInterfaceType> supertypes,
       Members members) {
-    return new Declared(type.getNameAsString(), kind, supertypes.map(ClassOrInterfaceType::getNameAsString).toList(),
-        members.fields(), members.operations(), members.constants(), top(type), file);
+    return new Declared(type.getNameAsString(), type.getFullyQualifiedName().orElse(type.getNameAsString()), kind,
+        supertypes.map(ClassOrInterfaceType::getNameAsString).toList(), members.fields(), members.operations(),
+        members.constants(), top(type), file);
   }
 
   private List<Operation> operations(TypeDeclaration<?> type) {

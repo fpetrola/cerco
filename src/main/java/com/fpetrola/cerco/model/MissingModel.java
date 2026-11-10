@@ -41,6 +41,11 @@ public enum MissingModel {
     return name().toLowerCase().replace('_', '-');
   }
 
+  /** The first word of the id, for the head of a column. */
+  public String word() {
+    return id().substring(0, id().indexOf('-'));
+  }
+
   public String absent() {
     return absent;
   }

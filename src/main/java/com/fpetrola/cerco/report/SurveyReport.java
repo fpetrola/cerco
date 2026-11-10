@@ -2,6 +2,7 @@ package com.fpetrola.cerco.report;
 
 import com.fpetrola.cerco.engine.Survey.Surveyed;
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import java.util.List;
 
 /**
@@ -29,6 +30,7 @@ public final class SurveyReport {
           module.perThousandLines(rule))));
       out.append('\n');
     }
+    out.append(missing(modules));
     for (String rule : rules) {
       out.append("\n[").append(rule).append("] up to ").append(sample).append(" per module, to judge by hand\n");
       for (Surveyed module : modules) {
@@ -38,8 +40,23 @@ public final class SurveyReport {
     return out.toString();
   }
 
+  /** Where each kind of modelling is lacking: per module, how many findings read as each missing model. */
+  private String missing(List<Surveyed> modules) {
+    StringBuilder out = new StringBuilder("\nwhat is missing, per module: findings read as each model, and those "
+        + "their rule could not read\n\n").append(String.format("%-40s", "module"));
+    List.of(MissingModel.values()).forEach(model -> out.append(String.format(" %10s", model.word())));
+    out.append(String.format(" %10s%n", "unread"));
+    for (Surveyed module : modules) {
+      out.append(String.format("%-40s", clipped(module.module(), 40)));
+      List.of(MissingModel.values()).forEach(model -> out.append(String.format(" %10d", module.readAs(model))));
+      out.append(String.format(" %10d%n", module.unread()));
+    }
+    return out.toString();
+  }
+
   private String line(Surveyed module, Finding finding) {
-    return "  " + module.module() + "  " + finding.file() + ":" + finding.line() + "  " + finding.detail() + '\n';
+    return "  " + module.module() + "  " + finding.file() + ":" + finding.line() + "  " + finding.detail()
+        + finding.reading().map(reading -> "\n      " + reading.line()).orElse("") + '\n';
   }
 
   private String clipped(String text, int width) {

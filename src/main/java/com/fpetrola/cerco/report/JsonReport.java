@@ -38,8 +38,15 @@ public final class JsonReport {
   }
 
   private List<Map<String, Object>> findings(List<Finding> findings) {
-    return findings.stream().map(finding -> Map.<String, Object>of(
+    return findings.stream().map(this::document).toList();
+  }
+
+  private Map<String, Object> document(Finding finding) {
+    Map<String, Object> document = new LinkedHashMap<>(Map.of(
         "rule", finding.rule(), "file", finding.file(), "line", finding.line(), "key", finding.key(),
-        "detail", finding.detail())).toList();
+        "detail", finding.detail()));
+    finding.reading().ifPresent(reading -> document.put("missing", Map.of("model", reading.model().id(),
+        "because", reading.because(), "do", reading.then())));
+    return document;
   }
 }
