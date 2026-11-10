@@ -76,6 +76,7 @@ decide por la escritura real, no por la mención.
 | `no-repeated-statements` | abstracción | seis sentencias consecutivas que aparecen dos veces (proyecto entero) |
 | `no-cloned-methods` | abstracción | el mismo método, nombre y cuerpo, en tres o más tipos (proyecto entero) |
 | `flag-driven-from-outside` | un solo dueño | otra clase llama con `true` o `false` al setter pelado de un campo `boolean` (`s.setPending(false)`): un protocolo de estados manejado desde afuera (proyecto entero) |
+| `ask-then-tell` | decí, no preguntes | un `if` le pregunta a otro objeto por una propiedad (`s.isHalted()`) y en una rama se la cambia (`s.setHalted(false)`): la transición la decide el que llama, y cada uno tiene su copia |
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 

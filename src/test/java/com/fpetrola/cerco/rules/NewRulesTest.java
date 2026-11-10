@@ -123,6 +123,20 @@ class NewRulesTest {
         snippets.parse("src/main/java/p/B.java", "package p; class B {" + slot + " }"))).isEmpty());
   }
   @Test
+  void askingAnotherObjectThenSettingWhatWasAsked() {
+    List<String> found = details(new AskThenTell(), "package p; class A { State s; boolean on; void f(Cpu c) {"
+        + " if (s.isHalted()) { s.setHalted(false); s.getPc().increment(); }"
+        + " if (!s.isHalted()) s.setHalted(true); else other.setHalted(false);"
+        + " if (c.getMode() == 2 && on) { log(); } else { c.setMode(1); }"
+        + " if (s.isHalted()) { s.setRunning(true); other.setHalted(true); }"
+        + " if (isOn()) { setOn(false); } if (this.isOn()) { this.setOn(false); }"
+        + " if (c.getAt(3) == 0) { c.setAt(3); } } }");
+    assertEquals(List.of("`s.setHalted(false)` sets what the if just asked, in p.A.f(Cpu)",
+        "`s.setHalted(true)` sets what the if just asked, in p.A.f(Cpu)",
+        "`c.setMode(1)` sets what the if just asked, in p.A.f(Cpu)"), found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"

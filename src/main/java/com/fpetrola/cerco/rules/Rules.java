@@ -48,6 +48,7 @@ public final class Rules {
         new RepeatedStatements(),
         new ClonedMethods(),
         new FlagDrivenFromOutside(),
+        new AskThenTell(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

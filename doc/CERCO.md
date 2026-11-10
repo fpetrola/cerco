@@ -197,7 +197,8 @@ algún tipo anotado con una anotación cuyo nombre termina en `Generated` (`engi
 ### 3.10 Autopsia
 
 Primera regla nacida de una autopsia: `flag-driven-from-outside` (0.4.0), de la autopsia de oozx
-`2026-11-10-no-instanceof`.
+`2026-11-10-no-instanceof`. Segunda, y la primera que la deuda de §3.10 obligó a construir: `ask-then-tell` (0.6.0),
+de `2026-11-10-flag-driven-from-outside` (salir del HALT copiado en los dos caminos de interrupción de oozx).
 
 
 La idea de Fernando: los hallazgos son síntomas de modelo faltante, y arreglarlos para cumplir la letra de la regla
@@ -332,7 +333,7 @@ de "arreglar" todo.
 | paquete | qué tiene |
 |---|---|
 | `model` | `SourceFile` (ruta absoluta + nombre relativo a la raíz), `ParsedFile`, `Finding`, `Measure`, `Settings` |
-| `rules` | `Rule`, `Inspection`, `FileRule`, `ProjectRule<S>`, `BudgetRule`/`Measuring`, `Enclosing` (nombres de miembros para las claves), `PackageGraph`, las 21 reglas, `Rules` |
+| `rules` | `Rule`, `Inspection`, `FileRule`, `ProjectRule<S>`, `BudgetRule`/`Measuring`, `Enclosing` (nombres de miembros para las claves), `PackageGraph`, las 23 reglas, `Rules` |
 | `engine` | `Parser`, `Generated`, `Sources` (recorrido + globs), `Feed`, `Runs` (una `Inspection` por regla), `Tally`, `Scope`, `Signed`, `Witness` (digests de código y de cerco, §3.11), `Outcome`, `Engine` |
 | `baseline` | `BaselineStore`, `Multiset`, `Key`, `Reconciler`, `CeilingReconciler`, `Reconciliation` |
 | `exemptions` | `ExemptionsFile` (+ `ExemptionsDocument`/`ExemptionEntry`, los beans de YAML), `Exemption`, `Limit`, `VersionOrder`, `Context`, `Verdict`, `Exempting`, `Applied`, `Loaded`, `Approval`, `Digest` |
@@ -436,7 +437,8 @@ pensarla contra el rodeo que va a provocar.
 | `9b0e641` | 0.3.0 | autopsias; 69 tests |
 | `2e821c8` | 0.4.0 | `flag-driven-from-outside`, la primera regla nacida de una autopsia; 70 tests |
 | `9a7bafe` | 0.4.1 | `GitTree` (git de línea de comandos, entiende worktrees) en vez de JGit; 72 tests |
-| | 0.5.0 | regla propuesta = deuda hasta que exista; testigo de código y de cerco; 76 tests |
+| `d8d1a7e` | 0.5.0 | regla propuesta = deuda hasta que exista; testigo de código y de cerco; 76 tests |
+| | 0.6.0 | `ask-then-tell`, construida porque la deuda de una autopsia de oozx lo exigió; 77 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 
