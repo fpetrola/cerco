@@ -3,7 +3,6 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
-import com.fpetrola.cerco.model.Reading;
 import com.fpetrola.cerco.project.Family;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
@@ -14,15 +13,9 @@ import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.InstanceOfExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 /**
  * A hierarchy of the project whose types are tested with instanceof or casts from two or more members outside it:
@@ -31,12 +24,17 @@ import java.util.stream.Collectors;
  * model smells: in oozx it finds OpcodeReference tested
  * from nine files of the emulator, which already has a visitor for its instructions.
  */
-public final class HierarchyAskedFromOutside extends ProjectRule<List<HierarchyAskedFromOutside.Test>> {
+public final class HierarchyAskedFromOutside extends RepeatedRule<HierarchyAskedFromOutside.Test> {
   private static final int MEMBERS = 2;
   private static final int SUBTYPES = 2;
 
   /** A test of a type: where, in which member of which type, and how. */
-  public record Test(String file, int line, String member, String enclosingType, String tested, String how) {
+  public record Test(String file, int line, String member, String enclosingType, String tested, String how)
+      implements Place {
+  }
+
+  public HierarchyAskedFromOutside() {
+    super(MEMBERS);
   }
 
   private final Hypothesis method = new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
@@ -78,11 +76,6 @@ public final class HierarchyAskedFromOutside extends ProjectRule<List<HierarchyA
   }
 
   @Override
-  protected List<Test> start() {
-    return new ArrayList<>();
-  }
-
-  @Override
   protected void gather(ParsedFile file, CompilationUnit unit, List<Test> tests) {
     unit.findAll(InstanceOfExpr.class).forEach(test -> keep(file, test, test.getType(), "instanceof", tests));
     unit.findAll(CastExpr.class).forEach(test -> keep(file, test, test.getType(), "cast", tests));
@@ -96,48 +89,33 @@ public final class HierarchyAskedFromOutside extends ProjectRule<List<HierarchyA
         .map(TypeDeclaration::getNameAsString).orElse(""), tested, how)));
   }
 
+  /** A test counts when what it tests belongs to a family of the project and is asked from outside that family. */
   @Override
-  protected List<Finding> conclude(List<Test> gathered, Project project) {
-    Map<String, List<Test>> byFamily = new LinkedHashMap<>();
-    Map<String, Family> families = new HashMap<>();
-    for (Test test : gathered) {
-      Optional.of(test.tested()).filter(project::declares).map(project::family)
-          .filter(family -> family.members().size() > SUBTYPES && !family.holds(test.enclosingType()))
-          .ifPresent(family -> {
-            families.put(family.root(), family);
-            byFamily.computeIfAbsent(family.root(), k -> new ArrayList<>()).add(test);
-          });
-    }
-    List<Finding> findings = new ArrayList<>();
-    byFamily.forEach((root, tests) -> {
-      Set<String> members = tests.stream().map(Test::member).collect(Collectors.toCollection(TreeSet::new));
-      if (members.size() >= MEMBERS) {
-        Family family = families.get(root);
-        String evidence = evidence(family, tests, project);
-        tests.forEach(test -> findings.add(new Finding(id(), test.file(), test.line(),
-            test.file() + "|" + test.member() + "|" + root + "|" + test.how() + " " + test.tested(),
-            "`" + test.how() + " " + test.tested() + "` in " + test.member() + "; " + evidence)
-            .read(read(test, family, members.size(), project))));
-      }
-    });
-    return findings;
+  protected boolean counts(Test test, Project project) {
+    Family family = project.family(test.tested());
+    return project.declares(test.tested()) && family.members().size() > SUBTYPES
+        && !family.holds(test.enclosingType());
   }
 
-  private String evidence(Family family, List<Test> tests, Project project) {
-    long members = tests.stream().map(Test::member).distinct().count();
-    long outside = tests.stream().map(Test::enclosingType).distinct().count();
+  @Override
+  protected String what(Test test, Project project) {
+    return project.family(test.tested()).root();
+  }
+
+  @Override
+  protected Finding found(Test test, Shared<Test> shared, Project project) {
+    Family family = project.family(test.tested());
+    long outside = shared.places().stream().map(Test::enclosingType).distinct().count();
     Set<String> visitors = project.visitorsOf(family);
-    return family.root() + " (" + family.subtypes() + " subtypes) is tested in " + members + " members of " + outside
-        + " types outside it"
+    String evidence = family.root() + " (" + family.subtypes() + " subtypes) is tested in " + shared.members()
+        + " members of " + outside + " types outside it"
         + (visitors.isEmpty() ? "" : "; the family already accepts " + String.join(", ", visitors));
-  }
-
-  /** A family asked in several members lacks a visitor; the one it already accepts, when it has one. */
-  private Reading read(Test test, Family family, int members, Project project) {
-    String kind = "`" + test.tested() + "` is one of `" + family.root() + "`, which " + members + " members ask";
-    return project.visitorsOf(family).stream().findFirst()
+    String kind = "`" + test.tested() + "` is one of `" + family.root() + "`, which " + shared.members()
+        + " members ask";
+    return finding(test, family.root() + "|" + test.how() + " " + test.tested(), "`" + test.how() + " "
+        + test.tested() + "` in " + test.member() + "; " + evidence).read(visitors.stream().findFirst()
         .map(accepted -> visitor.because(kind + " though it already accepts `" + accepted + "`"))
-        .orElseGet(() -> visitor.because(kind));
+        .orElseGet(() -> visitor.because(kind)));
   }
 
   private Optional<String> simpleName(Type type) {

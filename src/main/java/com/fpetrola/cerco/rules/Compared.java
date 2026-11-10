@@ -4,7 +4,6 @@ import com.fpetrola.cerco.rules.Decision.Case;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.CharLiteralExpr;
-import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.InstanceOfExpr;
@@ -17,7 +16,6 @@ import com.github.javaparser.ast.expr.RecordPatternExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.TypePatternExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
-import com.github.javaparser.ast.visitor.GenericVisitorWithDefaults;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -68,7 +66,7 @@ final class Compared {
   }
 
   /** What kind of constant an expression is; a name counts when it is written as constants are. */
-  private final class Kinds extends GenericVisitorWithDefaults<Case, Void> {
+  private final class Kinds extends ThroughParentheses<Case> {
 
     @Override
     public Case defaultAction(Node node, Void none) {
@@ -111,11 +109,6 @@ final class Compared {
     }
 
     @Override
-    public Case visit(EnclosedExpr enclosed, Void none) {
-      return enclosed.getInner().accept(this, none);
-    }
-
-    @Override
     public Case visit(NullLiteralExpr absent, Void none) {
       return Case.ABSENT;
     }
@@ -132,16 +125,11 @@ final class Compared {
   }
 
   /** The comparisons an expression makes when it is used as a condition. */
-  private final class Terms extends GenericVisitorWithDefaults<List<Term>, Void> {
+  private final class Terms extends ThroughParentheses<List<Term>> {
 
     @Override
     public List<Term> defaultAction(Node node, Void none) {
       return List.of(unknown());
-    }
-
-    @Override
-    public List<Term> visit(EnclosedExpr enclosed, Void none) {
-      return enclosed.getInner().accept(this, none);
     }
 
     @Override
