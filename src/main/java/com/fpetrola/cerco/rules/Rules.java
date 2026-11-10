@@ -34,6 +34,7 @@ public final class Rules {
         new SuppressedWarning(),
         new RepeatedStatements(),
         new ClonedMethods(),
+        new FlagDrivenFromOutside(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
     return every.stream().filter(rule -> !settings.disabledRules().contains(rule.id())).toList();

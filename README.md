@@ -15,7 +15,7 @@ Todo el código es Java. No hay scripts.
 <plugin>
   <groupId>com.fpetrola</groupId>
   <artifactId>cerco-maven-plugin</artifactId>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <executions>
     <execution>
       <goals>
@@ -75,6 +75,7 @@ decide por la escritura real, no por la mención.
 | `no-suppressed-warning` | honestidad | cualquier `@SuppressWarnings` |
 | `no-repeated-statements` | abstracción | seis sentencias consecutivas que aparecen dos veces (proyecto entero) |
 | `no-cloned-methods` | abstracción | el mismo método, nombre y cuerpo, en tres o más tipos (proyecto entero) |
+| `flag-driven-from-outside` | un solo dueño | otra clase llama con `true` o `false` al setter pelado de un campo `boolean` (`s.setPending(false)`): un protocolo de estados manejado desde afuera (proyecto entero) |
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 
@@ -87,6 +88,12 @@ ellas de antemano. No pasó nunca a rojo, y dejó casts como `Element.class.cast
 `instanceof`, una cadena de `if` en vez de un `switch`, clases de sólo constantes con un sufijo que no estaba en la
 lista, cinco clases con el mismo método de una línea, y un `boolean` descartado que escondió un bug real. Cada una
 de esas formas tiene ahora su regla.
+
+`flag-driven-from-outside` es la primera regla que salió de una autopsia (ver más abajo): al sacar un `instanceof EI`
+de oozx, la autopsia encontró que el flag `pendingEI` vivía en `State`, el bucle de la CPU lo apagaba, los snapshots
+lo copiaban y nada lo prendía nunca, así que la emulación de la sombra del EI no existía. Medida sobre oozx: 20
+hallazgos, unos dos tercios protocolos reales (HALT e interrupciones repartidos entre `State`, `OOZ80`, `Halt` y
+`UncontendedTiming`) y el resto carga de datos desde un snapshot.
 
 **Cuando una regla nueva llega a un proyecto que ya tiene línea de base**, la siguiente corrida completa (`audit`, o
 el `check` de un proyecto de un módulo) congela sus hallazgos actuales y lo anota en el reporte; las corridas

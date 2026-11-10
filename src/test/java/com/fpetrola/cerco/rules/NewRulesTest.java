@@ -122,4 +122,16 @@ class NewRulesTest {
         snippets.parse("src/main/java/p/A.java", "package p; class A {" + slot + " }"),
         snippets.parse("src/main/java/p/B.java", "package p; class B {" + slot + " }"))).isEmpty());
   }
+  @Test
+  void flagsSwitchedFromAnotherClass() {
+    List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
+        snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"
+            + " private boolean busy; void setPending(boolean pending) { this.pending = pending; }"
+            + " void setBusy(boolean b) { busy = b; if (b) { pending = false; } }"
+            + " void reset() { this.setPending(false); setPending(true); } }"),
+        snippets.parse("src/main/java/p/Cpu.java", "package p; class Cpu { void run(State s, boolean copy) {"
+            + " s.setPending(false); s.setPending(copy); s.setBusy(true); new javax.swing.JButton().setEnabled(true); } }")));
+    assertEquals(1, found.size(), found.toString());
+    assertTrue(found.get(0).detail().startsWith("`s.setPending(false)` drives a flag of another class from p.Cpu.run"));
+  }
 }

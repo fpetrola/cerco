@@ -196,6 +196,10 @@ algún tipo anotado con una anotación cuyo nombre termina en `Generated` (`engi
 
 ### 3.10 Autopsia
 
+Primera regla nacida de una autopsia: `flag-driven-from-outside` (0.4.0), de la autopsia de oozx
+`2026-11-10-no-instanceof`.
+
+
 La idea de Fernando: los hallazgos son síntomas de modelo faltante, y arreglarlos para cumplir la letra de la regla
 deja la causa en su lugar. Cada arreglo tiene que terminar en un análisis de la causa, y ese análisis es la fuente de
 las reglas nuevas. Para que no dependa de la buena voluntad del agente, es determinista:
@@ -471,6 +475,9 @@ configurar `<generated>` y firmar.
 8. **Goal `status`**: la baseline como tabla por módulo y regla, con tendencia en el tiempo.
 9. **`approve` desde un IDE** sin abrir la puerta al agente.
 10. ~~**`quick` que muestre lo resuelto**~~: hecho en 0.3.0 por las autopsias, que listan qué se resolvió.
+12. **Que una regla propuesta por autopsias no pueda quedar olvidada**: hoy la autopsia obliga a proponer, no a
+    implementar. Ver la conversación del 2026-11-10: una propuesta abierta podría ser rojo humano hasta que esté
+    implementada (una regla con ese id) o una persona la descarte o la posponga con firma.
 11. **Exigir arreglos de la baseline al tocar un archivo** que tiene hallazgos congelados, para contrarrestar el
     incentivo de no arreglar deuda vieja que crean las autopsias.
 
