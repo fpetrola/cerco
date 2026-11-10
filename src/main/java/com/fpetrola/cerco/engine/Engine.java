@@ -76,6 +76,10 @@ public final class Engine {
     return approvalFile;
   }
 
+  public Autopsies autopsies() {
+    return autopsies;
+  }
+
   public Witness witness() {
     return new Witness(store, rules);
   }
@@ -100,8 +104,8 @@ public final class Engine {
           () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept, solved)));
     }
     Witness witness = witness();
-    List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed);
     List<String> problems = new ArrayList<>(signed.problems());
+    List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed, problems);
     Applied applied = exempt(signed, tally.fresh(), scope.full());
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
@@ -159,12 +163,16 @@ public final class Engine {
    * What was fixed in this run owes an autopsy; every one already owed is checked, and filed when complete. A rule
    * a filed autopsy proposes is owed until this cerco has it, or a person declined it with a valid signature.
    */
-  private List<Owed> owed(List<Solved> solved, Signed signed) {
+  private List<Owed> owed(List<Solved> solved, Signed signed, List<String> problems) {
     if (!settings.autopsies() || !store.exists()) {
       return List.of();
     }
     autopsies.owe(solved, LocalDate.now(clock));
-    List<Owed> owed = new ArrayList<>(autopsies.settle());
+    Autopsies.Settled settled = autopsies.settle();
+    settled.awaiting().forEach(id -> problems.add("the autopsy autopsies/pending/" + id + ".md says no rule could "
+        + "catch its case (`none:`), and only a person accepts that: read it and sign with `mvn cerco:approve`, or "
+        + "have it propose a rule"));
+    List<Owed> owed = new ArrayList<>(settled.owed());
     owed.addAll(autopsies.unbuilt(rules.known(), signed.valid() ? settings.declinedRules() : List.of()));
     return owed;
   }

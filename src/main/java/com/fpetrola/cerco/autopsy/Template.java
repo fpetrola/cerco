@@ -25,7 +25,8 @@ final class Template {
         + "## " + Form.CANDIDATE + "\n\n"
         + "<!-- One of:\n"
         + "rule: <new-rule-id>  then what it would detect, what it would tell the agent, and an example path:line\n"
-        + "none: why no deterministic check could catch this cause\n"
+        + "none: why no deterministic check could catch this cause; a person files it with mvn cerco:approve, and\n"
+        + "      while one waits every other autopsy proposes a rule\n"
         + "same-as: <id of a filed autopsy>  when one already proposed the rule; the sections above still describe\n"
         + "this case -->\n";
   }

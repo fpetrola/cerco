@@ -195,6 +195,11 @@ tiene queda como deuda del agente, roja como una autopsia pendiente, con la ruta
 jar al compilar) y la autopsia como especificación. Se cierra sola cuando llega una versión de cerco que tiene una
 regla con ese id, o cuando una persona la descarta en `<declinedRules>` y firma.
 
+`none:` no es la salida barata: una autopsia que dice que ninguna regla podría atrapar su caso no se archiva sola,
+espera a que una persona la lea y firme con `mvn cerco:approve` (el hook la deja pasar, el build no). Espera una sola
+a la vez: mientras tanto, toda otra autopsia propone una regla. Y `same-as:` tiene que nombrar una autopsia que pida
+una regla.
+
 ## Lo que sólo una persona acepta
 
 Como el agente puede escribir el código de cerco, aflojar una regla no puede pasar por arreglar el código. Junto a la

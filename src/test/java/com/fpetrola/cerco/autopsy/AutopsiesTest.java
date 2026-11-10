@@ -180,4 +180,54 @@ class AutopsiesTest {
     assertTrue(outcome.owed().isEmpty());
     assertFalse(Files.exists(root.resolve("autopsies")));
   }
+
+  private static final String NONE = "none: the shape is a choice of the hardware being emulated, read off a manual "
+      + "page, and nothing in the code tells it from a choice of the programmer.";
+
+  @Test
+  void aNoneWaitsForAPersonWhoFilesIt(@TempDir Path root) throws IOException {
+    Engine engine = fixedOnce(root, Settings.DEFAULTS);
+    engine.run(scope(root));
+    write(root, PENDING, filled(CAUSE, NONE));
+    Outcome waiting = engine.run(scope(root));
+    assertFalse(waiting.green(), waiting.toString());
+    assertTrue(waiting.owed().isEmpty() && waiting.fresh().isEmpty(), "the agent owes nothing more: a person does");
+    assertTrue(waiting.problems().get(0).contains(PENDING), waiting.problems().toString());
+    assertFalse(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+
+    engine.autopsies().accept(engine.autopsies().settle().awaiting());
+    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    assertTrue(engine.run(scope(root)).green());
+  }
+
+  @Test
+  void whileANoneWaitsEveryOtherAutopsyProposesARule(@TempDir Path root) throws IOException {
+    write(root, "src/main/java/p/A.java", CLEAN);
+    write(root, "src/main/java/p/B.java", OTHER);
+    Autopsies autopsies = new Autopsies(root);
+    String key = "src/main/java/p/A.java|A.f|x";
+    autopsies.owe(List.of(new Solved("no-switch", List.of(key)), new Solved("no-cast", List.of(key))),
+        LocalDate.of(2026, 11, 10));
+    write(root, "autopsies/pending/2026-11-10-no-cast.md", filled(CAUSE, NONE));
+    write(root, PENDING, filled(CAUSE.replace("never had", "did not have"), NONE));
+
+    Autopsies.Settled first = autopsies.settle();
+    assertEquals(List.of("2026-11-10-no-cast"), first.awaiting());
+    assertEquals(List.of(FORM_ID), first.owed().stream().map(Owed::id).toList());
+    assertTrue(first.owed().get(0).missing().get(0).contains("waits for a person"), first.owed().toString());
+
+    autopsies.accept(first.awaiting());
+    assertEquals(List.of(FORM_ID), autopsies.settle().awaiting());
+  }
+
+  @Test
+  void sameAsMustJoinARuleAlreadyAskedFor(@TempDir Path root) throws IOException {
+    Engine engine = fixedOnce(root, Settings.DEFAULTS);
+    write(root, "autopsies/2026-11-01-hardware.md", filled(CAUSE.replace("never had", "had no"), NONE));
+    engine.run(scope(root));
+    write(root, PENDING, filled(CAUSE, "same-as: 2026-11-01-hardware"));
+    List<String> missing = engine.run(scope(root)).owed().get(0).missing();
+    assertEquals(1, missing.size(), missing.toString());
+    assertTrue(missing.get(0).contains("proposes no rule"), missing.toString());
+  }
 }

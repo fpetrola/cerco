@@ -46,6 +46,16 @@ public final class Form {
     return title;
   }
 
+  /** The first line under the candidate rule: what the autopsy proposes, and how it says it. */
+  public String candidate() {
+    return section(CANDIDATE).lines().findFirst().orElse("").strip();
+  }
+
+  /** Whether it says no rule could catch this, which only a person can accept. */
+  public boolean declines() {
+    return candidate().startsWith("none:");
+  }
+
   /** What was written under a heading, guidance left out; empty when the heading is missing. */
   public String section(String heading) {
     return sections.getOrDefault(heading, "");

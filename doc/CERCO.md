@@ -228,6 +228,13 @@ las reglas nuevas. Para que no dependa de la buena voluntad del agente, es deter
   como cualquier otra (§3.5). Sólo una persona la descarta: `declinedRules` en la configuración, que como todo
   apartamiento de los defaults vale sólo con firma.
 
+- El atajo más barato (0.7.0): `rule:` cuesta construir la regla y `none:` no costaba nada, así que el agente podía
+  cerrar cada autopsia diciendo que ninguna regla la atraparía. Ahora un `none:` completo no se archiva: queda en
+  `Settled.awaiting` como problema (rojo humano: el hook lo deja pasar, el build no) hasta que una persona lo lee y
+  firma con `approve`, que lo archiva. Espera uno solo a la vez: mientras espera, `FormCheck` le pide a cualquier otro
+  `none:` que proponga una regla. Y `same-as:` tiene que nombrar una autopsia que pida una regla
+  (`Backlog.proposes`, siguiendo la cadena): no sirve para colgarse de un `none:` ya firmado.
+
 Riesgo conocido: si cada arreglo cuesta una autopsia, el agente puede preferir no arreglar deuda vieja. Lo mitigan
 una autopsia por regla (no por hallazgo) y `same-as:`. La configuración `autopsies` (true) la apaga, con firma.
 
@@ -438,7 +445,8 @@ pensarla contra el rodeo que va a provocar.
 | `2e821c8` | 0.4.0 | `flag-driven-from-outside`, la primera regla nacida de una autopsia; 70 tests |
 | `9a7bafe` | 0.4.1 | `GitTree` (git de línea de comandos, entiende worktrees) en vez de JGit; 72 tests |
 | `d8d1a7e` | 0.5.0 | regla propuesta = deuda hasta que exista; testigo de código y de cerco; 76 tests |
-| | 0.6.0 | `ask-then-tell`, construida porque la deuda de una autopsia de oozx lo exigió; 77 tests |
+| `6c37730` | 0.6.0 | `ask-then-tell`, construida porque la deuda de una autopsia de oozx lo exigió; 77 tests |
+| | 0.7.0 | `none:` espera firma y uno solo a la vez; `same-as:` sólo hacia una autopsia que pide regla; 80 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 

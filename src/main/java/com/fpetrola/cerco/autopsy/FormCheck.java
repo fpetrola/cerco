@@ -63,8 +63,9 @@ public final class FormCheck {
     Optional<Map.Entry<String, Function<String, List<String>>>> kind = candidates.entrySet().stream()
         .filter(entry -> first.startsWith(entry.getKey())).findFirst();
     return kind.map(entry -> entry.getValue().apply(text)).orElse(List.of(Form.CANDIDATE + ": start with "
-        + "`rule: <new-rule-id>` and describe what it would detect with an example (path:line), or `none:` and why "
-        + "no rule could catch this, or `same-as: <autopsy id>` when an autopsy already filed proposed it"));
+        + "`rule: <new-rule-id>` and describe what it would detect with an example (path:line), or `same-as: <autopsy id>` "
+        + "when an autopsy already filed proposed the rule, or `none:` and why no rule could catch this, which waits "
+        + "until a person accepts it"));
   }
 
   private List<String> proposed(String text) {
@@ -84,7 +85,12 @@ public final class FormCheck {
 
   private List<String> repeated(String text) {
     String id = text.lines().findFirst().orElse("").strip().substring("same-as:".length()).strip();
-    return catalog.holds(id) ? List.of() : List.of(Form.CANDIDATE + ": `same-as: " + id + "` names no filed autopsy");
+    if (!catalog.holds(id)) {
+      return List.of(Form.CANDIDATE + ": `same-as: " + id + "` names no filed autopsy");
+    }
+    return new Backlog(catalog).proposes(id).isEmpty() ? List.of(Form.CANDIDATE + ": `same-as: " + id + "` names "
+        + "an autopsy that proposes no rule; `same-as:` joins a rule already asked for, so name one that asks for a "
+        + "rule, or propose one with `rule:`") : List.of();
   }
 
   private void atLeast(List<String> missing, String text, int length, String what) {

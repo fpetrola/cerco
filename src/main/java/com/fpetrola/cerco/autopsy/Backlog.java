@@ -65,9 +65,15 @@ public final class Backlog {
     return properties.getProperty("source", "cerco's own repository");
   }
 
+  /** The rule a filed autopsy proposes, following `same-as:`; empty when it proposes none or is not filed. */
+  public String proposes(String id) {
+    Map<String, Form> done = catalog.done();
+    return done.containsKey(id) ? proposal(done, done.get(id), 0) : "";
+  }
+
   /** The rule an autopsy proposes, following `same-as:` to the autopsy it names; empty when it proposes none. */
   private String proposal(Map<String, Form> done, Form form, int depth) {
-    String first = form.section(Form.CANDIDATE).lines().findFirst().orElse("").strip();
+    String first = form.candidate();
     String rule = first.startsWith("rule:") ? word(first.substring("rule:".length())) : "";
     String same = first.startsWith("same-as:") ? word(first.substring("same-as:".length())) : "";
     boolean follow = !same.isEmpty() && done.containsKey(same) && depth < done.size();

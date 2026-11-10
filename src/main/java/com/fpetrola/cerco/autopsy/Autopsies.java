@@ -38,23 +38,51 @@ public final class Autopsies {
     }
   }
 
-  /** Files every form that is complete and answers with the ones still owed. */
-  public List<Owed> settle() {
+  /**
+   * What the owed autopsies come to: the ones still owed, and the complete ones that say no rule could catch it
+   * (`none:`), which only a person files. One waits at a time: while it does, every other autopsy proposes a rule.
+   */
+  public record Settled(List<Owed> owed, List<String> awaiting) {
+  }
+
+  /** Files every form that is complete and proposes a rule, and answers with the ones still owed or waiting. */
+  public Settled settle() {
     List<Owed> owed = new ArrayList<>();
+    List<String> awaiting = new ArrayList<>();
+    List<String> complete = new ArrayList<>();
     for (Ledger.Entry entry : ledger.open()) {
-      Path form = catalog.pending(entry.id());
-      if (!Files.exists(form)) {
-        catalog.write(form, withSymptom(new Template().text(entry.id(), entry.ruleId()), entry));
+      Path file = catalog.pending(entry.id());
+      if (!Files.exists(file)) {
+        catalog.write(file, withSymptom(new Template().text(entry.id(), entry.ruleId()), entry));
       }
-      List<String> missing = check.missing(Form.parse(catalog.read(form)), entry.solved());
-      if (missing.isEmpty()) {
-        catalog.file(entry.id());
-        ledger.settle(entry.id());
-      } else {
+      Form form = Form.parse(catalog.read(file));
+      List<String> missing = missing(form, entry, awaiting);
+      if (!missing.isEmpty()) {
         owed.add(new Owed(entry.id(), entry.ruleId(), "autopsies/pending/" + entry.id() + ".md", missing));
+        continue;
       }
+      (form.declines() ? awaiting : complete).add(entry.id());
     }
-    return owed;
+    accept(complete);
+    return new Settled(owed, awaiting);
+  }
+
+  private List<String> missing(Form form, Ledger.Entry entry, List<String> awaiting) {
+    List<String> missing = check.missing(form, entry.solved());
+    if (!missing.isEmpty() || !form.declines() || awaiting.isEmpty()) {
+      return missing;
+    }
+    return List.of(Form.CANDIDATE + ": autopsies/pending/" + awaiting.get(0) + ".md already says no rule could "
+        + "catch its case and waits for a person; while it does, every other autopsy proposes a rule, with `rule:` "
+        + "or with `same-as:` an autopsy that asks for one");
+  }
+
+  /** Files these autopsies; for the `none:` ones waiting, a person read them and accepts them. */
+  public void accept(List<String> ids) {
+    ids.forEach(id -> {
+      catalog.file(id);
+      ledger.settle(id);
+    });
   }
 
   /** The rules the filed autopsies propose that this cerco does not have and nobody declined. */

@@ -6,6 +6,7 @@ import com.fpetrola.cerco.exemptions.Loaded;
 import com.fpetrola.cerco.hooks.Terminal;
 import java.io.Console;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -39,6 +40,8 @@ public final class ApproveMojo extends AbstractCercoMojo {
     }
     console.printf("  configuration: %s%n", settings().isDefault() ? "defaults" : settings().fingerprint());
     engine.witness().problems().forEach(problem -> console.printf("  and accept: %s%n", problem));
+    List<String> awaiting = engine.autopsies().settle().awaiting();
+    awaiting.forEach(id -> console.printf("  and file, as no rule could catch it: autopsies/pending/%s.md%n", id));
     String answer = Optional.ofNullable(console.readLine("Type 'yes' to approve: ")).orElse("");
     if (!answer.strip().equalsIgnoreCase("yes")) {
       throw new MojoFailureException("cerco: not approved, nothing was written to " + engine.approvalFile()
@@ -47,6 +50,7 @@ public final class ApproveMojo extends AbstractCercoMojo {
     Approval.of(loaded.digest(), engine.configDigest(), settings().isDefault(), approver(), LocalDate.now())
         .write(engine.approvalFile());
     engine.witness().accept();
+    engine.autopsies().accept(awaiting);
     console.printf("cerco: approved and recorded in %s; commit it%n", engine.approvalFile());
   }
 
