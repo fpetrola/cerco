@@ -631,3 +631,37 @@ diagnóstico.
 6. **Un proyecto de referencia de afuera.** Uno diseñado con patrones (JHotDraw es el clásico de la literatura)
    serviría para no ajustar todo a tu estilo. No es necesario para arrancar.
 7. **Por dónde empiezo.** Propongo la fase 0 y 1 juntas (medir y diagnóstico), con las reglas 2 y 7 adelantadas.
+
+---
+
+## 12. Estado al 2026-11-10, noche
+
+Hecho, en la rama `modelos-ausentes` (cerco 0.14.0, instalado en `~/.m2`, sin publicar):
+
+- **Fase 0**: goal `survey` (una pasada por el reactor, hallazgos por módulo, `-Dcerco.rules`, `-Dcerco.sample`) y
+  reglas candidatas (`Rules.candidates()`), que no frenan y cuentan como conocidas para las autopsias.
+- **Fase 1**: `MissingModel` (el vocabulario de once), `Diagnosis` e `Hypothesis` en 25 reglas, `DecisionRule` para
+  la familia de decisiones, línea `model:` obligatoria en la autopsia, conteo por regla en el reporte. Las 11
+  autopsias de oozx etiquetadas.
+- **Fase 2**, sin el índice compartido: las reglas de proyecto que lo necesitaban usan `Vocabulary` (los nombres que
+  el proyecto declara) o `IndexingRule` (declaraciones por nombre y sitios). El índice con caché para `quick` sigue
+  pendiente: depende de la pregunta 1 de §11.
+- **Fase 3**, seis candidatas con su ficha en `doc/reglas/`: `absence-as-state`, `hierarchy-asked-from-outside`,
+  `set-from-outside`, `reached-through`, `walked-from-outside`, `enum-decided-across`. Ninguna adoptada: esperan la
+  revisión de Fernando.
+
+Hallazgos de las candidatas en oozx, después de los arreglos de esta tanda:
+
+| grupo | absence | hierarchy | set | reached | walked | enum |
+|---|---|---|---|---|---|---|
+| emulator | 0 | 48 | 0 | 6 | 0 | 1 |
+| machine | 12 | 8 | 8 | 49 | 19 | 22 |
+| translation | 12 | 268 | 1 | 184 | 12 | 7 |
+
+Arreglos en oozx guiados por las candidatas: `WaysOfDrawing` (despacho doble de los efectos que llegan),
+`Speccy.select/reset/changeSpeed`, `Machine.model(String)/modelNames()`, `Knob.Kind` con comportamiento y el visitor
+`Knob.Controls`.
+
+Pendiente y anotado: `AttachedFrame` pregunta `dock == Dock.FREE` en 8 métodos (FREE debería ser el objeto nulo de
+`Dock`; no se tocó sin poder probar el docking en el escritorio real); los reproductores encontrados con
+`instanceof Opens` (API binaria de plugins); los estados de snapshot (pregunta 3); `narration` (pregunta 2).
