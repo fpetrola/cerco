@@ -158,6 +158,18 @@ class NewRulesTest {
   }
 
   @Test
+  void anotherObjectsModeSavedSwitchedAndSetBack() {
+    List<String> found = details(new BorrowedMode(), "package p; class A { R r; boolean on;"
+        + " void f(int v) { boolean was = r.isListening(); r.setListening(false); r.write(v); r.setListening(was); }"
+        + " void g() { boolean was = r.isListening(); r.write(1); r.setListening(was); }"
+        + " void h() { boolean was = isOn(); setOn(false); setOn(was); }"
+        + " void i() { boolean was = r.isOn(); q.setOn(false); q.setOn(was); }"
+        + " int j() { int w = r.getWidth(); r.setWidth(0); int t = r.measure(); r.setWidth(w); return t; } }");
+    assertEquals(List.of("`r.isListening()` is saved, switched and set back by the caller, in p.A.f(int)",
+        "`r.getWidth()` is saved, switched and set back by the caller, in p.A.j()"), found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"

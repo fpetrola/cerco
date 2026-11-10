@@ -51,6 +51,7 @@ public final class Rules {
         new AskThenTell(),
         new PropertyShuffle(),
         new NotifiedByCaller(),
+        new BorrowedMode(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

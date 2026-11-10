@@ -79,6 +79,7 @@ decide por la escritura real, no por la mención.
 | `ask-then-tell` | decí, no preguntes | un `if` le pregunta a otro objeto por una propiedad (`s.isHalted()`) y en una rama se la cambia (`s.setHalted(false)`): la transición la decide el que llama, y cada uno tiene su copia |
 | `property-shuffle` | decí, no preguntes | a una propiedad de otro objeto se le pone otra propiedad del mismo objeto (`s.setIff1(s.isIff2())`): el que llama mueve estado adentro de un objeto que no es suyo |
 | `notified-by-caller` | un cambio y su aviso son una operación del dueño | un setter sobre otro objeto y en la sentencia siguiente el que llama avisa (`loop.setPaused(p); notifyPaused(p);`): los otros que hacen el mismo cambio no avisan |
+| `borrowed-mode` | decí, no preguntes | el modo de otro objeto se guarda en una local, se cambia y se restaura (`boolean was = r.isListening(); r.setListening(false); r.write(v); r.setListening(was);`): falta esa operación en el objeto |
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 
