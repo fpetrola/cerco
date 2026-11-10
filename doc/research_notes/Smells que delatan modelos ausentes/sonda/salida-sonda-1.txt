@@ -1,0 +1,144 @@
+per 1000 code lines                                         emulator      core       app        ui  spectrum       kit    bridge   machine
+files                                                            229        99         6        19        14        20        31       219
+loc                                                             9924      5279      1893      2012      1906      1028      1018     14762
+instanceof                                                      4.33      1.14      8.45      4.47      0.52      4.86      3.93      2.78
+cast (reference)                                                2.62      0.00      4.23      4.47      0.00      9.73      2.95      2.10
+switch                                                          1.21      0.57      0.53      1.49      4.20      5.84      0.00      1.42
+else-if chain (3+ arms)                                         0.40      0.38      1.06      0.00      0.00      0.00      0.98      0.34
+null check                                                      1.81     15.34     46.49     17.89      9.97     34.05      6.88     20.12
+getter call on another object                                  33.76     28.23     96.67     51.69     80.80     35.99     17.68     54.60
+getter chain (x.getA().getB())                                  0.81      3.03      6.87      1.99      1.05      2.92      4.91      3.05
+setter call on another object                                   2.52      1.70     32.75     15.90     84.99     36.96      2.95     20.93
+field of another object (x.y)                                   6.85     33.72     33.28     20.38      6.30     18.48     34.38     25.13
+string compared to literal                                      0.40      0.76      2.64      0.00      0.00     20.43      3.93      2.37
+bit arithmetic with a literal                                  52.20     15.72      0.00     30.32     63.48      0.00      8.84     19.31
+methods                                                       207.48    166.51    108.29    114.81    119.62    172.18    208.25    143.54
+method lines (total)                                          803.91    809.43    941.36    947.81    984.78    868.68    771.12    851.85
+parameters                                                    201.23    172.38    105.65    153.58     91.29    154.67    211.20    145.10
+static method, not private                                      2.32      9.09      6.34     18.89     12.07      1.95     13.75      9.75
+types                                                          31.84     23.49      3.70     13.92      6.30     22.37     41.26     18.22
+interface                                                       4.53      7.39      0.00      1.49      0.52     11.67     10.81      4.74
+enum                                                            0.71      0.38      0.00      3.48      1.57      0.00      1.96      1.22
+enum with behaviour                                             0.10      0.19      0.00      1.99      0.52      0.00      0.00      0.47
+record                                                          0.20      1.89      2.11      0.99      0.00      0.97      0.00      1.29
+@Override                                                      30.23      5.30     33.81     10.44      2.10     54.47     27.50     14.70
+lambda                                                          3.53     12.50     42.26     20.87      0.52     18.48     10.81     15.92
+anonymous class                                                 0.81      1.89      5.28      1.99      0.00      4.86      0.00      1.96
+accept/visit method                                            37.59      2.08      0.00      0.00      0.00      0.00      0.00      0.75
+line comment inside a method                                    1.51     19.51     45.96     52.19     34.10      5.84     17.68     27.64
+primitive or String parameter                                  67.21    104.00     50.18     74.06     54.56     74.90     92.34     76.28
+type that extends or implements                                26.10      7.96      2.64      9.44      1.05     15.56     35.36      9.69
+fields                                                         36.28     68.38     22.72     36.78     37.25     34.05     51.08     49.11
+class with 20+ methods                                          0.71      1.33      1.06      1.49      1.57      0.97      0.98      1.15
+boolean field                                                   1.81      5.68      1.06      1.99     10.49      2.92      3.93      5.15
+collection or map field                                         3.43     12.31      6.34      4.97      3.15      2.92      1.96      7.79
+map field                                                       0.30      2.46      1.58      0.99      0.00      0.00      0.00      1.63
+map field keyed by String                                       0.00      1.52      0.00      0.50      0.00      0.00      0.00      0.68
+boolean parameter (not a setter)                                2.42      5.49      3.70      2.98      0.00     10.70      7.86      5.01
+method with 4+ parameters                                       7.05      5.49      3.70     13.42      2.62      2.92      9.82      5.69
+class with 10+ fields                                           0.81      2.08      0.53      1.49      1.57      0.00      0.00      1.29
+x.getter() == CONSTANT                                          0.20      0.00      3.17      1.49      0.00      0.00      0.00      0.61
+stream/forEach over another object's getter                     0.20      1.70      9.51      2.98      0.52      2.92      0.00      2.57
+class with 3+ boolean fields                                    0.10      0.19      0.00      0.50      1.57      0.00      0.00      0.47
+method that hands out its collection field                      0.50      3.03      0.00      0.00      2.62      0.00      0.00      1.49
+method over 40 lines                                            0.40      0.76      2.64      1.99      2.10      0.97      0.98      1.35
+abstract class                                                  1.51      1.52      0.00      0.50      0.00      1.95      0.00      0.81
+for-each over another object's getter                           0.20      2.27      5.81      1.49      0.52      0.00      0.00      2.03
+field-name clump (3+ fields, one prefix)                        0.20      0.19      0.00      0.50      0.52      0.00      0.00      0.20
+mutable field tested in 3+ methods of its class                 0.10      0.00      0.00      0.99      0.52      0.00      0.00      0.27
+boolean field tested in 3+ methods of its class                 0.10      0.00      0.00      0.50      0.00      0.00      0.00      0.07
+switch on another object's getter                               0.10      0.00      0.53      0.99      1.05      0.00      0.00      0.34
+3-statement shape shared by 2+ methods (type-2)                 2.82      0.76     12.68      0.99      1.05      1.95      0.00      2.57
+3-statement windows                                            39.10     65.35    122.56    152.09    143.76     59.34     43.22     96.53
+switch on constants also switched elsewhere                     0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00
+type family tested in 2+ methods                                0.00      0.00      1.06      0.00      0.00      0.00      0.00      0.14
+type tested with instanceof in 3+ methods                       2.32      0.00      2.11      0.00      0.00      0.00      0.00      0.47
+call pair on one receiver repeated in 3+ methods                0.30      0.00      0.00      0.00      1.57      0.00      0.00      0.41
+getter iterated from 3+ files                                   0.00      0.76      0.00      0.00      0.00      0.00      0.00      1.15
+discriminator getter decided on in 2+ files                     0.00      0.00      0.00      0.99      0.00      0.00      0.00      0.27
+primitive parameter whose (type name) recurs in 8+ methods     38.69     32.20      0.00     16.90     21.51      8.75     29.47     30.96
+class with 2+ maps on the same key type                         0.00      0.38      0.00      0.00      0.00      0.00      0.00      0.27
+string literal repeated 3+ times in a file                      0.00      3.22      3.70     42.74      6.30     33.07      0.00     10.57
+nested for-each over getters                                    0.00      0.38      0.00      0.50      0.00      0.00      0.00      0.20
+method nested 4+ deep                                           0.00      0.57      0.00      0.00      1.05      0.97      0.98      0.47
+recursive walk over a parameter's children                      0.00      0.00      0.53      0.00      0.00      0.00      0.00      0.07
+
+== emulator
+  collection handed out (5 keys): CollectionHandler.items() x1 | DefaultFetchNextOpcodeInstruction.getTable() x1 | MockedMemory.getData() x1 | MultipleItemsInvoker.getList() x1 | TableBasedOpCodeDecoder.getOpcodeLookupTable() x1
+  discriminator asked from outside (3 keys): base() x1 | getInterruptionMode() x1 | moment() x1
+  family of types tested together (11 keys): Call, JP, Register x1 | DefaultFetchNextOpcodeInstruction, Ld, Memory8BitReference x1 | IndirectMemory16BitReference, IndirectMemory8BitReference x1 | IndirectMemory16BitReference, Register x1 | IndirectMemory8BitReference, MemoryPlusRegister8BitReference x1 | IndirectMemory8BitReference, Register x1
+  field-name clump (2 keys): PhaseProcessorBase: registerI registerR registerIR registerSP registerPC registerDE registerBC registerHL x1 | RegisterBank: registerAf registerBc registerDe registerHl registerIx registerIy registerIr registerPc registerSp registerMemptr registerVirtual x1
+  iterated from outside (2 keys): items() x1 | of() x1
+  recurring primitive parameter (127 keys): int value x104 | int address x50 | int value1 x36 | int value2 x35 | int word x18 | int carry x17
+  same enum constants switched (2 keys): A, AF, AFx, Ax, B, BC, BCx, Bx, C, Cx, D, DE, DEx, Dx, E, Ex, F, Fx, H, HL, HLx, Hx, I, IR, IX, IXH, IXL, IY, IYH, IYL, L, Lx, MEMPTR, PC, R, SP, VIRTUAL x1 | BC, DE, HL, IR, LAST_ACCESS, PC, SP x1
+  state decided across methods (1 keys): ObservableRegister.listening in 4 methods x1
+  two calls in a row on one receiver (12 keys): visitingTarget(); visitingTargetInstruction() x3 | visitingTarget(); visitingFlag() x2 | addMemoryReadListener(); addMemoryWriteListener() x1 | addMr(); afterRead() x1 | contend(); addMr() x1 | contend(); addMw() x1
+  type tested with instanceof (23 keys): Register x10 | MemoryPlusRegister8BitReference x4 | IndirectMemory16BitReference x3 | IndirectMemory8BitReference x3 | Memory8BitReference x3 | Call x1
+
+== core
+  collection handed out (16 keys): AbstractPeripheral.getPorts() x1 | Backplane.wired() x1 | BlipBuffer.getBuffer() x1 | Machine.getMachineTypes() x1 | Mirror.properties() x1 | OOZxConfiguration.getFavorites() x1
+  family of types tested together (1 keys): java.net.SocketTimeoutException, java.net.UnknownHostException x1
+  field-name clump (1 keys): PokModState: previousValue previousBank previousAddress x1
+  iterated from outside (13 keys): found() x4 | at() x1 | bringing() x1 | digest() x1 | files() x1 | filter() x1
+  parallel maps (2 keys): OOZxConfiguration keyed by String x4 x1 | RomFiles keyed by String x3 x1
+  recurring primitive parameter (194 keys): int address x40 | int port x32 | byte value x13 | int y x13 | String filename x10 | int line x10
+  same enum constants switched (1 keys): SPECTRUM128K, SPECTRUM48K, SPECTRUMPLUS3 x1
+  two calls in a row on one receiver (5 keys): contendPortEarly(); contendPortLate() x1 | setConnectTimeout(); setReadTimeout() x1 | setInput(); finish() x1 | setSampleRate(); clockRate() x1 | upTo(); startAgain() x1
+  type tested with instanceof (6 keys): HttpURLConnection x1 | InterruptedException x1 | Pluggable x1 | Storage x1 | java.net.SocketTimeoutException x1 | java.net.UnknownHostException x1
+
+== app
+  discriminator asked from outside (4 keys): getID() x1 | getKeyChar() x1 | nativeKey() x1 | spectrumKey() x1
+  family of types tested together (2 keys): List<?>, java.io.File x2 | Dialog, JComboBox<?>, javax.swing.text.JTextComponent x1
+  iterated from outside (12 keys): getMachineTypes() x2 | actions() x1 | all() x1 | deskWindows() x1 | equipment() x1 | filter() x1
+  recurring primitive parameter (50 keys): String path x5 | String iconFile x3 | String key x3 | String label x3 | String message x3 | String rom x3
+  two calls in a row on one receiver (25 keys): letGoOfTheMachine(); removeInternalFrameListener() x2 | addChoosableFileFilter(); setFileFilter() x1 | finish(); awaitOutOfTheLoop() x1 | forEach(); removeIf() x1 | pack(); setLocationRelativeTo() x1 | pack(); setVisible() x1
+  type tested with instanceof (11 keys): Opens x4 | List<?> x2 | SpeccyScreen x2 | java.io.File x2 | AttachedFrame x1 | Dialog x1
+  walked from outside (1 keys): ZXSpectrumDesktopApp.emptied over container.getComponents() x1
+
+== ui
+  discriminator asked from outside (3 keys): kind() x2 | getID() x1 | getType() x1
+  family of types tested together (1 keys): JInternalFrame, MachineWindow x1
+  field-name clump (1 keys): AttachedFrame: machineWindow machineWatcher machineEnd x1
+  iterated from outside (6 keys): filter() x2 | all() x1 | getComponents() x1 | scalers() x1 | settings() x1 | values() x1
+  recurring primitive parameter (72 keys): int width x15 | int height x11 | String name x8 | String key x5 | String label x5 | int x x4
+  same enum constants switched (3 keys): AMBER, GREEN, GREY, NONE, SEPIA, WARM x1 | CHOICE, NUMBER, SWITCH x1 | CHOICE, SWITCH x1
+  state decided across methods (2 keys): AttachedFrame.compact in 3 methods x1 | AttachedFrame.machineWindow in 5 methods x1
+  two calls in a row on one receiver (17 keys): addComponentListener(); addInternalFrameListener() x1 | addMouseListener(); setIcon() x1 | drawImage(); dispose() x1 | fillRect(); setColor() x1 | remove(); repaint() x1 | removeComponentListener(); removeInternalFrameListener() x1
+  type tested with instanceof (8 keys): Scaler x2 | AttachedFrame x1 | DataBufferInt x1 | JInternalFrame x1 | JLayeredPane x1 | MachineWindow x1
+
+== spectrum
+  collection handed out (5 keys): AY8912State.getRegAY() x1 | MemoryState.getIF2Rom() x1 | MemoryState.getMultifaceRam() x1 | MemoryState.getRam() x1 | SpectrumState.getULAPlusPalette() x1
+  discriminator asked from outside (2 keys): getJoystick() x1 | getSpectrumModel() x1
+  field-name clump (1 keys): Z80State: regA regB regC regD regE regH regL regF regAx regFx regBx regCx regDx regEx regHx regLx regPC regIX regIY regSP regI regR x1
+  iterated from outside (2 keys): get() x1 | load() x1
+  recurring primitive parameter (51 keys): int value x19 | int word x12 | int page x10 | String fileName x4 | boolean state x4 | int address x3
+  same enum constants switched (2 keys): CURSOR, KEMPSTON, NONE, SINCLAIR1, SINCLAIR2 x1 | SPECTRUM128K, SPECTRUM16K, SPECTRUM48K, SPECTRUMPLUS2, SPECTRUMPLUS2A, SPECTRUMPLUS3 x1
+  state decided across methods (1 keys): SnapshotZ80.fIn in 4 methods x1
+  two calls in a row on one receiver (67 keys): setRegAx(); setRegFx() x3 | setIFF1(); setIFF2() x2 | setMemoryState(); setAY8912State() x2 | setRegA(); setRegF() x2 | setRegB(); setRegC() x2 | setRegBx(); setRegCx() x2
+  type tested with instanceof (1 keys): MockedMemory x1
+
+== kit
+  iterated from outside (3 keys): all() x1 | filter() x1 | getMachineTypes() x1
+  recurring primitive parameter (45 keys): String option x9 | String property x5 | String model x4 | String name x4 | String title x4 | String entry x3
+  two calls in a row on one receiver (6 keys): setMaximum(); setIcon() x2 | setColor(); fillRect() x1 | setText(); setEnabled() x1 | setToolTipText(); addActionListener() x1 | setToolTipText(); addChangeListener() x1 | setToolTipText(); setVisible() x1
+  type tested with instanceof (3 keys): EmulatorWindow x2 | JInternalFrame x1 | com.fpetrola.oozx.speccy.screen.SpeccyScreen x1
+
+== bridge
+  family of types tested together (1 keys): Ram, Rom x1
+  recurring primitive parameter (37 keys): int id x11 | int index x11 | int value x8 | int address x6 | String register x5 | int i x5
+  two calls in a row on one receiver (6 keys): libspectrum_snap_free(); libspectrum_end() x1 | retro_set_audio_sample(); retro_set_audio_sample_batch() x1 | retro_set_audio_sample_batch(); retro_set_input_poll() x1 | retro_set_bridge_command(); retro_set_audio_sample() x1 | retro_set_input_poll(); retro_set_input_state() x1 | retro_set_input_state(); retro_init() x1
+  type tested with instanceof (3 keys): ContinueExecutionCommand x1 | Ram x1 | Rom x1
+
+== machine
+  collection handed out (22 keys): AY8912State.getRegAY() x1 | AbstractPeripheral.getPorts() x1 | Backplane.wired() x1 | BlipBuffer.getBuffer() x1 | Machine.getMachineTypes() x1 | MemoryState.getIF2Rom() x1
+  discriminator asked from outside (8 keys): getID() x2 | kind() x2 | getJoystick() x1 | getKeyChar() x1 | getSpectrumModel() x1 | getType() x1
+  family of types tested together (5 keys): List<?>, java.io.File x2 | Dialog, JComboBox<?>, javax.swing.text.JTextComponent x1 | JInternalFrame, MachineWindow x1 | Ram, Rom x1 | java.net.SocketTimeoutException, java.net.UnknownHostException x1
+  field-name clump (3 keys): AttachedFrame: machineWindow machineWatcher machineEnd x1 | PokModState: previousValue previousBank previousAddress x1 | Z80State: regA regB regC regD regE regH regL regF regAx regFx regBx regCx regDx regEx regHx regLx regPC regIX regIY regSP regI regR x1
+  iterated from outside (29 keys): found() x6 | filter() x5 | all() x3 | getMachineTypes() x3 | getComponents() x2 | split() x2
+  parallel maps (4 keys): Joystick keyed by JoystickType x2 x1 | OOZxConfiguration keyed by String x4 x1 | RecreatedLayout keyed by Integer x2 x1 | RomFiles keyed by String x3 x1
+  recurring primitive parameter (356 keys): int address x50 | int port x41 | int value x38 | String name x28 | int width x18 | int y x18
+  same enum constants switched (6 keys): AMBER, GREEN, GREY, NONE, SEPIA, WARM x1 | CHOICE, NUMBER, SWITCH x1 | CHOICE, SWITCH x1 | CURSOR, KEMPSTON, NONE, SINCLAIR1, SINCLAIR2 x1 | SPECTRUM128K, SPECTRUM16K, SPECTRUM48K, SPECTRUMPLUS2, SPECTRUMPLUS2A, SPECTRUMPLUS3 x1 | SPECTRUM128K, SPECTRUM48K, SPECTRUMPLUS3 x1
+  state decided across methods (4 keys): AttachedFrame.compact in 3 methods x1 | AttachedFrame.machineWindow in 5 methods x1 | JavaSoundDevice.line in 3 methods x1 | SnapshotZ80.fIn in 4 methods x1
+  two calls in a row on one receiver (130 keys): open(); start() x3 | setRegAx(); setRegFx() x3 | letGoOfTheMachine(); removeInternalFrameListener() x2 | selectDefault(); select() x2 | setColor(); fillRect() x2 | setIFF1(); setIFF2() x2
+  type tested with instanceof (29 keys): Opens x4 | JInternalFrame x3 | AttachedFrame x2 | EmulatorWindow x2 | List<?> x2 | Scaler x2
+  walked from outside (1 keys): ZXSpectrumDesktopApp.emptied over container.getComponents() x1
