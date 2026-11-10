@@ -54,6 +54,7 @@ public final class Rules {
         new BorrowedMode(),
         new RefilteredByType(),
         new KeyHoldsValue(),
+        new EnumDecidedOutside(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

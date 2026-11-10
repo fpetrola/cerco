@@ -82,6 +82,7 @@ decide por la escritura real, no por la mención.
 | `borrowed-mode` | decí, no preguntes | el modo de otro objeto se guarda en una local, se cambia y se restaura (`boolean was = r.isListening(); r.setListening(false); r.write(v); r.setListening(was);`): falta esa operación en el objeto |
 | `refiltered-by-type` | un contenedor guarda sus partes por tipo | dos o más loops sobre la misma colección (`desktop.getAllFrames()`) prueban cada elemento por el mismo tipo: la clase deriva cada vez qué elementos son de ese tipo en vez de guardarlos |
 | `key-holds-value` | un solo dueño por hecho | una clave construida con un valor se guarda junto a ese valor (`core = new Core(speccy); desk.registerMachine(core, speccy)`): el mapa copia un vínculo que la clave ya tiene |
+| `enum-decided-outside` | polimorfismo en vez de preguntar el tipo | las mismas constantes de un enum se deciden en dos o más lugares del archivo (switches con los mismos `case`, o `x == E.A \|\| x == E.B`): lo que se decide es comportamiento de las constantes |
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 

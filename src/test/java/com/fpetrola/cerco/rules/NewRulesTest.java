@@ -192,6 +192,20 @@ class NewRulesTest {
   }
 
   @Test
+  void theSameConstantsDecidedOverInSeveralPlaces() {
+    List<String> found = details(new EnumDecidedOutside(), "package p; class A { Dock dock;"
+        + " int f() { switch (dock) { case TOP -> { return 1; } case BOTTOM -> { return 2; } default -> { return 0; } } }"
+        + " int g() { return switch (dock) { case BOTTOM -> 3; case TOP -> 4; default -> 0; }; }"
+        + " int h(int n) { switch (n) { case 1: return 1; case 2: return 2; } return 0; }"
+        + " int i(int n) { switch (n) { case 1: return 5; case 2: return 6; } return 0; }"
+        + " boolean j() { return dock == Dock.TOP || dock == Dock.BOTTOM; }"
+        + " boolean k() { return (dock == Dock.BOTTOM) || dock == Dock.TOP; }"
+        + " boolean l() { return dock == Dock.LEFT || dock.flat(); } }");
+    assertEquals(List.of("2 places decide over case BOTTOM, TOP, the first in p.A.f()",
+        "2 places decide over Dock.BOTTOM, Dock.TOP, the first in p.A.j()"), found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"

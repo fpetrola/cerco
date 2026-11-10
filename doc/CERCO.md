@@ -206,7 +206,8 @@ avisaban pausaban en silencio). Quinta: `borrowed-mode` (0.10.0), de `2026-11-10
 de registros guardaba, apagaba y restauraba el `listening` de cada mitad para escribirla sin que la oyeran). Sexta: `refiltered-by-type` (0.11.0), de `2026-11-10-no-instanceof-2` (el escritorio
 recorría todas sus ventanas buscando las máquinas en cada pregunta, y así tenía dos respuestas para la máquina en uso). Séptima: `key-holds-value` (0.12.0), de
 `2026-11-10-method-length` (el core de cada máquina se construía con ella y además se registraba al lado en un mapa
-del escritorio).
+del escritorio). Octava: `enum-decided-outside` (0.13.0), de `2026-11-10-no-switch` (los cuatro bordes donde se pega
+una ventana se decidían con switches en cuatro métodos de la ventana, cada uno con su copia de la geometría).
 
 
 La idea de Fernando: los hallazgos son síntomas de modelo faltante, y arreglarlos para cumplir la letra de la regla
@@ -459,7 +460,8 @@ pensarla contra el rodeo que va a provocar.
 | `5a26a9d` | 0.9.0 | `notified-by-caller`, de la autopsia de la pausa de oozx; 82 tests |
 | `9a1a79d` | 0.10.0 | `borrowed-mode`, de la autopsia de los registros observables de oozx; 83 tests |
 | `f628f96` | 0.11.0 | `refiltered-by-type`, de la autopsia del escritorio de oozx; 84 tests |
-| | 0.12.0 | `key-holds-value`, de la autopsia del registro de máquinas de oozx; 85 tests |
+| `d64e06f` | 0.12.0 | `key-holds-value`, de la autopsia del registro de máquinas de oozx; 85 tests |
+| | 0.13.0 | `enum-decided-outside`, de la autopsia de los bordes de las ventanas de oozx; 86 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 
