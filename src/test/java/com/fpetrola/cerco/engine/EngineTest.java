@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fpetrola.cerco.baseline.Multiset;
 import com.fpetrola.cerco.exemptions.Approval;
 import com.fpetrola.cerco.exemptions.Digest;
 import com.fpetrola.cerco.model.Settings;
@@ -66,6 +67,51 @@ class EngineTest {
   }
 
   @Test
+  void aFindingGoneWhileItsCodeStayedTheSameIsALooseningOnlyAPersonAccepts(@TempDir Path root) throws IOException {
+    Path a = write(root, "A.java", SWITCHY);
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true).files());
+    Multiset switches = engine.store().read("no-switch");
+    switches.add("src/main/java/p/A.java|p.A.g(int)|switch(y)", 1);
+    engine.store().write("no-switch", switches);
+    engine.store().write("no-package-cycles", Multiset.of(List.of("src/main/java/p/A.java|p|p -> q -> p")));
+
+    Outcome loosened = engine.run(scope(root, true));
+    assertTrue(loosened.fresh().isEmpty() && loosened.owed().isEmpty(), "a rule change owes no autopsy");
+    assertEquals(1, loosened.problems().size(), loosened.toString());
+    assertTrue(loosened.problems().get(0).startsWith("2 frozen finding(s) left the baseline"));
+    assertFalse(engine.run(scope(root, true)).green(), "it stays red after the run that saw it");
+
+    engine.witness().accept();
+    assertTrue(engine.run(scope(root, true)).green());
+    Files.writeString(a, CLEAN.replace("class B", "class A"));
+    Outcome fixed = engine.run(new Scope("quick", List.of(new SourceFile(root, a)), false));
+    assertTrue(fixed.problems().isEmpty() && fixed.owed().size() == 1, fixed.toString());
+  }
+
+  @Test
+  void aRuleGoneFromCercoAndChangedDefaultsWaitForAPerson(@TempDir Path root) throws IOException {
+    write(root, "A.java", SWITCHY);
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true).files());
+    engine.store().extendFrozen(List.of("no-goto"));
+    engine.store().write("no-goto", Multiset.of(List.of("src/main/java/p/A.java|p.A|goto")));
+    Path self = root.resolve(".cerco/baseline/self");
+    Files.writeString(self, Files.readString(self).replaceFirst("[0-9a-f]{64}\tdefaults", "0\tdefaults"));
+
+    Outcome gone = engine.run(scope(root, true));
+    assertTrue(gone.fresh().isEmpty() && gone.owed().isEmpty(), gone.toString());
+    assertEquals(2, gone.problems().size(), gone.toString());
+    assertTrue(gone.problems().get(0).contains("[no-goto]"));
+    assertTrue(gone.problems().get(1).contains("defaults"));
+
+    engine.witness().accept();
+    assertTrue(engine.run(scope(root, true)).green());
+    assertFalse(engine.store().frozenRules().contains("no-goto"));
+    assertEquals(0, engine.store().read("no-goto").total());
+  }
+
+  @Test
   void aPartialScopeLeavesOtherFilesEntriesAlone(@TempDir Path root) throws IOException {
     Path a = write(root, "A.java", SWITCHY);
     write(root, "B.java", SWITCHY.replace("class A", "class B"));
@@ -109,7 +155,7 @@ class EngineTest {
   void aNonDefaultConfigurationNeedsASignatureToo(@TempDir Path root) throws IOException {
     write(root, "A.java", CLEAN.replace("class B", "class A"));
     Settings loosened = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
-        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"), true);
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"), true, List.of());
     Engine engine = new Engine(loosened, root, "1.0", clock);
     engine.freeze(scope(root, true).files());
     Outcome outcome = engine.run(scope(root, true));

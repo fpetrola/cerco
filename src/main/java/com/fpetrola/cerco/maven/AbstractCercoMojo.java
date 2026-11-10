@@ -75,6 +75,13 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   @Parameter
   private Boolean autopsies;
 
+  /**
+   * Rules proposed by filed autopsies that a person decided not to build (default none): until a rule proposed is
+   * in the running cerco or declined here, the gate stays red. Declining needs a signature (approve).
+   */
+  @Parameter
+  private List<String> declinedRules;
+
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
     if (skip) {
@@ -97,7 +104,8 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
         Optional.ofNullable(maxExemptions).orElse(defaults.maxExemptions()),
         Optional.ofNullable(includeTests).orElse(defaults.includeTests()),
         listOr(disabledRules, defaults.disabledRules()),
-        Optional.ofNullable(autopsies).orElse(defaults.autopsies()));
+        Optional.ofNullable(autopsies).orElse(defaults.autopsies()),
+        listOr(declinedRules, defaults.declinedRules()));
   }
 
   private List<String> listOr(List<String> configured, List<String> fallback) {

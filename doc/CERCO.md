@@ -219,8 +219,36 @@ las reglas nuevas. Para que no dependa de la buena voluntad del agente, es deter
   diferencia del rojo humano el hook no lo deja pasar, porque es tarea del agente.
 - `Backlog` y el goal `autopsies` ordenan las reglas propuestas por cuántas autopsias las piden.
 
+- Proponer no alcanza (0.5.0): `Backlog.unbuilt` compara las reglas que piden las autopsias archivadas con
+  `Rules.known()` (todas, apagadas o no) y cada una que falta es un `Owed` más, con id `rule-<regla>`: rojo del
+  agente, como una autopsia pendiente. El mensaje dice dónde está el código de cerco (`cerco-source.properties`,
+  filtrado por Maven con `${project.basedir}` al compilar) y el camino: regla y tests en una rama, tests de cerco
+  verdes, versión nueva, `mvn install`, versión nueva en el pom del proyecto; la regla llega y congela sus hallazgos
+  como cualquier otra (§3.5). Sólo una persona la descarta: `declinedRules` en la configuración, que como todo
+  apartamiento de los defaults vale sólo con firma.
+
 Riesgo conocido: si cada arreglo cuesta una autopsia, el agente puede preferir no arreglar deuda vieja. Lo mitigan
 una autopsia por regla (no por hallazgo) y `same-as:`. La configuración `autopsies` (true) la apaga, con firma.
+
+### 3.11 Testigo: aflojar una regla no es arreglar el código
+
+Desde que el agente vigilado escribe el código de cerco (§3.10), podría aflojar una regla en vez de arreglar su
+código. `engine/Witness` guarda, junto a la baseline:
+
+- `digests`: `digest<TAB>archivo` del código de cada archivo leído (SHA-256 del árbol impreso por JavaParser, sin
+  comentarios ni formato; del texto si no parsea). Lo calcula `Parser`, en paralelo, y viaja en `ParsedFile`;
+- `self`: `project`, el digest de todos los archivos en la última corrida completa, y `defaults`, el de
+  `Settings.DEFAULTS.fingerprint()` del cerco que guardó la baseline.
+
+Lo que sale de la baseline (`Solved`) pasa por `Witness.fixedInCode`: una clave de regla por archivo cuyo archivo
+tiene el mismo digest que la última vez, o una de regla de proyecto sin que ningún archivo haya cambiado desde la
+última completa (las reglas de proyecto dependen de otros archivos, por eso no alcanza el del suyo), se anota en
+`loosened` y no pide autopsia. Son problemas de rojo humano (§3.8), junto con una regla de `frozen` que el cerco no
+conoce y unos defaults con otro digest. `approve` los muestra y, con el `yes`, `Witness.accept` los acepta: saca las
+reglas idas de `frozen` con sus baselines, registra los defaults y vacía `loosened`.
+
+Límite: el digest es del código, no del comportamiento; un cambio trivial del archivo (renombrar una variable) junto
+con la regla aflojada pasa. Atrapa el caso grueso: una regla que deja de ver hallazgos en archivos que nadie tocó.
 
 ## 4. Integración con Claude Code
 
@@ -305,7 +333,7 @@ de "arreglar" todo.
 |---|---|
 | `model` | `SourceFile` (ruta absoluta + nombre relativo a la raíz), `ParsedFile`, `Finding`, `Measure`, `Settings` |
 | `rules` | `Rule`, `Inspection`, `FileRule`, `ProjectRule<S>`, `BudgetRule`/`Measuring`, `Enclosing` (nombres de miembros para las claves), `PackageGraph`, las 21 reglas, `Rules` |
-| `engine` | `Parser`, `Generated`, `Sources` (recorrido + globs), `Feed`, `Runs` (una `Inspection` por regla), `Tally`, `Scope`, `Signed`, `Outcome`, `Engine` |
+| `engine` | `Parser`, `Generated`, `Sources` (recorrido + globs), `Feed`, `Runs` (una `Inspection` por regla), `Tally`, `Scope`, `Signed`, `Witness` (digests de código y de cerco, §3.11), `Outcome`, `Engine` |
 | `baseline` | `BaselineStore`, `Multiset`, `Key`, `Reconciler`, `CeilingReconciler`, `Reconciliation` |
 | `exemptions` | `ExemptionsFile` (+ `ExemptionsDocument`/`ExemptionEntry`, los beans de YAML), `Exemption`, `Limit`, `VersionOrder`, `Context`, `Verdict`, `Exempting`, `Applied`, `Loaded`, `Approval`, `Digest` |
 | `report` | `ConsoleReport` (lo que lee el agente), `JsonReport` (`target/cerco/<label>.json`) |
@@ -405,6 +433,10 @@ pensarla contra el rodeo que va a provocar.
 | `5929bb5` | 0.2.0 | 9 reglas nuevas del experimento, `quick` tras Bash que escribe, guard con lexer de shell, adopción de reglas, `ProjectRule<S>`, 60 tests |
 | `c6489b1` | 0.2.0 | la corrida completa poda entradas de archivos borrados; `explain` imprime un YAML de ejemplo; 61 tests |
 | `ee5db5e` | 0.2.0 | las excepciones firmadas liberan lo congelado; el rojo sólo humano no bloquea el `Stop`; 62 tests |
+| `9b0e641` | 0.3.0 | autopsias; 69 tests |
+| `2e821c8` | 0.4.0 | `flag-driven-from-outside`, la primera regla nacida de una autopsia; 70 tests |
+| `9a7bafe` | 0.4.1 | `GitTree` (git de línea de comandos, entiende worktrees) en vez de JGit; 72 tests |
+| | 0.5.0 | regla propuesta = deuda hasta que exista; testigo de código y de cerco; 76 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 
@@ -443,7 +475,10 @@ configurar `<generated>` y firmar.
 - **El guard es una aproximación de shell**: no expande variables, subshells ni alias. Un intérprete que escribe un
   path construido en tiempo de ejecución sin nombrarlo pasa; lo protegen igual el anti-borrado (para la baseline),
   la firma (para excepciones y configuración) y la CI.
-- **`-Dcerco.skip` se niega por texto**, también en comandos que sólo lo buscan.
+- **`-Dcerco.skip` se niega por texto**, también en comandos que sólo lo buscan (o un heredoc que lo cita).
+- **`sed -i` se niega si la línea menciona `.cerco`**, aunque el archivo editado sea otro (pasó al cambiar en
+  `AbstractCercoMojo.java` un literal `".cerco/baseline/frozen"`): el guard mira la línea, no a qué archivo escribe
+  `sed`. Rodeo legítimo: el Edit del agente.
 - **Hooks con rutas absolutas** (el `java` de sdkman, el jar en `~/.m2`): sirven sólo en esta máquina hasta publicar.
 - **`approve` exige terminal real**: no se puede firmar desde un IDE.
 - **Umbrales fijos** de cadena (3), repetición (6) y clonado (3) no son configurables.
@@ -475,9 +510,7 @@ configurar `<generated>` y firmar.
 8. **Goal `status`**: la baseline como tabla por módulo y regla, con tendencia en el tiempo.
 9. **`approve` desde un IDE** sin abrir la puerta al agente.
 10. ~~**`quick` que muestre lo resuelto**~~: hecho en 0.3.0 por las autopsias, que listan qué se resolvió.
-12. **Que una regla propuesta por autopsias no pueda quedar olvidada**: hoy la autopsia obliga a proponer, no a
-    implementar. Ver la conversación del 2026-11-10: una propuesta abierta podría ser rojo humano hasta que esté
-    implementada (una regla con ese id) o una persona la descarte o la posponga con firma.
+12. ~~**Que una regla propuesta por autopsias no pueda quedar olvidada**~~: hecho en 0.5.0 (§3.10, §3.11).
 11. **Exigir arreglos de la baseline al tocar un archivo** que tiene hallazgos congelados, para contrarrestar el
     incentivo de no arreglar deuda vieja que crean las autopsias.
 

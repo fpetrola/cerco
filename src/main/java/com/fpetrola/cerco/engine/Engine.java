@@ -76,6 +76,10 @@ public final class Engine {
     return approvalFile;
   }
 
+  public Witness witness() {
+    return new Witness(store, rules);
+  }
+
   public Outcome run(Scope scope) {
     long start = System.nanoTime();
     List<Rule> active = rules.all().stream().filter(rule -> scope.full() || rule.perFile()).toList();
@@ -95,12 +99,16 @@ public final class Engine {
           budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, kept, solved)),
           () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept, solved)));
     }
-    List<Owed> owed = owed(solved);
+    Witness witness = witness();
+    List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed);
     List<String> problems = new ArrayList<>(signed.problems());
     Applied applied = exempt(signed, tally.fresh(), scope.full());
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
-    if (!store.exists()) {
+    if (store.exists()) {
+      witness.record(runs.digests(), scope.full());
+      problems.addAll(witness.problems());
+    } else {
       notes.add("no baseline is frozen yet: every finding counts as new until `mvn verify` freezes the project");
     }
     long millis = (System.nanoTime() - start) / 1_000_000;
@@ -119,6 +127,7 @@ public final class Engine {
           .orElseGet(() -> freeze(rule, runs.findings(rule)));
     }
     store.markFrozen(LocalDate.now(clock), active.stream().map(Rule::id).toList());
+    witness().record(runs.digests(), true);
     return total;
   }
 
@@ -146,13 +155,18 @@ public final class Engine {
     return store.exists() && !store.frozenRules().contains(rule.id());
   }
 
-  /** What was fixed in this run owes an autopsy; every one already owed is checked, and filed when complete. */
-  private List<Owed> owed(List<Solved> solved) {
+  /**
+   * What was fixed in this run owes an autopsy; every one already owed is checked, and filed when complete. A rule
+   * a filed autopsy proposes is owed until this cerco has it, or a person declined it with a valid signature.
+   */
+  private List<Owed> owed(List<Solved> solved, Signed signed) {
     if (!settings.autopsies() || !store.exists()) {
       return List.of();
     }
     autopsies.owe(solved, LocalDate.now(clock));
-    return autopsies.settle();
+    List<Owed> owed = new ArrayList<>(autopsies.settle());
+    owed.addAll(autopsies.unbuilt(rules.known(), signed.valid() ? settings.declinedRules() : List.of()));
+    return owed;
   }
 
   private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope, Kept kept,

@@ -10,11 +10,13 @@ import com.fpetrola.cerco.rules.Rule;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-/** The live runs of every active rule, each fed the same file in turn. */
+/** The live runs of every active rule, each fed the same file in turn, and the digest of each file's code. */
 final class Runs {
   private final Map<String, Inspection> inspections = new LinkedHashMap<>();
   private final Map<String, Measuring> measurings = new LinkedHashMap<>();
+  private final Map<String, String> digests = new TreeMap<>();
 
   Runs(List<Rule> rules) {
     for (Rule rule : rules) {
@@ -26,6 +28,11 @@ final class Runs {
   void visit(ParsedFile file) {
     inspections.values().forEach(inspection -> inspection.visit(file));
     measurings.values().forEach(measuring -> measuring.visit(file));
+    digests.put(file.name(), file.digest());
+  }
+
+  Map<String, String> digests() {
+    return digests;
   }
 
   List<Finding> findings(Rule rule) {

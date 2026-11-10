@@ -1,5 +1,6 @@
 package com.fpetrola.cerco.engine;
 
+import com.fpetrola.cerco.exemptions.Digest;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.fpetrola.cerco.model.SourceFile;
 import com.github.javaparser.JavaParser;
@@ -38,10 +39,11 @@ public final class Parser {
     ParseResult<CompilationUnit> result = new JavaParser(configuration).parse(text);
     Optional<CompilationUnit> unit = result.isSuccessful() ? result.getResult() : Optional.empty();
     if (unit.isPresent()) {
-      return new ParsedFile(file, unit, Optional.empty(), lines);
+      return new ParsedFile(file, unit, Optional.empty(), lines, Digest.of(unit.get().toString()).hex());
     }
     String problem = result.getProblems().stream().map(Problem::getVerboseMessage).findFirst()
         .orElse("the parser produced no tree");
-    return new ParsedFile(file, Optional.empty(), Optional.of(problem.replaceAll("\\s+", " ")), lines);
+    return new ParsedFile(file, Optional.empty(), Optional.of(problem.replaceAll("\\s+", " ")), lines,
+        Digest.of(text).hex());
   }
 }

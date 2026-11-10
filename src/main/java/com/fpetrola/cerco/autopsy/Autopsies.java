@@ -5,13 +5,14 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Every finding taken out of the baseline asks why the code had it. Fixing it is the symptom going away; the cause is
  * usually a piece of model that was missing, and it shows elsewhere too, as other smells that look unrelated. So the
  * gate owes an autopsy for each rule whose findings went away, and stays red until its form says what the cause
  * was, where it was looked for, and which rule would catch it next time. Done autopsies stay in the catalog; the
- * rules they propose are the gate's own backlog.
+ * rules they propose are the gate's own backlog, and stay owed until they are built.
  */
 public final class Autopsies {
   private final Ledger ledger;
@@ -54,6 +55,11 @@ public final class Autopsies {
       }
     }
     return owed;
+  }
+
+  /** The rules the filed autopsies propose that this cerco does not have and nobody declined. */
+  public List<Owed> unbuilt(Set<String> known, List<String> declined) {
+    return new Backlog(catalog).unbuilt(known, declined);
   }
 
   private String freshId(LocalDate today, String ruleId) {

@@ -189,6 +189,23 @@ que nombra): una regla que vuelve desde arreglos que no tienen nada que ver es l
 No dispara autopsia el techo de tamaño que baja sin salir del límite ni lo que libera una excepción firmada. Un
 archivo borrado sí: el código muerto también merece saber por qué existía.
 
+Proponer no alcanza: una regla que pide una autopsia archivada (`rule:` o `same-as:`) y que el cerco que corre no
+tiene queda como deuda del agente, roja como una autopsia pendiente, con la ruta del código de cerco (embebida en el
+jar al compilar) y la autopsia como especificación. Se cierra sola cuando llega una versión de cerco que tiene una
+regla con ese id, o cuando una persona la descarta en `<declinedRules>` y firma.
+
+## Lo que sólo una persona acepta
+
+Como el agente puede escribir el código de cerco, aflojar una regla no puede pasar por arreglar el código. Junto a la
+línea de base, cerco guarda el digest del código de cada archivo (del árbol sin comentarios ni formato), el del
+proyecto entero en la última corrida completa y el de sus propios valores por defecto. Es rojo humano, que sólo
+acepta `approve`:
+
+- un hallazgo congelado que se va mientras su código sigue igual (por archivo, el digest del archivo; para las reglas
+  de proyecto, el del proyecto): cambió la regla, no el código. No pide autopsia; queda en `.cerco/baseline/loosened`;
+- una regla congelada que el cerco que corre ya no tiene;
+- valores por defecto distintos de aquellos con que se guardó la línea de base.
+
 ## Goals
 
 | goal | corre | qué hace |
@@ -196,7 +213,7 @@ archivo borrado sí: el código muerto también merece saber por qué existía.
 | `check` | en `verify`, por módulo | las reglas por archivo sobre el módulo; congela todo el reactor si no hay línea de base |
 | `audit` | hook `Stop`, CI, a mano | todo el reactor, todas las reglas, y detecta excepciones vencidas o vacías |
 | `quick` | hook `PostToolUse` | el archivo recién editado, o tras un comando de shell que escribe, los `.java` que git ve cambiados; reglas por archivo |
-| `approve` | un humano, en terminal | firma las excepciones y la configuración |
+| `approve` | un humano, en terminal | firma las excepciones y la configuración, y acepta reglas que se fueron, defaults cambiados y hallazgos que una regla dejó de ver |
 | `install-hooks` | una vez por proyecto | escribe los hooks y las reglas `deny` en `.claude/settings.json` |
 | `explain` | a mano | las reglas, con su principio, su remedio y lo congelado |
 | `autopsies` | a mano | las reglas que proponen las autopsias archivadas, las más pedidas primero |
@@ -208,7 +225,7 @@ Los reportes también quedan en `target/cerco/<alcance>.json`.
 No hace falta. Si un proyecto necesita apartarse de los valores por defecto, va en el `<configuration>` del plugin y
 requiere firma (`approve`): `fileCeiling` (400), `methodCeiling` (40), `utilitySuffixes`, `factoryPrefixes`,
 `generated` (globs de código generado), `maxExemptions` (10), `includeTests` (false), `disabledRules`,
-`autopsies` (true).
+`autopsies` (true), `declinedRules` (reglas propuestas por autopsias que una persona decidió no construir).
 
 ## Medido sobre zx-lift (38 módulos, 1577 archivos analizados, 52 MB de fuentes en el repo)
 

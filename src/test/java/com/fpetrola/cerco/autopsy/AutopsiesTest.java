@@ -8,14 +8,17 @@ import com.fpetrola.cerco.engine.Engine;
 import com.fpetrola.cerco.engine.Outcome;
 import com.fpetrola.cerco.engine.Scope;
 import com.fpetrola.cerco.engine.Sources;
+import com.fpetrola.cerco.exemptions.Approval;
 import com.fpetrola.cerco.model.Settings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -79,7 +82,7 @@ class AutopsiesTest {
     assertTrue(form.contains("src/main/java/p/A.java|"), form);
     assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".owed")));
 
-    write(root, PENDING, filled(CAUSE, proposing("kind-without-type")));
+    write(root, PENDING, filled(CAUSE, proposing("no-type-code")));
     Outcome done = engine.run(scope(root));
     assertTrue(done.green(), done.toString());
     assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
@@ -126,9 +129,31 @@ class AutopsiesTest {
     assertEquals(2, missing.size(), missing.toString());
 
     write(root, PENDING, filled(CAUSE.replace("never had", "did not have"), "same-as: 2026-11-01-no-cast"));
-    assertTrue(engine.run(scope(root)).green());
+    assertEquals(List.of("kind-without-type"), engine.run(scope(root)).owed().stream().map(Owed::ruleId).toList());
     assertEquals(List.of(new Backlog.Wanted("kind-without-type", List.of("2026-11-01-no-cast", FORM_ID))),
         new Backlog(new Catalog(root.resolve("autopsies"))).wanted());
+  }
+
+  @Test
+  void aProposedRuleIsOwedUntilCercoHasItOrAPersonDeclinesIt(@TempDir Path root) throws IOException {
+    Engine engine = fixedOnce(root, Settings.DEFAULTS);
+    engine.run(scope(root));
+    write(root, PENDING, filled(CAUSE, proposing("kind-without-type")));
+    Outcome filed = engine.run(scope(root));
+    assertFalse(filed.green());
+    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    Owed rule = filed.owed().get(0);
+    assertEquals("kind-without-type", rule.ruleId());
+    assertEquals("autopsies/" + FORM_ID + ".md", rule.form());
+    assertTrue(rule.missing().get(0).contains(FORM_ID), rule.missing().toString());
+
+    Settings declining = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), true, List.of("kind-without-type"));
+    Engine declined = new Engine(declining, root, "1.0", clock);
+    assertEquals(1, declined.run(scope(root)).owed().size(), "a decline nobody signed declines nothing");
+    Approval.of(Optional.empty(), declined.configDigest(), false, "fernando", LocalDate.of(2026, 11, 10))
+        .write(declined.approvalFile());
+    assertTrue(declined.run(scope(root)).green());
   }
 
   @Test
@@ -149,7 +174,7 @@ class AutopsiesTest {
   @Test
   void switchedOffNothingIsOwed(@TempDir Path root) throws IOException {
     Settings off = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
-        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), false);
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), false, List.of());
     Engine engine = fixedOnce(root, off);
     Outcome outcome = engine.run(scope(root));
     assertTrue(outcome.owed().isEmpty());

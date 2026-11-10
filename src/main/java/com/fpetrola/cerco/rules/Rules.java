@@ -14,7 +14,20 @@ public final class Rules {
   }
 
   public List<Rule> all() {
-    List<Rule> every = List.of(
+    return every().stream().filter(rule -> !settings.disabledRules().contains(rule.id())).toList();
+  }
+
+  public Set<String> ids() {
+    return all().stream().map(Rule::id).collect(Collectors.toSet());
+  }
+
+  /** Every rule this cerco has, switched off or not. */
+  public Set<String> known() {
+    return every().stream().map(Rule::id).collect(Collectors.toSet());
+  }
+
+  private List<Rule> every() {
+    return List.of(
         new Unparseable(),
         new PackageCycles(),
         new MutableStaticField(),
@@ -37,10 +50,5 @@ public final class Rules {
         new FlagDrivenFromOutside(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
-    return every.stream().filter(rule -> !settings.disabledRules().contains(rule.id())).toList();
-  }
-
-  public Set<String> ids() {
-    return all().stream().map(Rule::id).collect(Collectors.toSet());
   }
 }

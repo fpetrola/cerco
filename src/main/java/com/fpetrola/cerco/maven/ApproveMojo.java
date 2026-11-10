@@ -11,8 +11,9 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 
 /**
- * A person signs the exemptions and the configuration as they stand. It insists on a terminal: an agent's shell has
- * none, which is the point.
+ * A person signs the exemptions and the configuration as they stand, and accepts what only a person can about cerco
+ * itself (a rule gone, defaults changed, findings a changed rule stopped seeing). It insists on a terminal: an
+ * agent's shell has none, which is the point.
  */
 @Mojo(name = "approve", aggregator = true)
 public final class ApproveMojo extends AbstractCercoMojo {
@@ -37,6 +38,7 @@ public final class ApproveMojo extends AbstractCercoMojo {
       console.printf("  (no exemptions)%n");
     }
     console.printf("  configuration: %s%n", settings().isDefault() ? "defaults" : settings().fingerprint());
+    engine.witness().problems().forEach(problem -> console.printf("  and accept: %s%n", problem));
     String answer = Optional.ofNullable(console.readLine("Type 'yes' to approve: ")).orElse("");
     if (!answer.strip().equalsIgnoreCase("yes")) {
       throw new MojoFailureException("cerco: not approved, nothing was written to " + engine.approvalFile()
@@ -44,6 +46,7 @@ public final class ApproveMojo extends AbstractCercoMojo {
     }
     Approval.of(loaded.digest(), engine.configDigest(), settings().isDefault(), approver(), LocalDate.now())
         .write(engine.approvalFile());
+    engine.witness().accept();
     console.printf("cerco: approved and recorded in %s; commit it%n", engine.approvalFile());
   }
 

@@ -57,9 +57,31 @@ public final class BaselineStore {
     markFrozen(LocalDate.parse(frozenLines().get(0)), all);
   }
 
+  /** Takes rules out of the freeze and drops their baselines: only for a person accepting that a rule is gone. */
+  public void unfreeze(Collection<String> ruleIds) {
+    Set<String> kept = new TreeSet<>(frozenRules());
+    kept.removeAll(ruleIds);
+    ruleIds.forEach(id -> {
+      write(id, new Multiset());
+      writeCeilings(id, Map.of());
+    });
+    markFrozen(LocalDate.parse(frozenLines().get(0)), kept);
+  }
+
   private List<String> frozenLines() {
-    return Stream.of(read(dir.resolve("frozen")).split("\n")).map(String::strip).filter(line -> !line.isEmpty())
-        .toList();
+    return lines("frozen");
+  }
+
+  /** A plain list kept beside the baseline, one entry per line. */
+  public List<String> lines(String name) {
+    Path file = dir.resolve(name);
+    return Files.exists(file) ? Stream.of(read(file).split("\n")).map(String::strip).filter(line -> !line.isEmpty())
+        .toList() : List.of();
+  }
+
+  /** Writes a plain list beside the baseline; an empty one removes its file. */
+  public void writeLines(String name, Collection<String> lines) {
+    writeOrRemove(dir.resolve(name), String.join("\n", lines) + "\n", lines.isEmpty());
   }
 
   public Multiset read(String ruleId) {

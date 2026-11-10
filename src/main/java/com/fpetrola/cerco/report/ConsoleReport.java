@@ -66,7 +66,8 @@ public final class ConsoleReport {
         .append("  Findings went away: the symptom is gone, the cause is not understood yet. Fill each form below: the\n")
         .append("  model that was missing, the places around the fix you read, where else the same cause shows, the\n")
         .append("  principle, and the rule that would catch it next time. cerco files a complete form in autopsies/ by\n")
-        .append("  itself; until then it stays red, and .cerco/autopsies keeps the debt even if the form is deleted.\n");
+        .append("  itself; until then it stays red, and .cerco/autopsies keeps the debt even if the form is deleted.\n")
+        .append("  A rule a filed autopsy proposes is owed the same way until the running cerco has it.\n");
     for (Owed one : owed) {
       out.append("  ").append(one.form()).append("  (").append(one.ruleId()).append(")\n");
       one.missing().forEach(missing -> out.append("    - ").append(missing).append('\n'));
