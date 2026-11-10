@@ -4,6 +4,7 @@ import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.Measure;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.fpetrola.cerco.project.Project;
+import com.fpetrola.cerco.project.Recall;
 import com.fpetrola.cerco.rules.BudgetRule;
 import com.fpetrola.cerco.rules.Inspection;
 import com.fpetrola.cerco.rules.Measuring;
@@ -11,6 +12,7 @@ import com.fpetrola.cerco.rules.Rule;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 
 /** The live runs of every active rule, each fed the same file in turn, and the digest of each file's code. */
@@ -34,9 +36,18 @@ final class Runs {
     digests.put(file.name(), file.digest());
   }
 
-  /** Every file of the project went through: the rules may take what the project does not declare as foreign. */
-  void sawTheWholeProject() {
+  /**
+   * Every file of the project went through: the rules may take what the project does not declare as foreign, and
+   * what it declares is kept for the runs over a few files.
+   */
+  void sawTheWholeProject(Recall recall) {
     project.markWhole();
+    recall.keep(project);
+  }
+
+  /** A run over a few files starts from what the last whole run learnt; answers with what went wrong, if it did. */
+  Optional<String> remember(Recall recall) {
+    return recall.remind(project);
   }
 
   Map<String, String> digests() {

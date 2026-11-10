@@ -410,4 +410,26 @@ class ReadingsTest {
     assertEquals(List.of("concept-without-a-class: it calls 3 setters on `state`",
         "procedure-instead-of-model: 46 lines and 1 locals in one method"), found.stream().map(this::read).toList());
   }
+
+  @Test
+  void aRunOverOneFileReadsWithWhatTheLastWholeRunLearnt(@org.junit.jupiter.api.io.TempDir java.nio.file.Path kept) {
+    com.fpetrola.cerco.project.Recall recall = new com.fpetrola.cerco.project.Recall(kept.resolve("project.json"));
+    com.fpetrola.cerco.project.Project whole = new com.fpetrola.cerco.project.Project();
+    whole.learn(snippets.parse("src/main/java/p/Shape.java", SHAPES));
+    ParsedFile before = snippets.parse("src/main/java/p/Painter.java", "package p; class Painter {}");
+    whole.learn(before);
+    whole.markWhole();
+    recall.keep(whole);
+
+    com.fpetrola.cerco.project.Project edited = new com.fpetrola.cerco.project.Project();
+    assertEquals(Optional.empty(), recall.remind(edited));
+    ParsedFile after = snippets.parse("src/main/java/p/Painter.java",
+        "package p; class Painter { int sides(Shape s) { return s instanceof Square ? 4 : 0; } }");
+    edited.learn(after);
+    Inspection inspection = new InstanceOfDispatch().inspection(edited);
+    inspection.visit(after);
+    assertEquals(List.of("dispatch-from-outside: `Square` is a kind of `Shape` (3 subtypes)"),
+        inspection.findings().stream().map(this::read).toList());
+    assertEquals(5, edited.everything().size());
+  }
 }

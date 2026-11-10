@@ -18,6 +18,7 @@ import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.Measure;
 import com.fpetrola.cerco.model.Settings;
 import com.fpetrola.cerco.model.SourceFile;
+import com.fpetrola.cerco.project.Recall;
 import com.fpetrola.cerco.rules.BudgetRule;
 import com.fpetrola.cerco.rules.Rule;
 import com.fpetrola.cerco.rules.Rules;
@@ -44,6 +45,7 @@ public final class Engine {
   private final String projectVersion;
   private final Clock clock;
   private final Autopsies autopsies;
+  private final Recall recall;
   private final Feed feed = new Feed(new Parser(), new Generated());
   private final Reconciler reconciler = new Reconciler();
   private final CeilingReconciler ceilings = new CeilingReconciler();
@@ -58,6 +60,7 @@ public final class Engine {
     this.projectVersion = projectVersion;
     this.clock = clock;
     this.autopsies = new Autopsies(root);
+    this.recall = new Recall(root.resolve("target").resolve("cerco").resolve("project.json"));
   }
 
   public BaselineStore store() {
@@ -92,10 +95,7 @@ public final class Engine {
       active = adopt(active, scope.full(), notes);
     }
     Runs runs = new Runs(active);
-    int parsed = feed.each(scope.files(), runs::visit);
-    if (scope.full()) {
-      runs.sawTheWholeProject();
-    }
+    int parsed = fed(scope, runs, notes);
     Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
     Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();
@@ -121,6 +121,21 @@ public final class Engine {
     long millis = (System.nanoTime() - start) / 1_000_000;
     return new Outcome(scope.label(), parsed, applied.remaining(), applied.exempted(), tally.solved(),
         tally.frozen(), owed, notes, problems, millis);
+  }
+
+  /**
+   * Feeds the scope's files through the rules. A run over a few files starts from what the last whole run learnt
+   * about the project, and a whole run leaves what it learnt for those.
+   */
+  private int fed(Scope scope, Runs runs, List<String> notes) {
+    if (!scope.full()) {
+      runs.remember(recall).ifPresent(notes::add);
+    }
+    int parsed = feed.each(scope.files(), runs::visit);
+    if (scope.full()) {
+      runs.sawTheWholeProject(recall);
+    }
+    return parsed;
   }
 
   /** Freezes the project as it stands: every current finding and every oversize measure become the baseline. */

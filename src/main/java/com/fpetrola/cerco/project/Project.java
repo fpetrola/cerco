@@ -26,9 +26,35 @@ public final class Project {
   private final Map<String, List<Declared>> homonyms = new HashMap<>();
   private final Map<String, Set<String>> under = new HashMap<>();
   private boolean whole;
+  private boolean recalled;
 
+  /** What a file declares; when the project came from an earlier run, in place of what that file declared then. */
   public void learn(ParsedFile file) {
+    if (recalled) {
+      forget(file.name());
+    }
     file.unit().ifPresent(unit -> new Declarations(file.name()).visit(unit, this::declare));
+  }
+
+  /** What an earlier whole run learnt, taken as the whole project except for the files learnt again after it. */
+  public void recall(List<Declared> remembered) {
+    remembered.forEach(this::declare);
+    recalled = true;
+    whole = true;
+  }
+
+  /** Everything the project declares, for a later run to recall. */
+  public List<Declared> everything() {
+    return List.copyOf(everyone);
+  }
+
+  private void forget(String file) {
+    List<Declared> kept = everyone.stream().filter(type -> !type.file().equals(file)).toList();
+    everyone.clear();
+    homonyms.clear();
+    types.clear();
+    under.clear();
+    kept.forEach(this::declare);
   }
 
   private void declare(Declared type) {
