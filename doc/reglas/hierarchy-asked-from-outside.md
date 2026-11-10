@@ -60,3 +60,14 @@ plan admite la otra salida: "encuentra deuda que reconocés como tal". Adoptarla
 Pregunta para Fernando: los visitors de `emulator` que preguntan subtipos dentro de un `visit` (Before, After,
 PhaseProcessor), ¿son deuda (al visitor le faltan métodos), o una decisión (el visitor es grueso a propósito para no
 tener 91 métodos)?
+
+## 5. Lectura y corrección (0.15.0)
+
+**Corrección.** La muestra de §3 dice que `OpcodeReferenceBase` no tiene visitor. Es falso:
+`OpcodeReferenceBase` declara `accept(InstructionVisitor)`, el mismo visitor de las instrucciones. La regla lo
+informa bien desde que usa el índice del proyecto; el error era de la lectura a mano. Cambia el arreglo: no hay que
+crear un visitor de referencias sino usar el que la familia ya acepta.
+
+La regla lee siempre como visitor, y dice cuál acepta ya la familia. En oozx `87e376742`: los 48 de `emulator` son de
+familias que ya aceptan `InstructionVisitor`; los 8 de `machine`, de familias sin visitor. Pasa a `RepeatedRule` y al
+índice del proyecto, con los mismos hallazgos.

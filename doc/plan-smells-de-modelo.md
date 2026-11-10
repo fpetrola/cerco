@@ -665,3 +665,117 @@ Arreglos en oozx guiados por las candidatas: `WaysOfDrawing` (despacho doble de 
 Pendiente y anotado: `AttachedFrame` pregunta `dock == Dock.FREE` en 8 métodos (FREE debería ser el objeto nulo de
 `Dock`; no se tocó sin poder probar el docking en el escritorio real); los reproductores encontrados con
 `instanceof Opens` (API binaria de plugins); los estados de snapshot (pregunta 3); `narration` (pregunta 2).
+
+---
+
+## 13. Estado al 2026-11-10, cerco 0.15.0 (rama `lectura-e-indice`)
+
+Hecho sobre `modelos-ausentes`, en un worktree aparte (`coding/cerco-lectura`) y con otra versión, para no tocar el
+jar 0.14.0 que usan los hooks de la prueba en oozx. Instalado en `~/.m2`, sin publicar ni mergear.
+
+### 13.1 Cada hallazgo elige su modelo (la lectura)
+
+Un `Finding` puede llevar una lectura (`Reading`): de las hipótesis de su regla, cuál señala el código de ese lugar,
+con qué evidencia y con qué transformación. Es consejo y no entra en la clave. El reporte la imprime bajo cada
+hallazgo (`missing: … because …` y `do: …`), el JSON la trae, y `survey` la suma por módulo.
+
+Qué mira cada familia:
+
+| regla | lo que decide la lectura |
+|---|---|
+| `no-instanceof`, `no-cast` | de quién es el tipo (del proyecto o de librería, por los imports); su familia; si la familia ya acepta un visitor; si vive en un módulo que no puede depender del que pregunta; cuántos miembros la preguntan; si se elige de una colección, se busca por su clase o llega declarado como un tipo ajeno; si es una interfaz que no es de la familia del valor (rol); si viaja como `Object` |
+| `no-switch`, `no-conditional-chain`, `no-type-code`, `enum-decided-outside` | con qué se compara (constantes de un enum del proyecto, textos, números, constantes sueltas, tipos, `null`) y qué hacen las ramas (devuelven un valor, reasignan un campo que testean, hacen trabajo distinto); a quién se le preguntó |
+| `no-static-method` | si recibe un objeto del proyecto, o solo valores planos |
+| `no-null-return` | si es el caso de no encontrar, o un campo que todavía no llegó |
+| `no-cloned-methods` | si las copias están en una familia o en tipos sin nada en común |
+| `method-length` | si llena un objeto con setters, le pregunta mucho a uno, o narra pasos |
+| `no-mutable-static`, `flag-driven-from-outside` | quién puede cambiarlo |
+| las de una sola hipótesis | esa hipótesis |
+| las seis candidatas de §12 | lo que cada una ya juntaba (ver su ficha, §5) |
+
+No leen, a propósito: `equals`, variables de tipo, excepciones, `null` y lambdas con cast, cadenas de condiciones sin
+relación, y las reglas de honestidad (`no-ignored-result`, `no-swallowed-exception`, `no-suppressed-warning`).
+Tampoco leen todavía `file-length`, `no-repeated-statements`, `ask-then-tell`, `property-shuffle` y `borrowed-mode`.
+
+Medido en oozx `87e376742` con las 35 reglas de 0.14.0: los 10.619 hallazgos son los mismos, línea por línea. El
+`audit` de 0.15.0 da verde sobre la línea de base congelada con 0.14.0 (9.972 congelados, 0 nuevos, 0 resueltos).
+
+| grupo | hallazgos | con lectura |
+|---|---|---|
+| `emulator` | 285 | 246 (86 %) |
+| `machine/*` | 551 | 428 (78 %) |
+| `translation/*` | 9.783 | 4.607 |
+
+Qué modelo falta, por grupo (hallazgos que leen como cada uno):
+
+| modelo | emulator | machine |
+|---|---|---|
+| `dispatch-from-outside` | 109 | 16 |
+| `behaviour-not-on-owner` | 35 | 126 |
+| `value-without-a-type` | 21 | 70 |
+| `variation-as-data` | 11 | 62 |
+| `knowledge-without-one-owner` | 5 | 44 |
+| `concept-without-a-class` | 33 | 37 |
+| `state-without-an-object` | 2 | 26 |
+| `structure-walked-from-outside` | 2 | 23 |
+| `procedure-instead-of-model` | 3 | 16 |
+| `shape-repeated` | 25 | 7 |
+| `protocol-by-convention` | 0 | 1 |
+| sin lectura | 39 | 123 |
+
+La deuda de `emulator` es casi toda de una clase: familias que ya aceptan un visitor y aun así se preguntan desde
+afuera. La de `machine` está repartida, y lo que más le falta es comportamiento en el dueño del dato.
+
+La muestra de lecturas la juzgó Claude, no Fernando. Los defectos que encontró en su propia primera versión, ya
+corregidos: homónimos (`Timer`, `Frame`) tomados por tipos del proyecto; excepciones; `(Tipo) null`; valores que viajan
+como `Object`; un `switch` que reasigna una variable local leído como estado; un enum elegido mal cuando dos tienen
+las mismas constantes. Quedan sin medir la precisión de la lectura con un segundo juez.
+
+### 13.2 El índice del proyecto
+
+`Project` (paquete `project`) aprende de cada archivo, antes que las reglas lo vean, los tipos que declara: nombre
+simple y completo, supertipos, campos con su tipo, métodos, constantes, tipo de primer nivel y archivo (de ahí el
+módulo). Contesta familias, visitors aceptados, quién declara un método, qué enum tiene unas constantes. Las reglas
+lo reciben en `inspection(Project)` y le preguntan al concluir.
+
+- `TypeName` e `Imports` dicen de quién es un nombre de tipo: escrito completo, importado por nombre, del mismo
+  paquete o de un paquete importado entero.
+- `Names` dice con qué tipo se declaró un valor dentro de su archivo (parámetro, local, patrón, campo).
+- `Recall` guarda lo aprendido por una corrida completa en `target/cerco/project.json` (1 MB en oozx) y `quick`
+  parte de ahí. Solo alimenta la lectura: ningún veredicto depende de lo recordado. `quick` tarda lo mismo que
+  antes (unos 0,7 s dentro de cerco).
+
+Esto contesta en parte la pregunta 1 de §11: el índice ya llega a `quick`, pero solo como consejo. Que las reglas de
+proyecto *frenen* en `quick` sigue sin hacerse y sigue siendo decisión de Fernando.
+
+Bases nuevas, las tres nacidas de clones que cerco marcó en su propio código: `SiteRule` (un sitio por hallazgo,
+leído al final), `RepeatedRule` (lo mismo en varios miembros) y `PlacesRule`.
+
+Pendiente de la infraestructura: `Vocabulary` e `IndexingRule` siguen vivos en cuatro candidatas, que arman su
+propio índice por nombre; resolver el tipo de `a.b()` y de un campo heredado a través del índice, que es lo que
+pierden `said-in-two-calls`, `unpacked-at-the-call` y `walked-from-outside` (los homónimos `all()`).
+
+### 13.3 Siete candidatas más
+
+| candidata | emulator | machine | muestra (juicio de Claude) | propuesta |
+|---|---|---|---|---|
+| `flag-argument` | 1 | 13 | 11 verdaderos y 3 débiles de 14 | adoptar |
+| `maps-keyed-alike` | 0 | 5 | 4 de 5 | adoptar, mirando antes los 15 de `translation` |
+| `named-by-text` | 4 | 18 | 22 de 22 | adoptar |
+| `state-asked-across-methods` | 1 | 2 | 3 de 3 | no separa: bajar el umbral o dejarla como evidencia |
+| `unpacked-at-the-call` | 6 | 7 | 12 de 13 | no separa: depende de si los clonadores de `emulator` son deuda |
+| `said-in-two-calls` | 3 | 0 | 1 caso real | no rinde hasta resolver tipos con el índice |
+| `condition-repeated` | 0 | 2 | 1 caso real | no rinde: comparar la forma, no el texto |
+
+Con las seis de §12 son trece candidatas con ficha en `doc/reglas/`. Ninguna está adoptada.
+
+### 13.4 Lo que sigue sin hacer, y por qué
+
+- **Adoptar candidatas.** Es de Fernando: el protocolo (§8.1) pide que las primeras muestras las juzgue él.
+- **Congelar por pregunta y no por miembro, y la frontera.** Son decisiones de diseño de cerco que quedaron
+  planteadas y sin tomar.
+- **`narration`** (comentarios dentro de un método): pregunta 2 de §11.
+- **`data-without-behaviour`** y el modelo paralelo de los estados de snapshot: pregunta 3 de §11.
+- **El resto del catálogo** de §7.2 y de lo que se cruzó con los catálogos: diferencia entre clones, despacho
+  encubierto, grupos de datos que viajan juntos, modelo paralelo, mismos literales en dos archivos, jerarquías de más.
+- **Un segundo proyecto de referencia.** Todo está medido sobre oozx.

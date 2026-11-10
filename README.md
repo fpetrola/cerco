@@ -95,7 +95,13 @@ distingue, la transformación habitual y los disfraces que no son un arreglo. El
 regla, y si las autopsias del proyecto ya nombraron modelos para esa regla, dice cuáles. La autopsia nombra el suyo
 con una línea `model: <id>` en la causa.
 
-Las reglas **candidatas** (hoy `absence-as-state`, `hierarchy-asked-from-outside`, `set-from-outside`, `reached-through`, `walked-from-outside` y `enum-decided-across`) no frenan: se miden con `survey` y entran al catálogo cuando su
+Desde 0.15.0 cada hallazgo además **elige** una de esas hipótesis, cuando el código del lugar alcanza para
+decidir, y la imprime debajo: `missing: <modelo>, because <evidencia>` y `do: <transformación>`. Para eso cerco
+mantiene un índice de lo que el proyecto declara (tipos, familias, visitors, módulos); una edición suelta lee con lo
+que aprendió la última corrida completa (`target/cerco/project.json`). La lectura es consejo: no entra en la clave
+del hallazgo ni cambia ningún veredicto.
+
+Las reglas **candidatas** (hoy trece: `absence-as-state`, `hierarchy-asked-from-outside`, `set-from-outside`, `reached-through`, `walked-from-outside`, `enum-decided-across`, `flag-argument`, `state-asked-across-methods`, `maps-keyed-alike`, `unpacked-at-the-call`, `named-by-text`, `said-in-two-calls` y `condition-repeated`) no frenan: se miden con `survey` y entran al catálogo cuando su
 ficha en `doc/reglas/` muestra que encuentran casos reales más allá del que las originó. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
 
 Las nueve reglas que no son de polimorfismo clásico ni de tamaño nacieron de un experimento: un agente al que se le
@@ -238,7 +244,7 @@ acepta `approve`:
 | `install-hooks` | una vez por proyecto | escribe los hooks y las reglas `deny` en `.claude/settings.json` |
 | `explain` | a mano | las reglas, con su principio, su remedio y lo congelado |
 | `autopsies` | a mano | las reglas que proponen las autopsias archivadas, las más pedidas primero |
-| `survey` | a mano | mide reglas por módulo sin tocar la línea de base: las candidatas, o las de `-Dcerco.rules=a,b`; cuántos hallazgos, cuántos por mil líneas y una muestra para juzgar a mano (`-Dcerco.sample=N`, 10 por defecto) |
+| `survey` | a mano | mide reglas por módulo sin tocar la línea de base: las candidatas, las de `-Dcerco.rules=a,b`, o todas con `-Dcerco.rules=all`; imprime también cuántos hallazgos de cada módulo leen como cada modelo que falta; cuántos hallazgos, cuántos por mil líneas y una muestra para juzgar a mano (`-Dcerco.sample=N`, 10 por defecto) |
 
 Los reportes también quedan en `target/cerco/<alcance>.json`.
 

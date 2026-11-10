@@ -348,7 +348,8 @@ de "arreglar" todo.
 
 | paquete | qué tiene |
 |---|---|
-| `model` | `SourceFile` (ruta absoluta + nombre relativo a la raíz), `ParsedFile`, `Finding`, `Measure`, `Settings` |
+| `model` | `SourceFile` (ruta absoluta + nombre relativo a la raíz), `ParsedFile`, `Finding`, `Measure`, `Settings`, `MissingModel`, `Reading` (la hipótesis elegida para un hallazgo) |
+| `project` | `Project` (lo que el proyecto declara: tipos, familias, visitors, módulo), `Declared`, `Family`, `TypeName`/`Imports` (de quién es un nombre de tipo), `Names` (con qué tipo se declaró un valor), `Recall` (lo aprendido, guardado para `quick`) |
 | `rules` | `Rule`, `Inspection`, `FileRule`, `ProjectRule<S>`, `BudgetRule`/`Measuring`, `Enclosing` (nombres de miembros para las claves), `PackageGraph`, las 23 reglas, `Rules` |
 | `engine` | `Parser`, `Generated`, `Sources` (recorrido + globs), `Feed`, `Runs` (una `Inspection` por regla), `Tally`, `Scope`, `Signed`, `Witness` (digests de código y de cerco, §3.11), `Outcome`, `Engine` |
 | `baseline` | `BaselineStore`, `Multiset`, `Key`, `Reconciler`, `CeilingReconciler`, `Reconciliation` |
@@ -463,6 +464,7 @@ pensarla contra el rodeo que va a provocar.
 | `d64e06f` | 0.12.0 | `key-holds-value`, de la autopsia del registro de máquinas de oozx; 85 tests |
 | | 0.13.0 | `enum-decided-outside`, de la autopsia de los bordes de las ventanas de oozx; 86 tests |
 | | 0.14.0 | Fases 0 y 1 de `doc/plan-smells-de-modelo.md`: diagnóstico en cada regla (`MissingModel`, `Diagnosis`, `DecisionRule`), línea `model:` obligatoria en la autopsia y su conteo por regla en el reporte; reglas candidatas y goal `survey`; candidatas `absence-as-state` y `hierarchy-asked-from-outside` (una familia del proyecto preguntada con `instanceof` o casts desde dos o más miembros de afuera), `set-from-outside`, `reached-through`, `walked-from-outside` y `enum-decided-across`, las tres de proyecto que indexan declaraciones y sitios sobre `IndexingRule`; `survey` en una sola pasada por el reactor; 95 tests |
+| | 0.15.0 | Cada hallazgo elige su modelo: `Reading` en `Finding`, leída por `TypeTestDiagnosis` (pruebas de tipo) y `DecisionDiagnosis` (decisiones) y por cada regla con su evidencia. `Project`, el índice de lo que el proyecto declara (tipos, familias, visitors, módulos), que las reglas reciben en `inspection(Project)`; `TypeName`/`Imports`/`Names` dicen de quién es un tipo y con qué tipo se declaró un valor; `Recall` lo guarda para `quick`, solo como consejo. Bases `SiteRule`, `RepeatedRule`, `PlacesRule`, `GatheringRule`. Siete candidatas más (trece en total). `survey -Dcerco.rules=all` y su tabla de modelo que falta por módulo. Los hallazgos de las 35 reglas de 0.14.0 no cambian (10.619 en oozx, línea por línea). Estado en §13 de `doc/plan-smells-de-modelo.md`; 140 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 

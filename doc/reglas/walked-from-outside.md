@@ -38,3 +38,9 @@ Separa.
 
 Cumple las condiciones. Para bajar los homónimos se puede exigir que el método lo declare un solo tipo del proyecto
 (`all()` lo declaran tres), a costa de no ver los casos reales con nombres comunes. Adoptarla congela 35 hallazgos.
+
+## 5. Lectura (0.15.0)
+
+Un `stream` sobre lo entregado lee como consulta que falta en el dueño; un bucle, como recorrido que el dueño debería
+hacer solo. En oozx `87e376742` (12 en `machine`): 5 consultas y 7 recorridos. Después del arreglo de
+`WhatIsPluggedIn` en la rama `cerco`, `equipment()` bajó de 7 miembros a 3.

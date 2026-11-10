@@ -44,3 +44,9 @@ Unos 57 verdaderos o probables y 5 dudosos, de 64.
 ## 4. Decisión
 
 Cumple las tres condiciones. Adoptarla congela 248 hallazgos, la mayoría en `translation`.
+
+## 5. Lectura (0.15.0)
+
+En cada sitio mira si el miembro usa al todo para algo más que llegar a la parte. Si solo lo usa para eso, lee
+`knowledge-without-one-owner` (denle la parte); si no, `behaviour-not-on-owner` (el todo ofrece la operación). En
+oozx `87e376742`, `emulator` y `machine` (56 hallazgos): 33 solo quieren la parte, 23 usan al todo para más.

@@ -34,3 +34,9 @@ Separa.
 
 Esperar la respuesta a la pregunta 3. Si los estados de snapshot son legítimos, conviene excluir los receptores que
 son clases de datos del proyecto, y la regla queda con 2 hallazgos.
+
+## 5. Lectura (0.15.0)
+
+Si 3 o más de los valores son getters de un mismo tercero, lee `knowledge-without-one-owner` (una copia propiedad por
+propiedad); si no, `behaviour-not-on-owner` (una sola cosa hecha con varios setters). En oozx `87e376742` (8 en
+`machine`): 2 copias y 6 de la otra clase.

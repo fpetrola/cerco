@@ -39,3 +39,10 @@ Unos 20 verdaderos y 5 débiles de 25.
 
 Cumple las condiciones. Adoptarla como reemplazo de `enum-decided-outside` necesita la firma de una persona, porque
 una regla que se va del catálogo es un problema que sólo `approve` acepta.
+
+## 5. Lectura (0.15.0)
+
+Según lo que hacen las ramas: reasignan lo que testean, es un modo (`state-without-an-object`); hacen trabajo
+distinto, es comportamiento de la constante; solo contestan un valor, o el sitio pregunta si el valor es una de
+algunas constantes, es un dato de la constante. En oozx `87e376742`, `emulator` y `machine` (19 hallazgos): 18
+preguntan "¿es una de estas?" y 1 solo contesta valores (`RegisterBank.get`).

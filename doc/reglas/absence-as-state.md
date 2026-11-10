@@ -45,3 +45,10 @@ Veredicto de Claude: 10 verdaderos, 2 débiles, 0 falsos.
 Cumple las tres condiciones del plan (§8.1): más de 3 casos reales, 8 de 10 o más verdaderos, y separa el código de
 referencia. Propuesta: adoptarla en 0.15.0 si Fernando confirma la muestra. Al adoptarla congela 12 hallazgos en
 `machine` y 12 en `translation`.
+
+## 5. Lectura (0.15.0)
+
+La regla elige entre sus tres hipótesis mirando cómo llega el campo: si algún método lo vuelve a `null`, son fases;
+si lo da un método después de construir, llega tarde; si solo se da al construir, es opcional. En oozx `87e376742`
+(10 hallazgos en `machine`): 4 leen como fases y 6 como llegada tardía. Límite conocido: `SnapshotZ80.fIn` y `fOut`
+leen como llegada tardía, cuando lo que pasa es que un stream de una sola operación vive en un campo.
