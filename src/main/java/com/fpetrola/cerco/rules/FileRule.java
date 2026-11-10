@@ -4,8 +4,11 @@ import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /** A rule that looks at one compilation unit at a time and forgets it. */
 public abstract class FileRule implements Rule {
@@ -35,6 +38,11 @@ public abstract class FileRule implements Rule {
 
   protected int line(Node node) {
     return node.getBegin().map(position -> position.line).orElse(1);
+  }
+
+  /** Who the call is made on; empty for a type calling itself (no receiver, this or super). */
+  protected Optional<String> receiver(MethodCallExpr call) {
+    return call.getScope().filter(scope -> !scope.isThisExpr() && !scope.isSuperExpr()).map(Expression::toString);
   }
 
   protected String clipped(String text) {

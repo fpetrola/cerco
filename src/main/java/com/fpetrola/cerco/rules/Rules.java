@@ -49,6 +49,7 @@ public final class Rules {
         new ClonedMethods(),
         new FlagDrivenFromOutside(),
         new AskThenTell(),
+        new PropertyShuffle(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

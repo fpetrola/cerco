@@ -137,6 +137,15 @@ class NewRulesTest {
   }
 
   @Test
+  void movingOneOfAnotherObjectsPropertiesIntoAnother() {
+    List<String> found = details(new PropertyShuffle(), "package p; class A { State s; void f(Cpu c) {"
+        + " s.setIff1(s.isIff2()); s.setIff2(s.getIff2()); c.setA(s.getB()); setA(getB());"
+        + " this.setA(this.getB()); s.setA(s.getB(1)); s.put(s.getB()); s.setA(s.getB(), 2); } }");
+    assertEquals(List.of("`s.setIff1(s.isIff2())` moves one property of an object into another, in p.A.f(Cpu)"),
+        found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"

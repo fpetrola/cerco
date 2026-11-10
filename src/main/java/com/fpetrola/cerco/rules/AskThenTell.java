@@ -4,7 +4,6 @@ import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.IfStmt;
 import java.util.LinkedHashSet;
@@ -66,10 +65,5 @@ public final class AskThenTell extends FileRule {
     return Stream.of(Optional.of(test.getThenStmt()), test.getElseStmt()).flatMap(Optional::stream)
         .flatMap(branch -> branch.findAll(MethodCallExpr.class).stream())
         .filter(call -> call.getNameAsString().equals(setter) && receiver(call).equals(receiver));
-  }
-
-  /** Who the call is made on; empty for a type calling itself (no receiver, this or super). */
-  private Optional<String> receiver(MethodCallExpr call) {
-    return call.getScope().filter(scope -> !scope.isThisExpr() && !scope.isSuperExpr()).map(Expression::toString);
   }
 }
