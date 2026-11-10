@@ -284,4 +284,21 @@ class NewRulesTest {
     assertEquals(List.of("src/main/java/p/Core.java|p.Core.pause()|speccy.loop",
         "src/main/java/p/Core.java|p.Core.resume()|speccy.loop"), found.stream().map(Finding::key).sorted().toList());
   }
+
+  @Test
+  void whatOneMethodHandsOutWalkedFromThreeMembersOfOtherTypes() {
+    List<Finding> found = new WalkedFromOutside().inspect(List.of(
+        snippets.parse("src/main/java/p/Desk.java", "package p; import java.util.*; class Desk {"
+            + " List<W> windows() { return null; } Map<String, W> table() { return null; }"
+            + " int own() { int n = 0; for (W w : windows()) n++; return n; } }"),
+        snippets.parse("src/main/java/p/A.java", "package p; class A {"
+            + " void a(Desk d) { for (W w : d.windows()) w.hide(); }"
+            + " long b(Desk d) { return d.windows().stream().count(); }"
+            + " void c(Desk d) { d.table().values().forEach(W::hide); }"
+            + " void e(Desk d) { d.table().forEach((k, v) -> v.hide()); }"
+            + " void f(javax.swing.JPanel p) { for (Object o : p.getComponents()) {} } }"),
+        snippets.parse("src/main/java/p/B.java", "package p; class B { void g(Desk d) { d.windows().forEach(W::show); } }")));
+    assertEquals(List.of("src/main/java/p/A.java|p.A.a(Desk)|windows()", "src/main/java/p/A.java|p.A.b(Desk)|windows()",
+        "src/main/java/p/B.java|p.B.g(Desk)|windows()"), found.stream().map(Finding::key).sorted().toList());
+  }
 }

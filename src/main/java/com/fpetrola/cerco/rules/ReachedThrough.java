@@ -123,7 +123,4 @@ public final class ReachedThrough extends ProjectRule<ReachedThrough.Gathered> {
         .collect(Collectors.toSet())).orElse(Set.of());
   }
 
-  private int line(MethodCallExpr call) {
-    return call.getBegin().map(position -> position.line).orElse(1);
-  }
 }

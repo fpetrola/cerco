@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
 import java.util.List;
 
 /**
@@ -40,6 +41,10 @@ public abstract class ProjectRule<S> implements Rule {
   protected abstract void gather(ParsedFile file, CompilationUnit unit, S state);
 
   protected abstract List<Finding> conclude(S state);
+
+  protected int line(Node node) {
+    return node.getBegin().map(position -> position.line).orElse(1);
+  }
 
   protected String clipped(String text) {
     String flat = text.replaceAll("\\s+", " ");

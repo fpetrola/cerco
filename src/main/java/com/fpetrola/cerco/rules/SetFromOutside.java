@@ -126,7 +126,4 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
     return call.getScope().filter(scope -> !scope.isThisExpr() && !scope.isSuperExpr()).map(Expression::toString);
   }
 
-  private int line(MethodCallExpr call) {
-    return call.getBegin().map(position -> position.line).orElse(1);
-  }
 }

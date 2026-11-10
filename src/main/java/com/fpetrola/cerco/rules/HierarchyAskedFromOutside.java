@@ -203,7 +203,4 @@ public final class HierarchyAskedFromOutside extends ProjectRule<HierarchyAskedF
     return type.toClassOrInterfaceType().map(ClassOrInterfaceType::getNameAsString);
   }
 
-  private int line(Node node) {
-    return node.getBegin().map(position -> position.line).orElse(1);
-  }
 }
