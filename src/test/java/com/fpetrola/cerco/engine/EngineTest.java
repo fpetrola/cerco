@@ -59,8 +59,9 @@ class EngineTest {
     Files.writeString(b, CLEAN);
     write(root, "A.java", CLEAN.replace("class B", "class A"));
     Outcome better = engine.run(scope(root, true));
-    assertTrue(better.green());
+    assertTrue(better.fresh().isEmpty() && better.problems().isEmpty(), better.toString());
     assertEquals(1, better.solved());
+    assertEquals(1, better.owed().size(), "a fix owes an autopsy");
     assertEquals(0, engine.store().read("no-switch").total());
   }
 
@@ -108,7 +109,7 @@ class EngineTest {
   void aNonDefaultConfigurationNeedsASignatureToo(@TempDir Path root) throws IOException {
     write(root, "A.java", CLEAN.replace("class B", "class A"));
     Settings loosened = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
-        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"));
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"), true);
     Engine engine = new Engine(loosened, root, "1.0", clock);
     engine.freeze(scope(root, true).files());
     Outcome outcome = engine.run(scope(root, true));
@@ -159,8 +160,9 @@ class EngineTest {
     assertEquals(2, engine.store().read("no-switch").total());
 
     Outcome full = engine.run(scope(root, true));
-    assertTrue(full.green());
+    assertTrue(full.fresh().isEmpty() && full.problems().isEmpty(), full.toString());
     assertEquals(1, full.solved());
+    assertEquals(1, full.owed().size(), "code that is gone owes an autopsy too");
     assertEquals(1, full.frozen());
     assertEquals(1, engine.store().read("no-switch").total());
     assertTrue(engine.store().read("no-switch").keys().iterator().next().startsWith("src/main/java/p/A.java"));

@@ -25,6 +25,8 @@ public final class JsonReport {
     document.put("millis", outcome.millis());
     document.put("fresh", findings(outcome.fresh()));
     document.put("exempted", findings(outcome.exempted()));
+    document.put("owed", outcome.owed().stream().map(owed -> Map.<String, Object>of("id", owed.id(), "rule",
+        owed.ruleId(), "form", owed.form(), "missing", owed.missing())).toList());
     document.put("notes", outcome.notes());
     document.put("problems", outcome.problems());
     try {

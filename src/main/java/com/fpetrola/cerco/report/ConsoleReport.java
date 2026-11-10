@@ -1,5 +1,6 @@
 package com.fpetrola.cerco.report;
 
+import com.fpetrola.cerco.autopsy.Owed;
 import com.fpetrola.cerco.engine.Outcome;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.rules.Rule;
@@ -27,6 +28,9 @@ public final class ConsoleReport {
     Map<String, List<Finding>> byRule = outcome.fresh().stream()
         .collect(Collectors.groupingBy(Finding::rule, TreeMap::new, Collectors.toList()));
     byRule.forEach((rule, findings) -> out.append(section(rule, findings)));
+    if (!outcome.owed().isEmpty()) {
+      out.append(autopsies(outcome.owed()));
+    }
     if (!outcome.problems().isEmpty()) {
       out.append("problems:\n");
       outcome.problems().forEach(problem -> out.append("  - ").append(problem).append('\n'));
@@ -38,7 +42,7 @@ public final class ConsoleReport {
     if (!outcome.fresh().isEmpty()) {
       out.append("Exemptions are a human's decision, signed with `mvn cerco:approve` at a terminal; .cerco/ is not "
           + "yours to edit, and the baseline only shrinks. Fix the code.\n");
-    } else if (!outcome.problems().isEmpty()) {
+    } else if (!outcome.problems().isEmpty() && outcome.owed().isEmpty()) {
       out.append("No new finding: what remains is a human's to settle (`mvn cerco:approve` at a terminal, or editing "
           + ".cerco/exemptions.yaml). Not yours; tell them and carry on.\n");
     }
@@ -49,7 +53,25 @@ public final class ConsoleReport {
     String verdict = outcome.green() ? "cerco GREEN" : "cerco RED";
     return verdict + ": " + outcome.fresh().size() + " new finding(s) in " + outcome.label() + " (" + outcome.parsed()
         + " files, " + outcome.frozen() + " frozen, " + outcome.solved() + " solved, " + outcome.exempted().size()
-        + " exempted, " + outcome.problems().size() + " problem(s), " + outcome.millis() + " ms)";
+        + " exempted, " + outcome.owed().size() + " autopsy(ies) owed, " + outcome.problems().size() + " problem(s), "
+        + outcome.millis() + " ms)";
+  }
+
+  /**
+   * What a fix still owes. Said every run until the forms are done, because the moment to look at why the code had
+   * that shape is right after changing it, while the surroundings are still in mind.
+   */
+  private String autopsies(List<Owed> owed) {
+    StringBuilder out = new StringBuilder("\n[autopsy] ").append(owed.size()).append(" owed\n")
+        .append("  Findings went away: the symptom is gone, the cause is not understood yet. Fill each form below: the\n")
+        .append("  model that was missing, the places around the fix you read, where else the same cause shows, the\n")
+        .append("  principle, and the rule that would catch it next time. cerco files a complete form in autopsies/ by\n")
+        .append("  itself; until then it stays red, and .cerco/autopsies keeps the debt even if the form is deleted.\n");
+    for (Owed one : owed) {
+      out.append("  ").append(one.form()).append("  (").append(one.ruleId()).append(")\n");
+      one.missing().forEach(missing -> out.append("    - ").append(missing).append('\n'));
+    }
+    return out.toString();
   }
 
   private String section(String ruleId, List<Finding> findings) {

@@ -117,6 +117,9 @@ regla que queda vacío se elimina.
 **Techos**: un método congelado con 120 líneas tiene techo propio de 120. Si baja a 90, el techo pasa a 90; si baja a
 40 o menos, la entrada desaparece; si sube a 121, es rojo (`CeilingReconciler`). El techo sólo baja.
 
+**Autopsias** (0.3.0): lo que sale de la baseline en una corrida deja anotada una autopsia por regla
+(`autopsy/Autopsies`). Ver 3.10.
+
 ### 3.4 Alcance (Scope)
 
 `engine/Scope(label, files, full)`:
@@ -190,6 +193,30 @@ que cae en los globs de `generated` (`**/target/**`, `**/generated-sources/**`, 
 algún tipo anotado con una anotación cuyo nombre termina en `Generated` (`engine/Generated`).
 
 ---
+
+### 3.10 Autopsia
+
+La idea de Fernando: los hallazgos son síntomas de modelo faltante, y arreglarlos para cumplir la letra de la regla
+deja la causa en su lugar. Cada arreglo tiene que terminar en un análisis de la causa, y ese análisis es la fuente de
+las reglas nuevas. Para que no dependa de la buena voluntad del agente, es determinista:
+
+- `Engine.reconcile` calcula qué claves salieron de la baseline en esta corrida (`Solved`): las que bajaron de cuenta,
+  las de archivos borrados en una corrida completa, y las de techos que desaparecieron. No cuentan las liberadas por
+  una excepción firmada ni los techos que sólo bajan.
+- `Ledger` escribe la deuda en `.cerco/autopsies/<fecha>-<regla>.owed` (la regla y las claves). Está bajo `.cerco/`,
+  así que el `deny` del editor y el `guard` del shell ya la protegen. Una regla con autopsia abierta suma las claves
+  nuevas a esa misma.
+- `Catalog` escribe el formulario en `autopsies/pending/<id>.md` desde `Template`, con la sección `Symptom` regenerada
+  por cerco en cada corrida. Si falta, lo vuelve a escribir.
+- `FormCheck` valida: causa de 150 caracteres que no repita una archivada, dos lugares `ruta:línea` que existan
+  (`References`) con uno fuera de lo arreglado, otros lugares o `none`, principio, y regla candidata (`rule:`,
+  `none:` o `same-as:` de una archivada). Lo que está dentro de comentarios HTML es la guía de la plantilla y no cuenta.
+- Completo, se mueve a `autopsies/` y la deuda se borra. Incompleto, es un `Owed` en el `Outcome`: rojo, y a
+  diferencia del rojo humano el hook no lo deja pasar, porque es tarea del agente.
+- `Backlog` y el goal `autopsies` ordenan las reglas propuestas por cuántas autopsias las piden.
+
+Riesgo conocido: si cada arreglo cuesta una autopsia, el agente puede preferir no arreglar deuda vieja. Lo mitigan
+una autopsia por regla (no por hallazgo) y `same-as:`. La configuración `autopsies` (true) la apaga, con firma.
 
 ## 4. Integración con Claude Code
 
@@ -443,8 +470,9 @@ configurar `<generated>` y firmar.
    legítimos no sean rojo.
 8. **Goal `status`**: la baseline como tabla por módulo y regla, con tendencia en el tiempo.
 9. **`approve` desde un IDE** sin abrir la puerta al agente.
-10. **`quick` que muestre lo resuelto**: el titular ya trae el conteo `solved`; falta decir *qué* se resolvió, para
-    que el agente vea que achicó la deuda.
+10. ~~**`quick` que muestre lo resuelto**~~: hecho en 0.3.0 por las autopsias, que listan qué se resolvió.
+11. **Exigir arreglos de la baseline al tocar un archivo** que tiene hallazgos congelados, para contrarrestar el
+    incentivo de no arreglar deuda vieja que crean las autopsias.
 
 ---
 

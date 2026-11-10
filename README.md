@@ -15,7 +15,7 @@ Todo el código es Java. No hay scripts.
 <plugin>
   <groupId>com.fpetrola</groupId>
   <artifactId>cerco-maven-plugin</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <executions>
     <execution>
       <goals>
@@ -151,6 +151,37 @@ adentro) o para pasar `-Dcerco.skip`; y si la línea de base aparece borrada per
 se niega a recongelar y pide restaurarla. Además, cada reporte en rojo le dice al agente, con todas las letras, que
 las excepciones no son suyas.
 
+## Las autopsias
+
+Arreglar un hallazgo hace desaparecer el síntoma, no explica la causa. Casi siempre la causa es un pedazo de modelo
+que faltaba, y ese mismo hueco aparece en otros lugares como olores que parecen no tener relación. Por eso, cada vez
+que una corrida saca entradas de la línea de base, cerco deja anotada una **autopsia** pendiente por regla:
+
+- la deuda queda en `.cerco/autopsies/<id>.owed`, donde el agente no puede escribir;
+- el formulario a completar queda en `autopsies/pending/<id>.md`, con el síntoma ya escrito: qué hallazgos se fueron.
+
+Mientras haya una autopsia pendiente o incompleta, cerco está en rojo: lo dice el `quick` después de cada edición, lo
+bloquea el hook `Stop` y falla `verify`. Si se borra el formulario, vuelve a aparecer. Un segundo arreglo de la misma
+regla se suma a la autopsia abierta en vez de abrir otra.
+
+cerco no puede juzgar el análisis, pero sí obligar a que exista y a que mire alrededor del arreglo:
+
+| sección | qué exige |
+|---|---|
+| `Cause` | qué faltaba en el modelo, en al menos 150 caracteres, sin copiar la causa de otra autopsia archivada |
+| `Context` | al menos dos lugares leídos (`ruta:línea`, relativos a la raíz, que existan), uno fuera de lo arreglado |
+| `Same cause elsewhere` | otros lugares (`ruta:línea`) con la misma causa, o `none` y cómo se buscó |
+| `Principle` | el principio de diseño en juego |
+| `Candidate rule` | `rule: <id>` con qué detectaría y un ejemplo `ruta:línea`; o `none:` y por qué ninguna regla podría; o `same-as: <id>` de una autopsia archivada |
+
+Cuando el formulario está completo, la siguiente corrida lo mueve a `autopsies/` y salda la deuda. El catálogo va a
+git: es el registro de por qué el código tenía la forma que tenía. `mvn com.fpetrola:cerco-maven-plugin:autopsies`
+lista las reglas candidatas ordenadas por cuántas autopsias las piden (`same-as` cuenta para la regla de la autopsia
+que nombra): una regla que vuelve desde arreglos que no tienen nada que ver es la próxima regla de cerco.
+
+No dispara autopsia el techo de tamaño que baja sin salir del límite ni lo que libera una excepción firmada. Un
+archivo borrado sí: el código muerto también merece saber por qué existía.
+
 ## Goals
 
 | goal | corre | qué hace |
@@ -161,6 +192,7 @@ las excepciones no son suyas.
 | `approve` | un humano, en terminal | firma las excepciones y la configuración |
 | `install-hooks` | una vez por proyecto | escribe los hooks y las reglas `deny` en `.claude/settings.json` |
 | `explain` | a mano | las reglas, con su principio, su remedio y lo congelado |
+| `autopsies` | a mano | las reglas que proponen las autopsias archivadas, las más pedidas primero |
 
 Los reportes también quedan en `target/cerco/<alcance>.json`.
 
@@ -168,7 +200,8 @@ Los reportes también quedan en `target/cerco/<alcance>.json`.
 
 No hace falta. Si un proyecto necesita apartarse de los valores por defecto, va en el `<configuration>` del plugin y
 requiere firma (`approve`): `fileCeiling` (400), `methodCeiling` (40), `utilitySuffixes`, `factoryPrefixes`,
-`generated` (globs de código generado), `maxExemptions` (10), `includeTests` (false), `disabledRules`.
+`generated` (globs de código generado), `maxExemptions` (10), `includeTests` (false), `disabledRules`,
+`autopsies` (true).
 
 ## Medido sobre zx-lift (38 módulos, 1577 archivos analizados, 52 MB de fuentes en el repo)
 

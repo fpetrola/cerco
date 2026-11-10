@@ -1,5 +1,8 @@
 package com.fpetrola.cerco.engine;
 
+import com.fpetrola.cerco.autopsy.Autopsies;
+import com.fpetrola.cerco.autopsy.Owed;
+import com.fpetrola.cerco.autopsy.Solved;
 import com.fpetrola.cerco.baseline.BaselineStore;
 import com.fpetrola.cerco.baseline.CeilingReconciler;
 import com.fpetrola.cerco.baseline.Key;
@@ -40,6 +43,7 @@ public final class Engine {
   private final Path approvalFile;
   private final String projectVersion;
   private final Clock clock;
+  private final Autopsies autopsies;
   private final Feed feed = new Feed(new Parser(), new Generated());
   private final Reconciler reconciler = new Reconciler();
   private final CeilingReconciler ceilings = new CeilingReconciler();
@@ -53,6 +57,7 @@ public final class Engine {
     this.approvalFile = root.resolve(".cerco").resolve("approved");
     this.projectVersion = projectVersion;
     this.clock = clock;
+    this.autopsies = new Autopsies(root);
   }
 
   public BaselineStore store() {
@@ -83,12 +88,14 @@ public final class Engine {
     Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
     Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();
+    List<Solved> solved = new ArrayList<>();
     for (Rule rule : active) {
       Kept kept = new Kept(inScope, scope.full(), signed, rule.id());
       rule.asBudget().ifPresentOrElse(
-          budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, kept)),
-          () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept)));
+          budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, kept, solved)),
+          () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept, solved)));
     }
+    List<Owed> owed = owed(solved);
     List<String> problems = new ArrayList<>(signed.problems());
     Applied applied = exempt(signed, tally.fresh(), scope.full());
     problems.addAll(applied.problems());
@@ -98,7 +105,7 @@ public final class Engine {
     }
     long millis = (System.nanoTime() - start) / 1_000_000;
     return new Outcome(scope.label(), parsed, applied.remaining(), applied.exempted(), tally.solved(),
-        tally.frozen(), notes, problems, millis);
+        tally.frozen(), owed, notes, problems, millis);
   }
 
   /** Freezes the project as it stands: every current finding and every oversize measure become the baseline. */
@@ -139,7 +146,17 @@ public final class Engine {
     return store.exists() && !store.frozenRules().contains(rule.id());
   }
 
-  private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope, Kept kept) {
+  /** What was fixed in this run owes an autopsy; every one already owed is checked, and filed when complete. */
+  private List<Owed> owed(List<Solved> solved) {
+    if (!settings.autopsies() || !store.exists()) {
+      return List.of();
+    }
+    autopsies.owe(solved, LocalDate.now(clock));
+    return autopsies.settle();
+  }
+
+  private Reconciliation reconcile(Rule rule, List<Finding> findings, Set<String> inScope, Kept kept,
+      List<Solved> solved) {
     if (adopting(rule)) {
       freeze(rule, findings);
       store.extendFrozen(List.of(rule.id()));
@@ -150,12 +167,14 @@ public final class Engine {
         .plusSolved(stored.where(kept::gone).total());
     if (store.exists() && !reconciliation.updated().sameAs(stored)) {
       store.write(rule.id(), reconciliation.updated());
+      solved.add(new Solved(rule.id(), stored.keys().stream()
+          .filter(key -> kept.gone(key) || baseline.count(key) > reconciliation.updated().count(key)).toList()));
     }
     return reconciliation;
   }
 
   private CeilingReconciler.Outcome reconcile(BudgetRule rule, List<Measure> measures, Set<String> inScope,
-      Kept kept) {
+      Kept kept, List<Solved> solved) {
     if (adopting(rule)) {
       freeze(rule, measures);
       store.extendFrozen(List.of(rule.id()));
@@ -167,6 +186,9 @@ public final class Engine {
     CeilingReconciler.Outcome outcome = ceilings.reconcile(rule, baseline, inScope, measures).plusSolved(gone);
     if (store.exists() && !outcome.updated().equals(stored)) {
       store.writeCeilings(rule.id(), outcome.updated());
+      solved.add(new Solved(rule.id(), stored.keySet().stream()
+          .filter(key -> kept.gone(key) || (baseline.containsKey(key) && !outcome.updated().containsKey(key)))
+          .toList()));
     }
     return outcome;
   }

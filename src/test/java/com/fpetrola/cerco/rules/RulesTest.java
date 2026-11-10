@@ -128,7 +128,7 @@ class RulesTest {
   @Test
   void theCatalogueDropsDisabledRules() {
     Settings settings = new Settings(400, 40, List.of("Util"), List.of("of"), List.of(), 10, false,
-        List.of("no-switch"));
+        List.of("no-switch"), true);
     assertTrue(new Rules(settings).ids().contains("no-instanceof"));
     assertTrue(!new Rules(settings).ids().contains("no-switch"));
     assertEquals(21, new Rules(Settings.DEFAULTS).all().size());

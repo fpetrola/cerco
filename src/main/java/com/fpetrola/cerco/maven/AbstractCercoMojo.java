@@ -68,6 +68,13 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   @Parameter
   private List<String> disabledRules;
 
+  /**
+   * Whether a fixed finding owes an autopsy (default true): a form in autopsies/pending saying what model was missing
+   * and which rule would catch it, without which the gate stays red. Switching it off needs a signature (approve).
+   */
+  @Parameter
+  private Boolean autopsies;
+
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
     if (skip) {
@@ -89,7 +96,8 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
         listOr(generated, defaults.generatedGlobs()),
         Optional.ofNullable(maxExemptions).orElse(defaults.maxExemptions()),
         Optional.ofNullable(includeTests).orElse(defaults.includeTests()),
-        listOr(disabledRules, defaults.disabledRules()));
+        listOr(disabledRules, defaults.disabledRules()),
+        Optional.ofNullable(autopsies).orElse(defaults.autopsies()));
   }
 
   private List<String> listOr(List<String> configured, List<String> fallback) {
@@ -141,14 +149,15 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
       getLog().info(text.strip());
       return;
     }
-    if (hook && outcome.fresh().isEmpty()) {
+    if (hook && outcome.fresh().isEmpty() && outcome.owed().isEmpty()) {
       getLog().warn(text.strip());
       getLog().warn("cerco: nothing here is the agent's to fix, so the hook lets this pass; the build will not "
           + "until a human signs with `mvn cerco:approve`");
       return;
     }
     getLog().error(text);
-    throw new MojoFailureException("cerco: " + outcome.fresh().size() + " new finding(s) and "
-        + outcome.problems().size() + " problem(s) in " + outcome.label() + "; the report is above");
+    throw new MojoFailureException("cerco: " + outcome.fresh().size() + " new finding(s), "
+        + outcome.owed().size() + " autopsy(ies) owed and " + outcome.problems().size() + " problem(s) in "
+        + outcome.label() + "; the report is above");
   }
 }
