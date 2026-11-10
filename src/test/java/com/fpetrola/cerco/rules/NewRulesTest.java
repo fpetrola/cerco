@@ -235,4 +235,25 @@ class NewRulesTest {
     assertTrue(rules.known().contains("absence-as-state"));
     assertTrue(!rules.ids().contains("absence-as-state"));
   }
+
+  @Test
+  void aFamilyOfTheProjectTestedFromTwoMembersOutsideIt() {
+    List<Finding> found = new HierarchyAskedFromOutside().inspect(List.of(
+        snippets.parse("src/main/java/p/Ref.java", "package p; interface Ref { void accept(RefVisitor v); }"
+            + " class Reg implements Ref {} class Mem implements Ref {} class Ind extends Mem {}"
+            + " class Own implements Ref { boolean same(Object o) { return o instanceof Reg; }"
+            + " public boolean equals(Object o) { return o instanceof Own; } }"),
+        snippets.parse("src/main/java/p/Use.java", "package p; class Use {"
+            + " int size(Ref r) { return r instanceof Reg ? 1 : 2; }"
+            + " Mem memory(Ref r) { return (Mem) r; }"
+            + " boolean text(Object o) { return o instanceof String; } }"),
+        snippets.parse("src/main/java/p/Two.java", "package p; class Two { boolean pair(Ref r) { return r instanceof"
+            + " Ind; } boolean alone(Object o) { return o instanceof Solo; } } class Solo {}")));
+    assertEquals(List.of("src/main/java/p/Two.java|p.Two.pair(Ref)|Ref|instanceof Ind",
+        "src/main/java/p/Use.java|p.Use.memory(Ref)|Ref|cast Mem",
+        "src/main/java/p/Use.java|p.Use.size(Ref)|Ref|instanceof Reg"),
+        found.stream().map(Finding::key).sorted().toList());
+    assertTrue(found.get(0).detail().contains("Ref (4 subtypes) is tested in 3 members of 2 types outside it; "
+        + "the family already accepts RefVisitor"), found.get(0).detail());
+  }
 }

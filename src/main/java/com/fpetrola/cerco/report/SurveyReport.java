@@ -9,11 +9,13 @@ import java.util.List;
  * thousand lines, so modules of known quality can be compared, then a sample of the findings to judge by hand.
  */
 public final class SurveyReport {
-  private static final int SAMPLE = 10;
   private final List<String> rules;
+  private final int sample;
 
-  public SurveyReport(List<String> rules) {
+  /** The rules to report, and how many findings per rule and module to show for judging by hand. */
+  public SurveyReport(List<String> rules, int sample) {
     this.rules = List.copyOf(rules);
+    this.sample = sample;
   }
 
   public String render(List<Surveyed> modules) {
@@ -28,9 +30,9 @@ public final class SurveyReport {
       out.append('\n');
     }
     for (String rule : rules) {
-      out.append("\n[").append(rule).append("] up to ").append(SAMPLE).append(" per module, to judge by hand\n");
+      out.append("\n[").append(rule).append("] up to ").append(sample).append(" per module, to judge by hand\n");
       for (Surveyed module : modules) {
-        module.of(rule).stream().limit(SAMPLE).forEach(finding -> out.append(line(module, finding)));
+        module.of(rule).stream().limit(sample).forEach(finding -> out.append(line(module, finding)));
       }
     }
     return out.toString();

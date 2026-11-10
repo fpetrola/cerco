@@ -22,6 +22,10 @@ public final class SurveyMojo extends AbstractCercoMojo {
   @Parameter(property = "cerco.rules")
   private List<String> rules;
 
+  /** How many findings per rule and module the survey shows, to be judged by hand. */
+  @Parameter(property = "cerco.sample", defaultValue = "10")
+  private int sample;
+
   @Override
   protected void run() throws MojoFailureException {
     Rules catalogue = new Rules(settings());
@@ -36,6 +40,6 @@ public final class SurveyMojo extends AbstractCercoMojo {
         .map(module -> survey.take(root().relativize(module.getBasedir().toPath().toAbsolutePath()).toString(),
             sourcesOf(module)))
         .filter(module -> module.lines() > 0).toList();
-    System.out.print(new SurveyReport(chosen.stream().map(Rule::id).toList()).render(modules));
+    System.out.print(new SurveyReport(chosen.stream().map(Rule::id).toList(), sample).render(modules));
   }
 }

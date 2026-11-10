@@ -32,7 +32,7 @@ public final class Rules {
    * catalogue only after their record (doc/reglas) shows they find real cases beyond the one that gave them birth.
    */
   public List<Rule> candidates() {
-    return List.of(new AbsenceAsState());
+    return List.of(new AbsenceAsState(), new HierarchyAskedFromOutside());
   }
 
   private List<Rule> every() {
