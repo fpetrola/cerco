@@ -256,4 +256,32 @@ class NewRulesTest {
     assertTrue(found.get(0).detail().contains("Ref (4 subtypes) is tested in 3 members of 2 types outside it; "
         + "the family already accepts RefVisitor"), found.get(0).detail());
   }
+
+  @Test
+  void threeOfTheProjectsSettersOnOneObjectButNotLibrarySetters() {
+    List<Finding> found = new SetFromOutside().inspect(List.of(
+        snippets.parse("src/main/java/p/Z.java", "package p; class Z { void setA(int a) {} void setB(int b) {}"
+            + " void setC(int c) {} void setD(int d) {} }"),
+        snippets.parse("src/main/java/p/L.java", "package p; class L {"
+            + " void load(Z z, State s) { z.setA(s.getA()); z.setB(s.getB()); z.setC(s.getC()); z.setD(1); }"
+            + " void two(Z z) { z.setA(1); z.setB(2); }"
+            + " void swing(javax.swing.JButton b) { b.setText(\"x\"); b.setEnabled(true); b.setVisible(true); }"
+            + " void self() { setA(1); setB(2); setC(3); } void setA(int a) {} void setB(int b) {} void setC(int c) {} }")));
+    assertEquals(1, found.size(), found.toString());
+    assertEquals("p.L.load(Z, State) sets 4 properties of `z`: setA, setB, setC, setD; 3 of the values are getters of "
+        + "s, a copy property by property", found.get(0).detail());
+  }
+
+  @Test
+  void aFieldOfAnotherObjectReachedThroughFromTwoMembers() {
+    List<Finding> found = new ReachedThrough().inspect(List.of(
+        snippets.parse("src/main/java/p/Speccy.java", "package p; class Speccy { Loop loop; Machine machine; }"),
+        snippets.parse("src/main/java/p/Core.java", "package p; class Core { Speccy speccy;"
+            + " void pause() { speccy.loop.setPaused(true); } void resume() { speccy.loop.setPaused(false); }"
+            + " void reset() { speccy.machine.reset(); } void out() { System.out.println(); } }"),
+        snippets.parse("src/main/java/p/Pair.java", "package p; class Pair { Loop loop;"
+            + " boolean same(Pair other) { return other.loop.equals(loop); } void again(Pair o) { o.loop.run(); } }")));
+    assertEquals(List.of("src/main/java/p/Core.java|p.Core.pause()|speccy.loop",
+        "src/main/java/p/Core.java|p.Core.resume()|speccy.loop"), found.stream().map(Finding::key).sorted().toList());
+  }
 }

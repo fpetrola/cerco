@@ -2,10 +2,13 @@ package com.fpetrola.cerco.maven;
 
 import com.fpetrola.cerco.engine.Survey;
 import com.fpetrola.cerco.engine.Survey.Surveyed;
+import com.fpetrola.cerco.model.SourceFile;
 import com.fpetrola.cerco.report.SurveyReport;
 import com.fpetrola.cerco.rules.Rule;
 import com.fpetrola.cerco.rules.Rules;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -35,11 +38,10 @@ public final class SurveyMojo extends AbstractCercoMojo {
     if (chosen.isEmpty()) {
       throw new MojoFailureException("cerco: no rule to survey; known are " + catalogue.known());
     }
-    Survey survey = new Survey(chosen);
-    List<Surveyed> modules = session.getProjects().stream()
-        .map(module -> survey.take(root().relativize(module.getBasedir().toPath().toAbsolutePath()).toString(),
-            sourcesOf(module)))
-        .filter(module -> module.lines() > 0).toList();
+    Map<String, List<SourceFile>> reactor = new LinkedHashMap<>();
+    session.getProjects().forEach(module -> reactor.put(
+        root().relativize(module.getBasedir().toPath().toAbsolutePath()).toString(), sourcesOf(module)));
+    List<Surveyed> modules = new Survey(chosen).take(reactor).stream().filter(module -> module.lines() > 0).toList();
     System.out.print(new SurveyReport(chosen.stream().map(Rule::id).toList(), sample).render(modules));
   }
 }

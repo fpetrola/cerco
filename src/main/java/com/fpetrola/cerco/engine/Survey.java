@@ -4,14 +4,16 @@ import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.SourceFile;
 import com.fpetrola.cerco.rules.Inspection;
 import com.fpetrola.cerco.rules.Rule;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Rules run over a module with no baseline and no verdict, only to see what they find: how a candidate rule is
- * measured before it gates anything. Budget rules are judged against their default ceilings.
+ * Rules run over the reactor with no baseline and no verdict, only to see what they find, split by module: how a
+ * candidate rule is measured before it gates anything. One pass over every file, so a project-wide rule sees the
+ * whole project as it does in an audit. Budget rules are judged against their default ceilings.
  */
 public final class Survey {
   private final Feed feed = new Feed(new Parser(), new Generated());
@@ -21,17 +23,27 @@ public final class Survey {
     this.rules = List.copyOf(rules);
   }
 
-  public Surveyed take(String module, List<SourceFile> files) {
+  /** Each module by name with its files, in the order to report them. */
+  public List<Surveyed> take(Map<String, List<SourceFile>> modules) {
+    Map<String, String> moduleOf = new HashMap<>();
+    List<SourceFile> all = new ArrayList<>();
+    modules.forEach((module, files) -> files.forEach(file -> {
+      moduleOf.put(file.name(), module);
+      all.add(file);
+    }));
     Map<String, Inspection> inspections = new LinkedHashMap<>();
     rules.forEach(rule -> inspections.put(rule.id(), rule.inspection()));
-    AtomicInteger lines = new AtomicInteger();
-    feed.each(files, file -> {
-      lines.addAndGet(file.lines());
+    Map<String, Integer> lines = new HashMap<>();
+    feed.each(all, file -> {
+      lines.merge(moduleOf.get(file.name()), file.lines(), Integer::sum);
       inspections.values().forEach(inspection -> inspection.visit(file));
     });
-    Map<String, List<Finding>> findings = new LinkedHashMap<>();
-    inspections.forEach((id, inspection) -> findings.put(id, inspection.findings()));
-    return new Surveyed(module, lines.get(), findings);
+    Map<String, Map<String, List<Finding>>> found = new HashMap<>();
+    inspections.forEach((id, inspection) -> inspection.findings().forEach(finding ->
+        found.computeIfAbsent(moduleOf.getOrDefault(finding.file(), ""), k -> new HashMap<>())
+            .computeIfAbsent(id, k -> new ArrayList<>()).add(finding)));
+    return modules.keySet().stream().map(module -> new Surveyed(module, lines.getOrDefault(module, 0),
+        found.getOrDefault(module, Map.of()))).toList();
   }
 
   /** What the rules found in one module, and how long the module is. */
