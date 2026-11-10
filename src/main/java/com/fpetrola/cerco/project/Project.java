@@ -103,10 +103,15 @@ public final class Project {
         .map(Declared::top).collect(Collectors.toCollection(TreeSet::new));
   }
 
-  /** The enum of the project that has all those constants, the first by name when several do. */
-  public Optional<Declared> enumWith(Set<String> constants) {
+  /** The enums of the project that have all those constants, by name. */
+  public List<Declared> enumsWith(Set<String> constants) {
     return types.values().stream().filter(Declared::isEnum).filter(type -> type.constants().containsAll(constants))
-        .min(Comparator.comparing(Declared::name));
+        .sorted(Comparator.comparing(Declared::name)).toList();
+  }
+
+  /** Whether some type of the project has a field by that name. */
+  public boolean declaresField(String name) {
+    return everyone.stream().anyMatch(type -> type.fields().containsKey(name));
   }
 
   /** The topmost project types above a type; the type itself when nothing of the project is above it. */

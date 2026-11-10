@@ -1,6 +1,5 @@
 package com.fpetrola.cerco.rules;
 
-import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.SwitchExpr;
@@ -34,19 +33,21 @@ public final class SwitchDispatch extends DecisionRule {
   }
 
   @Override
-  protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
-    List<Finding> out = new ArrayList<>();
+  protected List<Decision> decisions(ParsedFile file, CompilationUnit unit, Decisions reader) {
+    List<Decision> out = new ArrayList<>();
     for (SwitchStmt statement : unit.findAll(SwitchStmt.class)) {
       String where = enclosing.of(statement);
       String selector = clipped(statement.getSelector().toString());
-      out.add(finding(file, statement, where + "|switch(" + selector + ")",
-          "switch over `" + selector + "` with " + statement.getEntries().size() + " entries in " + where));
+      out.add(reader.ofSwitch(finding(file, statement, where + "|switch(" + selector + ")", "switch over `"
+          + selector + "` with " + statement.getEntries().size() + " entries in " + where), statement, statement,
+          false));
     }
     for (SwitchExpr expression : unit.findAll(SwitchExpr.class)) {
       String where = enclosing.of(expression);
       String selector = clipped(expression.getSelector().toString());
-      out.add(finding(file, expression, where + "|switch(" + selector + ")",
-          "switch expression over `" + selector + "` with " + expression.getEntries().size() + " entries in " + where));
+      out.add(reader.ofSwitch(finding(file, expression, where + "|switch(" + selector + ")", "switch expression over `"
+          + selector + "` with " + expression.getEntries().size() + " entries in " + where), expression, expression,
+          true));
     }
     return out;
   }

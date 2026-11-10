@@ -1,12 +1,9 @@
 package com.fpetrola.cerco.rules;
 
-import com.fpetrola.cerco.model.Finding;
-import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
-import java.util.ArrayList;
 import java.util.List;
 
 /** A switch written as if / else if / else: the cases are still enumerated at the caller. */
@@ -36,20 +33,12 @@ public final class ConditionalChain extends DecisionRule {
   }
 
   @Override
-  public Diagnosis diagnosis() {
-    List<Hypothesis> hypotheses = new ArrayList<>(super.diagnosis().hypotheses());
-    hypotheses.add(new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT, "the arms test whether something is there",
-        "a null object, or a mandatory collaborator"));
-    return new Diagnosis(hypotheses, super.diagnosis().notAFix());
-  }
-
-  @Override
-  protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
+  protected List<Decision> decisions(ParsedFile file, CompilationUnit unit, Decisions reader) {
     return unit.findAll(IfStmt.class).stream()
         .filter(this::isChainHead)
         .filter(head -> branches(head) >= BRANCHES)
-        .map(head -> finding(file, head, enclosing.of(head) + "|if-chain",
-            branches(head) + " branches in " + enclosing.of(head)))
+        .map(head -> reader.ofChain(finding(file, head, enclosing.of(head) + "|if-chain",
+            branches(head) + " branches in " + enclosing.of(head)), head))
         .toList();
   }
 

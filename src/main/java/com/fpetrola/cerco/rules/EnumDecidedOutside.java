@@ -7,14 +7,18 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.SwitchExpr;
 import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.stmt.SwitchStmt;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,24 +51,33 @@ public final class EnumDecidedOutside extends DecisionRule {
     return "give the enum the behaviour (a method, or a field per constant) and call it where the switches were";
   }
 
+  /** One place that decides, and how to read it once the finding of its group is written. */
+  private record Place(Node node, Function<Finding, Decision> read) {
+  }
+
   @Override
-  protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
-    Map<String, List<Node>> places = new LinkedHashMap<>();
-    unit.findAll(SwitchEntry.class).stream().map(Node::getParentNode).flatMap(Optional::stream).distinct()
-        .forEach(decision -> cases(decision).ifPresent(names -> keep(places, "case " + names, decision)));
+  protected List<Decision> decisions(ParsedFile file, CompilationUnit unit, Decisions reader) {
+    List<Place> switches = new ArrayList<>();
+    unit.findAll(SwitchStmt.class).forEach(decision -> switches.add(new Place(decision,
+        finding -> reader.ofSwitch(finding, decision, decision, false))));
+    unit.findAll(SwitchExpr.class).forEach(decision -> switches.add(new Place(decision,
+        finding -> reader.ofSwitch(finding, decision, decision, true))));
+    Map<String, List<Place>> places = new LinkedHashMap<>();
+    switches.stream().sorted(Comparator.comparing(Place::node, Node.NODE_BY_BEGIN_POSITION))
+        .forEach(place -> cases(place.node()).ifPresent(names -> keep(places, "case " + names, place)));
     List<BinaryExpr> ors = unit.findAll(BinaryExpr.class).stream().filter(this::isOr).toList();
     Set<Expression> inner = ors.stream().flatMap(or -> Stream.of(or.getLeft(), or.getRight())).map(this::bare)
         .filter(this::isOr).collect(Collectors.toSet());
-    ors.stream().filter(or -> !inner.contains(or))
-        .forEach(test -> constants(test).ifPresent(names -> keep(places, names, test)));
+    ors.stream().filter(or -> !inner.contains(or)).forEach(test -> constants(test).ifPresent(names ->
+        keep(places, names, new Place(test, finding -> reader.ofTest(finding, test)))));
     return places.entrySet().stream().filter(entry -> entry.getValue().size() >= 2).map(entry -> {
-      Node first = entry.getValue().get(0);
-      return finding(file, first, entry.getKey(), entry.getValue().size() + " places decide over " + entry.getKey()
-          + ", the first in " + enclosing.of(first));
+      Place first = entry.getValue().get(0);
+      return first.read().apply(finding(file, first.node(), entry.getKey(), entry.getValue().size()
+          + " places decide over " + entry.getKey() + ", the first in " + enclosing.of(first.node())));
     }).toList();
   }
 
-  private void keep(Map<String, List<Node>> places, String key, Node place) {
+  private void keep(Map<String, List<Place>> places, String key, Place place) {
     places.computeIfAbsent(key, k -> new ArrayList<>()).add(place);
   }
 

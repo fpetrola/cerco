@@ -38,6 +38,12 @@ public final class Names {
     return expression.accept(typed, this);
   }
 
+  /** Whether what an expression names is kept by an object, not by the member at work: a field, its own or not. */
+  public boolean isField(Expression expression) {
+    return expression.isFieldAccessExpr() || expression.toNameExpr()
+        .filter(name -> local(name, name.getNameAsString()).isEmpty()).isPresent();
+  }
+
   /** One declaration of a name: where it starts, the type written, and what it was first given. */
   private record Named(Position begin, Type type, Optional<Expression> given) {
   }

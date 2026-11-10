@@ -13,8 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * What asking a value its type may hide, and at one place which of them: a kind of a family of the project asked
@@ -22,6 +20,7 @@ import java.util.stream.Stream;
  * is, a role, or a type that is not the project's at all.
  */
 final class TypeTestDiagnosis {
+  private final Clues clues = new Clues();
   private final Hypothesis method = new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
       "the tested type is a kind of a family of the project, asked in one place",
       "a method on the common type, implemented by each subtype");
@@ -85,13 +84,8 @@ final class TypeTestDiagnosis {
         return carried().or(() -> Optional.of(foreign.because("`" + tested + "` is not a type of this project")))
             .filter(reading -> project.isWhole());
       }
-      return first(this::self, this::picked, this::lookedUp, this::wider, this::own, this::played, this::narrowed,
+      return clues.first(this::self, this::picked, this::lookedUp, this::wider, this::own, this::played, this::narrowed,
           this::visited, this::elsewhere, this::around).or(() -> Optional.of(method.because(kind())));
-    }
-
-    @SafeVarargs
-    private Optional<Reading> first(Supplier<Optional<Reading>>... clues) {
-      return Stream.of(clues).map(Supplier::get).flatMap(Optional::stream).findFirst();
     }
 
     private Optional<Reading> carried() {
@@ -130,7 +124,7 @@ final class TypeTestDiagnosis {
 
     /** An interface that is not a kind of what the value is: a role some of them play, or that outsiders play. */
     private Optional<Reading> played() {
-      return first(this::acrossFamilies, this::ofOutsiders)
+      return clues.first(this::acrossFamilies, this::ofOutsiders)
           .filter(reading -> project.declared(tested).filter(Declared::isInterface).isPresent());
     }
 

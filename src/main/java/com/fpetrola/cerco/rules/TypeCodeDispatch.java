@@ -46,14 +46,21 @@ public final class TypeCodeDispatch extends DecisionRule {
   }
 
   @Override
-  protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
-    List<Node> suspects = new ArrayList<>();
+  protected List<Decision> decisions(ParsedFile file, CompilationUnit unit, Decisions reader) {
+    List<MethodCallExpr> suspects = new ArrayList<>();
     for (MethodCallExpr call : unit.findAll(MethodCallExpr.class)) {
       if (inspectsClass(call) || comparesTypeCode(call)) {
         suspects.add(call);
       }
     }
-    return suspects.stream().sorted(Node.NODE_BY_BEGIN_POSITION).map(node -> finding(file, node)).toList();
+    return suspects.stream().sorted(Node.NODE_BY_BEGIN_POSITION).map(call -> decision(file, call, reader)).toList();
+  }
+
+  /** A type code is read with the comparison it sits in; a class that is only inspected has nothing to read. */
+  private Decision decision(ParsedFile file, MethodCallExpr call, Decisions reader) {
+    Finding finding = finding(file, call);
+    return enclosing.parentOf(call, Expression.class).filter(comparison -> comparesTypeCode(call))
+        .map(comparison -> reader.ofTest(finding, comparison)).orElseGet(() -> reader.unread(finding, call));
   }
 
   private boolean inspectsClass(MethodCallExpr call) {
