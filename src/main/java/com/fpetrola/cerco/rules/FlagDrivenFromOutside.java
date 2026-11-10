@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
@@ -100,7 +101,7 @@ public final class FlagDrivenFromOutside extends ProjectRule<FlagDrivenFromOutsi
   }
 
   @Override
-  protected List<Finding> conclude(Seen seen) {
+  protected List<Finding> conclude(Seen seen, Project project) {
     return seen.calls().stream()
         .filter(call -> seen.setters().containsKey(call.name()))
         .filter(call -> !seen.setters().get(call.name()).contains(call.file()))

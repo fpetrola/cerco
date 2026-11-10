@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
   }
 
   @Override
-  protected List<Finding> conclude(Graph graph) {
+  protected List<Finding> conclude(Graph graph, Project project) {
     return graph.findings();
   }
 

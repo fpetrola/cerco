@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.EnumConstantDeclaration;
@@ -86,7 +87,7 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
   }
 
   @Override
-  protected List<Finding> conclude(Index<Set<String>, Decision> gathered) {
+  protected List<Finding> conclude(Index<Set<String>, Decision> gathered, Project project) {
     Map<String, List<Decision>> byEnum = new LinkedHashMap<>();
     for (Decision decision : gathered.sites()) {
       gathered.declared().entrySet().stream()

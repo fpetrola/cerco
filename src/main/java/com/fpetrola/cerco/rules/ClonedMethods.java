@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import java.util.ArrayList;
@@ -87,7 +88,7 @@ public final class ClonedMethods extends ProjectRule<Map<String, List<ClonedMeth
   }
 
   @Override
-  protected List<Finding> conclude(Map<String, List<Site>> sites) {
+  protected List<Finding> conclude(Map<String, List<Site>> sites, Project project) {
     List<Finding> findings = new ArrayList<>();
     sites.values().stream().filter(copies -> copies.size() >= TYPES).forEach(copies -> copies.forEach(site ->
         findings.add(new Finding(id(), site.file(), site.line(), site.file() + "|" + site.member(),

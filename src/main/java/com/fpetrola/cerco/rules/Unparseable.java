@@ -2,6 +2,7 @@ package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public final class Unparseable implements Rule {
   }
 
   @Override
-  public Inspection inspection() {
+  public Inspection inspection(Project project) {
     List<Finding> findings = new ArrayList<>();
     return new Inspection() {
       @Override

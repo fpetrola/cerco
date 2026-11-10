@@ -2,6 +2,7 @@ package com.fpetrola.cerco.engine;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.SourceFile;
+import com.fpetrola.cerco.project.Project;
 import com.fpetrola.cerco.rules.Inspection;
 import com.fpetrola.cerco.rules.Rule;
 import java.util.ArrayList;
@@ -31,13 +32,16 @@ public final class Survey {
       moduleOf.put(file.name(), module);
       all.add(file);
     }));
+    Project project = new Project();
     Map<String, Inspection> inspections = new LinkedHashMap<>();
-    rules.forEach(rule -> inspections.put(rule.id(), rule.inspection()));
+    rules.forEach(rule -> inspections.put(rule.id(), rule.inspection(project)));
     Map<String, Integer> lines = new HashMap<>();
     feed.each(all, file -> {
+      project.learn(file);
       lines.merge(moduleOf.get(file.name()), file.lines(), Integer::sum);
       inspections.values().forEach(inspection -> inspection.visit(file));
     });
+    project.markWhole();
     Map<String, Map<String, List<Finding>>> found = new HashMap<>();
     inspections.forEach((id, inspection) -> inspection.findings().forEach(finding ->
         found.computeIfAbsent(moduleOf.getOrDefault(finding.file(), ""), k -> new HashMap<>())

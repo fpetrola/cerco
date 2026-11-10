@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -90,7 +91,7 @@ public final class WalkedFromOutside extends IndexingRule<Set<String>, WalkedFro
   }
 
   @Override
-  protected List<Finding> conclude(Index<Set<String>, Site> gathered) {
+  protected List<Finding> conclude(Index<Set<String>, Site> gathered, Project project) {
     Map<String, List<Site>> byMethod = new LinkedHashMap<>();
     gathered.sites().stream()
         .filter(site -> gathered.declared().containsKey(site.handedOut()))

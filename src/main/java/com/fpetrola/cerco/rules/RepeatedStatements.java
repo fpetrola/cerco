@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.Statement;
@@ -72,7 +73,7 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
   }
 
   @Override
-  protected List<Finding> conclude(Seen seen) {
+  protected List<Finding> conclude(Seen seen, Project project) {
     return List.copyOf(seen.repeats());
   }
 

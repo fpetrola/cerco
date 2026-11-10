@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -91,7 +92,7 @@ public final class ReachedThrough extends ProjectRule<ReachedThrough.Gathered> {
   }
 
   @Override
-  protected List<Finding> conclude(Gathered gathered) {
+  protected List<Finding> conclude(Gathered gathered, Project project) {
     Map<String, List<Site>> byPath = new LinkedHashMap<>();
     gathered.sites().stream().filter(site -> !site.ownField())
         .filter(site -> gathered.vocabulary().declaresField(site.field()))

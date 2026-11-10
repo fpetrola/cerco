@@ -2,6 +2,7 @@ package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
@@ -15,7 +16,7 @@ public abstract class FileRule implements Rule {
   protected final Enclosing enclosing = new Enclosing();
 
   @Override
-  public Inspection inspection() {
+  public Inspection inspection(Project project) {
     List<Finding> findings = new ArrayList<>();
     return new Inspection() {
       @Override

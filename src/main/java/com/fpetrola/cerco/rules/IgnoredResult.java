@@ -2,6 +2,7 @@ package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.LambdaExpr;
@@ -81,7 +82,7 @@ public final class IgnoredResult extends ProjectRule<IgnoredResult.Seen> {
   }
 
   @Override
-  protected List<Finding> conclude(Seen seen) {
+  protected List<Finding> conclude(Seen seen, Project project) {
     return seen.calls().stream()
         .filter(call -> seen.reporting().getOrDefault(call.name() + "/" + call.arity(), false))
         .map(call -> new Finding(id(), call.file(), call.line(), call.file() + "|" + call.member() + "|"

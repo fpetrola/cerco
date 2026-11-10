@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.expr.Expression;
@@ -94,7 +95,7 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
   }
 
   @Override
-  protected List<Finding> conclude(Gathered gathered) {
+  protected List<Finding> conclude(Gathered gathered, Project project) {
     List<Finding> findings = new ArrayList<>();
     for (Site site : gathered.sites()) {
       Set<String> ours = site.setters().stream().filter(gathered.vocabulary()::declaresMethod)

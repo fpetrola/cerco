@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -105,7 +106,7 @@ public final class HierarchyAskedFromOutside
   }
 
   @Override
-  protected List<Finding> conclude(Index<Declared, Test> gathered) {
+  protected List<Finding> conclude(Index<Declared, Test> gathered, Project project) {
     Map<String, Set<String>> children = new HashMap<>();
     gathered.declared().values().forEach(type -> type.supertypes().forEach(parent ->
         children.computeIfAbsent(parent, k -> new TreeSet<>()).add(type.name())));

@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.Measure;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,7 +25,7 @@ public interface BudgetRule extends Rule {
 
   /** Without a baseline, everything over the default ceiling is a finding. */
   @Override
-  default Inspection inspection() {
+  default Inspection inspection(Project project) {
     Measuring measuring = measuring();
     return new Inspection() {
       @Override

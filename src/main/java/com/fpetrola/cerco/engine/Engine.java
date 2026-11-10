@@ -93,6 +93,9 @@ public final class Engine {
     }
     Runs runs = new Runs(active);
     int parsed = feed.each(scope.files(), runs::visit);
+    if (scope.full()) {
+      runs.sawTheWholeProject();
+    }
     Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
     Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();

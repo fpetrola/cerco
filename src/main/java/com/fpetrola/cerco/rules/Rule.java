@@ -2,6 +2,7 @@ package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Project;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,11 +27,18 @@ public interface Rule {
     return true;
   }
 
-  /** A fresh, stateful run of the rule; the engine feeds it every file in name order. */
-  Inspection inspection();
+  /**
+   * A fresh, stateful run of the rule. The engine feeds it every file in name order, each right after the project
+   * learnt it: the project is whole only when the findings are asked for, so that is when a rule may ask it.
+   */
+  Inspection inspection(Project project);
 
+  /** The rule over these files as if they were the whole project. */
   default List<Finding> inspect(List<ParsedFile> files) {
-    Inspection inspection = inspection();
+    Project project = new Project();
+    files.forEach(project::learn);
+    project.markWhole();
+    Inspection inspection = inspection(project);
     files.forEach(inspection::visit);
     return inspection.findings();
   }
