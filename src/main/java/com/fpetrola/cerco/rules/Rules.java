@@ -53,6 +53,7 @@ public final class Rules {
         new NotifiedByCaller(),
         new BorrowedMode(),
         new RefilteredByType(),
+        new KeyHoldsValue(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

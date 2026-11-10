@@ -181,6 +181,17 @@ class NewRulesTest {
   }
 
   @Test
+  void aKeyKeptWithTheValueItWasBuiltFrom() {
+    List<String> found = details(new KeyHoldsValue(), "package p; class A { Desk desk; java.util.Map<Core, M> m;"
+        + " void f(M speccy) { Core core = new Core(speccy); desk.registerMachine(core, speccy); }"
+        + " void g(M speccy, M other) { Core core = new Core(speccy); m.put(core, other); m.put(core, speccy); }"
+        + " void h(M speccy) { Core core = make(speccy); m.put(core, speccy); }"
+        + " void i(M speccy) { Core core = new Core(speccy); m.add(core, speccy); m.put(speccy, core); } }");
+    assertEquals(List.of("`desk.registerMachine(core, speccy)` keeps a key with the value it was built from, in p.A.f(M)",
+        "`m.put(core, speccy)` keeps a key with the value it was built from, in p.A.g(M, M)"), found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"
