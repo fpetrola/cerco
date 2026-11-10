@@ -30,10 +30,12 @@ import java.util.stream.Stream;
 /**
  * A hierarchy of the project whose types are tested with instanceof or casts from two or more members outside it:
  * the same family asked in several places is an operation the family lacks, and with two or more of them, a visitor.
- * One finding per testing site, under the largest family the tested type belongs to. Candidate born from the plan of model smells: in oozx it finds OpcodeReference tested
+ * One finding per testing site, under the largest family the tested type belongs to. Candidate born from the plan of
+ * model smells: in oozx it finds OpcodeReference tested
  * from nine files of the emulator, which already has a visitor for its instructions.
  */
-public final class HierarchyAskedFromOutside extends ProjectRule<HierarchyAskedFromOutside.Gathered> {
+public final class HierarchyAskedFromOutside
+    extends IndexingRule<HierarchyAskedFromOutside.Declared, HierarchyAskedFromOutside.Test> {
   private static final int MEMBERS = 2;
   private static final int SUBTYPES = 2;
 
@@ -45,9 +47,6 @@ public final class HierarchyAskedFromOutside extends ProjectRule<HierarchyAskedF
   public record Test(String file, int line, String member, String enclosingType, String tested, String how) {
   }
 
-  /** What the files said: the types declared and the tests made. */
-  public record Gathered(Map<String, Declared> types, List<Test> tests) {
-  }
 
   @Override
   public String id() {
@@ -86,40 +85,36 @@ public final class HierarchyAskedFromOutside extends ProjectRule<HierarchyAskedF
             "a method every member answers, with the empty answer in the common type"));
   }
 
-  @Override
-  protected Gathered start() {
-    return new Gathered(new HashMap<>(), new ArrayList<>());
-  }
 
   @Override
-  protected void gather(ParsedFile file, CompilationUnit unit, Gathered gathered) {
+  protected void gather(ParsedFile file, CompilationUnit unit, Index<Declared, Test> gathered) {
     for (TypeDeclaration<?> type : unit.findAll(TypeDeclaration.class)) {
-      gathered.types().putIfAbsent(type.getNameAsString(),
+      gathered.declared().putIfAbsent(type.getNameAsString(),
           new Declared(type.getNameAsString(), supertypes(type), visitor(type)));
     }
     unit.findAll(InstanceOfExpr.class).forEach(test -> keep(file, test, test.getType(), "instanceof", gathered));
     unit.findAll(CastExpr.class).forEach(test -> keep(file, test, test.getType(), "cast", gathered));
   }
 
-  private void keep(ParsedFile file, Node test, Type type, String how, Gathered gathered) {
+  private void keep(ParsedFile file, Node test, Type type, String how, Index<Declared, Test> gathered) {
     boolean inEquals = test.findAncestor(MethodDeclaration.class)
         .map(method -> method.getNameAsString().equals("equals")).orElse(false);
-    simpleName(type).filter(tested -> !inEquals).ifPresent(tested -> gathered.tests().add(new Test(file.name(),
+    simpleName(type).filter(tested -> !inEquals).ifPresent(tested -> gathered.sites().add(new Test(file.name(),
         line(test), enclosing.of(test), test.findAncestor(TypeDeclaration.class)
         .map(TypeDeclaration::getNameAsString).orElse(""), tested, how)));
   }
 
   @Override
-  protected List<Finding> conclude(Gathered gathered) {
+  protected List<Finding> conclude(Index<Declared, Test> gathered) {
     Map<String, Set<String>> children = new HashMap<>();
-    gathered.types().values().forEach(type -> type.supertypes().forEach(parent ->
+    gathered.declared().values().forEach(type -> type.supertypes().forEach(parent ->
         children.computeIfAbsent(parent, k -> new TreeSet<>()).add(type.name())));
     Map<String, List<Test>> byFamily = new LinkedHashMap<>();
-    for (Test test : gathered.tests()) {
-      if (!gathered.types().containsKey(test.tested())) {
+    for (Test test : gathered.sites()) {
+      if (!gathered.declared().containsKey(test.tested())) {
         continue;
       }
-      roots(test.tested(), gathered.types()).stream()
+      roots(test.tested(), gathered.declared()).stream()
           .max(Comparator.comparingInt((String root) -> descendants(root, children).size())
               .thenComparing(Comparator.reverseOrder()))
           .filter(root -> descendants(root, children).size() > SUBTYPES)
@@ -130,7 +125,7 @@ public final class HierarchyAskedFromOutside extends ProjectRule<HierarchyAskedF
     byFamily.forEach((root, tests) -> {
       Set<String> members = tests.stream().map(Test::member).collect(Collectors.toCollection(TreeSet::new));
       if (members.size() >= MEMBERS) {
-        String evidence = evidence(root, tests, descendants(root, children), gathered.types());
+        String evidence = evidence(root, tests, descendants(root, children), gathered.declared());
         tests.forEach(test -> findings.add(new Finding(id(), test.file(), test.line(),
             test.file() + "|" + test.member() + "|" + root + "|" + test.how() + " " + test.tested(),
             "`" + test.how() + " " + test.tested() + "` in " + test.member() + "; " + evidence)));

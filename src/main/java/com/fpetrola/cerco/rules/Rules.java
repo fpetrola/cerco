@@ -33,7 +33,7 @@ public final class Rules {
    */
   public List<Rule> candidates() {
     return List.of(new AbsenceAsState(), new HierarchyAskedFromOutside(), new SetFromOutside(), new ReachedThrough(),
-        new WalkedFromOutside());
+        new WalkedFromOutside(), new EnumDecidedAcross());
   }
 
   private List<Rule> every() {

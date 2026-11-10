@@ -301,4 +301,18 @@ class NewRulesTest {
     assertEquals(List.of("src/main/java/p/A.java|p.A.a(Desk)|windows()", "src/main/java/p/A.java|p.A.b(Desk)|windows()",
         "src/main/java/p/B.java|p.B.g(Desk)|windows()"), found.stream().map(Finding::key).sorted().toList());
   }
+
+  @Test
+  void theConstantsOfOneEnumDecidedInTwoMembersOfDifferentFiles() {
+    List<Finding> found = new EnumDecidedAcross().inspect(List.of(
+        snippets.parse("src/main/java/p/Kind.java", "package p; enum Kind { CHOICE, NUMBER, SWITCH }"),
+        snippets.parse("src/main/java/p/Rows.java", "package p; class Rows { int f(Knob k) {"
+            + " switch (k.kind()) { case CHOICE: return 1; case NUMBER: return 2; default: return 3; } } }"),
+        snippets.parse("src/main/java/p/Settings.java", "package p; class Settings {"
+            + " boolean g(Knob k) { return k.kind() == Kind.SWITCH; }"
+            + " int h(int x) { switch (x) { case 1: return 1; default: return 0; } }"
+            + " boolean i(Thread t) { return t.getState() == Thread.State.NEW; } }")));
+    assertEquals(List.of("src/main/java/p/Rows.java|p.Rows.f(Knob)|Kind|CHOICE,NUMBER",
+        "src/main/java/p/Settings.java|p.Settings.g(Knob)|Kind|SWITCH"), found.stream().map(Finding::key).sorted().toList());
+  }
 }

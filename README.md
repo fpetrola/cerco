@@ -95,7 +95,7 @@ distingue, la transformación habitual y los disfraces que no son un arreglo. El
 regla, y si las autopsias del proyecto ya nombraron modelos para esa regla, dice cuáles. La autopsia nombra el suyo
 con una línea `model: <id>` en la causa.
 
-Las reglas **candidatas** (hoy `absence-as-state`, `hierarchy-asked-from-outside`, `set-from-outside`, `reached-through` y `walked-from-outside`) no frenan: se miden con `survey` y entran al catálogo cuando su
+Las reglas **candidatas** (hoy `absence-as-state`, `hierarchy-asked-from-outside`, `set-from-outside`, `reached-through`, `walked-from-outside` y `enum-decided-across`) no frenan: se miden con `survey` y entran al catálogo cuando su
 ficha en `doc/reglas/` muestra que encuentran casos reales más allá del que las originó. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
 
 Las nueve reglas que no son de polimorfismo clásico ni de tamaño nacieron de un experimento: un agente al que se le

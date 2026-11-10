@@ -25,7 +25,7 @@ import java.util.stream.Stream;
  * or forEach on it, where items() is a method of the project with no arguments. The structure hands its insides out
  * and every client writes the walk again. Generalises refiltered-by-type, which saw one shape of it in one file.
  */
-public final class WalkedFromOutside extends ProjectRule<WalkedFromOutside.Gathered> {
+public final class WalkedFromOutside extends IndexingRule<Set<String>, WalkedFromOutside.Site> {
   private static final int MEMBERS = 3;
   private static final Set<String> WALKS = Set.of("stream", "forEach", "iterator", "removeIf");
   private static final Set<String> MAP_VIEWS = Set.of("values", "keySet", "entrySet");
@@ -34,9 +34,6 @@ public final class WalkedFromOutside extends ProjectRule<WalkedFromOutside.Gathe
   public record Site(String file, int line, String member, String handedOut, String walker) {
   }
 
-  /** Which top-level types declare each no-argument method, and the walks found. */
-  public record Gathered(Map<String, Set<String>> declaredIn, List<Site> sites) {
-  }
 
   @Override
   public String id() {
@@ -75,17 +72,13 @@ public final class WalkedFromOutside extends ProjectRule<WalkedFromOutside.Gathe
             "a visitor the elements accept, walked by the owner"));
   }
 
-  @Override
-  protected Gathered start() {
-    return new Gathered(new HashMap<>(), new ArrayList<>());
-  }
 
   @Override
-  protected void gather(ParsedFile file, CompilationUnit unit, Gathered gathered) {
+  protected void gather(ParsedFile file, CompilationUnit unit, Index<Set<String>, Site> gathered) {
     for (TypeDeclaration<?> top : unit.getTypes()) {
       String walker = top.getNameAsString();
       top.findAll(MethodDeclaration.class, method -> method.getParameters().isEmpty()).forEach(method ->
-          gathered.declaredIn().computeIfAbsent(method.getNameAsString(), k -> new HashSet<>()).add(walker));
+          gathered.declared().computeIfAbsent(method.getNameAsString(), k -> new HashSet<>()).add(walker));
       Stream<Expression> iterated = top.findAll(ForEachStmt.class).stream().map(ForEachStmt::getIterable);
       Stream<Expression> streamed = top.findAll(MethodCallExpr.class,
               call -> WALKS.contains(call.getNameAsString())).stream()
@@ -97,17 +90,17 @@ public final class WalkedFromOutside extends ProjectRule<WalkedFromOutside.Gathe
   }
 
   @Override
-  protected List<Finding> conclude(Gathered gathered) {
+  protected List<Finding> conclude(Index<Set<String>, Site> gathered) {
     Map<String, List<Site>> byMethod = new LinkedHashMap<>();
     gathered.sites().stream()
-        .filter(site -> gathered.declaredIn().containsKey(site.handedOut()))
-        .filter(site -> !gathered.declaredIn().get(site.handedOut()).contains(site.walker()))
+        .filter(site -> gathered.declared().containsKey(site.handedOut()))
+        .filter(site -> !gathered.declared().get(site.handedOut()).contains(site.walker()))
         .forEach(site -> byMethod.computeIfAbsent(site.handedOut(), k -> new ArrayList<>()).add(site));
     List<Finding> findings = new ArrayList<>();
     byMethod.forEach((method, sites) -> {
       Set<String> members = sites.stream().map(Site::member).collect(Collectors.toSet());
       if (members.size() >= MEMBERS) {
-        String owners = String.join(", ", gathered.declaredIn().get(method));
+        String owners = String.join(", ", gathered.declared().get(method));
         sites.forEach(site -> findings.add(new Finding(id(), site.file(), site.line(),
             site.file() + "|" + site.member() + "|" + method + "()", "what " + method + "() of " + owners
                 + " hands out is walked in " + site.member() + "; " + members.size() + " members walk it")));
