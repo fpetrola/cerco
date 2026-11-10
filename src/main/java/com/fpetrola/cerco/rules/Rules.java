@@ -50,6 +50,7 @@ public final class Rules {
         new FlagDrivenFromOutside(),
         new AskThenTell(),
         new PropertyShuffle(),
+        new NotifiedByCaller(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

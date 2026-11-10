@@ -200,7 +200,9 @@ Primera regla nacida de una autopsia: `flag-driven-from-outside` (0.4.0), de la 
 `2026-11-10-no-instanceof`. Segunda, y la primera que la deuda de §3.10 obligó a construir: `ask-then-tell` (0.6.0),
 de `2026-11-10-flag-driven-from-outside` (salir del HALT copiado en los dos caminos de interrupción de oozx).
 Tercera: `property-shuffle` (0.8.0), de `2026-11-10-ask-then-tell` (el protocolo de los flip-flops de interrupción,
-IFF1 guardado en IFF2 y devuelto por RETN, escrito por los que llaman como `state.setIff1(state.isIff2())`).
+IFF1 guardado en IFF2 y devuelto por RETN, escrito por los que llaman como `state.setIff1(state.isIff2())`). Cuarta: `notified-by-caller` (0.9.0), de
+`2026-11-10-flag-driven-from-outside-3` (pausar la máquina y avisarlo eran dos pasos de quien llamaba, y los que no
+avisaban pausaban en silencio).
 
 
 La idea de Fernando: los hallazgos son síntomas de modelo faltante, y arreglarlos para cumplir la letra de la regla
@@ -449,7 +451,8 @@ pensarla contra el rodeo que va a provocar.
 | `d8d1a7e` | 0.5.0 | regla propuesta = deuda hasta que exista; testigo de código y de cerco; 76 tests |
 | `6c37730` | 0.6.0 | `ask-then-tell`, construida porque la deuda de una autopsia de oozx lo exigió; 77 tests |
 | `87c7da4` | 0.7.0 | `none:` espera firma y uno solo a la vez; `same-as:` sólo hacia una autopsia que pide regla; 80 tests |
-| | 0.8.0 | `property-shuffle`, de la autopsia del NMI de oozx; 81 tests |
+| `e4b04f4` | 0.8.0 | `property-shuffle`, de la autopsia del NMI de oozx; 81 tests |
+| | 0.9.0 | `notified-by-caller`, de la autopsia de la pausa de oozx; 82 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 

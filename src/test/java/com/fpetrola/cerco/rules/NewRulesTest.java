@@ -146,6 +146,18 @@ class NewRulesTest {
   }
 
   @Test
+  void aChangeOfAnotherObjectAnnouncedByTheCaller() {
+    List<String> found = details(new NotifiedByCaller(), "package p; class A { Loop loop; boolean on;"
+        + " void f(boolean p) { loop.setPaused(p); notifyPaused(p); }"
+        + " void g() { loop.setPaused(true); this.fireChanged(); }"
+        + " void h() { setOn(true); notifyOn(); this.setOn(false); notifyOn(); on = true; fireOn(); }"
+        + " void i() { loop.setPaused(true); other.notifyPaused(true); loop.setPaused(false); log(); notifyX(); }"
+        + " void j() { loop.pause(); notifyPaused(true); } }");
+    assertEquals(List.of("`loop.setPaused(p)` is announced by the caller, in p.A.f(boolean)",
+        "`loop.setPaused(true)` is announced by the caller, in p.A.g()"), found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"
