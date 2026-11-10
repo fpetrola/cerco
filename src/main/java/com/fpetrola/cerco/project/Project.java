@@ -90,10 +90,10 @@ public final class Project {
         .orElseGet(() -> new Family(type, Set.of(type)));
   }
 
-  /** The visitor a family accepts: the one its top, or failing that any of its members, declares `accept` for. */
-  public Optional<String> visitorOf(Family family) {
-    return family.members().stream().sorted(Comparator.comparing((String member) -> !member.equals(family.root())))
-        .map(this::declared).flatMap(Optional::stream).map(Declared::visitor).flatMap(Optional::stream).findFirst();
+  /** The visitors a family accepts: those any of its members declares `accept` for, by name. */
+  public Set<String> visitorsOf(Family family) {
+    return family.members().stream().map(this::declared).flatMap(Optional::stream).map(Declared::visitor)
+        .flatMap(Optional::stream).collect(Collectors.toCollection(TreeSet::new));
   }
 
   /** The top-level types of the project that declare a method by that name taking that many arguments. */

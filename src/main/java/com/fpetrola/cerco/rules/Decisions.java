@@ -41,13 +41,16 @@ final class Decisions {
    */
   Decision ofSwitch(Finding finding, Node place, SwitchNode decision, boolean valued) {
     List<Compared.Term> terms = new ArrayList<>();
+    decision.getEntries().forEach(entry -> entry.getLabels().forEach(label -> terms.add(compared.label(label))));
+    return decision(finding, place, Optional.of(decision.getSelector()), terms,
+        effectOf(place, decision, valued));
+  }
+
+  /** What the branches of a switch do with what it decides on. */
+  Effect effectOf(Node place, SwitchNode decision, boolean valued) {
     List<List<Statement>> bodies = new ArrayList<>();
-    decision.getEntries().forEach(entry -> {
-      entry.getLabels().forEach(label -> terms.add(compared.label(label)));
-      bodies.add(entry.getStatements());
-    });
-    return decision(finding, place, Optional.of(decision.getSelector()), terms, effect(place,
-        Optional.of(decision.getSelector()), bodies, valued));
+    decision.getEntries().forEach(entry -> bodies.add(entry.getStatements()));
+    return effect(place, Optional.of(decision.getSelector()), bodies, valued);
   }
 
   /** An if / else if chain, from its first if: what its conditions compare, when they all compare one thing. */

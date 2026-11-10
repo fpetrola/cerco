@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * What another object holds, walked from three or more members outside it: a for-each over `x.items()`, or a stream
@@ -31,9 +30,22 @@ public final class WalkedFromOutside extends IndexingRule<Set<String>, WalkedFro
   private static final Set<String> WALKS = Set.of("stream", "forEach", "iterator", "removeIf");
   private static final Set<String> MAP_VIEWS = Set.of("values", "keySet", "entrySet");
 
-  /** One walk: where, which method handed the collection out, and which top-level type is walking. */
-  public record Site(String file, int line, String member, String handedOut, String walker) {
+  /**
+   * One walk: where, which method handed the collection out, which top-level type is walking, and whether it goes
+   * through a stream, which looks for or counts things, rather than over every element.
+   */
+  public record Site(String file, int line, String member, String handedOut, String walker, boolean streamed) {
   }
+
+  private final Hypothesis queried = new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
+      "the walks look for, count or filter the same things",
+      "a named query on the owner");
+  private final Hypothesis iterated = new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
+      "the walks do something to every element",
+      "an internal iterator on the owner (each(action)), or a composite that does it itself");
+  private final Hypothesis sorted = new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
+      "the walks treat each kind of element differently",
+      "a visitor the elements accept, walked by the owner");
 
 
   @Override
@@ -61,18 +73,8 @@ public final class WalkedFromOutside extends IndexingRule<Set<String>, WalkedFro
   @Override
   public Diagnosis diagnosis() {
     return new Diagnosis("handing out an unmodifiable copy or a Stream instead of the list: the insides are still "
-        + "walked from outside",
-        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
-            "the walks look for, count or filter the same things",
-            "a named query on the owner"),
-        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
-            "the walks do something to every element",
-            "an internal iterator on the owner (each(action)), or a composite that does it itself"),
-        new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
-            "the walks treat each kind of element differently",
-            "a visitor the elements accept, walked by the owner"));
+        + "walked from outside", queried, iterated, sorted);
   }
-
 
   @Override
   protected void gather(ParsedFile file, CompilationUnit unit, Index<Set<String>, Site> gathered) {
@@ -80,13 +82,13 @@ public final class WalkedFromOutside extends IndexingRule<Set<String>, WalkedFro
       String walker = top.getNameAsString();
       top.findAll(MethodDeclaration.class, method -> method.getParameters().isEmpty()).forEach(method ->
           gathered.declared().computeIfAbsent(method.getNameAsString(), k -> new HashSet<>()).add(walker));
-      Stream<Expression> iterated = top.findAll(ForEachStmt.class).stream().map(ForEachStmt::getIterable);
-      Stream<Expression> streamed = top.findAll(MethodCallExpr.class,
-              call -> WALKS.contains(call.getNameAsString())).stream()
-          .map(MethodCallExpr::getScope).flatMap(Optional::stream);
-      Stream.concat(iterated, streamed).map(this::handedOut).flatMap(Optional::stream)
-          .forEach(call -> gathered.sites().add(new Site(file.name(), line(call), enclosing.of(call),
-              call.getNameAsString(), walker)));
+      top.findAll(ForEachStmt.class).stream().map(ForEachStmt::getIterable).map(this::handedOut)
+          .flatMap(Optional::stream).forEach(call -> gathered.sites().add(new Site(file.name(), line(call),
+              enclosing.of(call), call.getNameAsString(), walker, false)));
+      top.findAll(MethodCallExpr.class, call -> WALKS.contains(call.getNameAsString())).forEach(walk ->
+          walk.getScope().flatMap(this::handedOut).ifPresent(call -> gathered.sites().add(new Site(file.name(),
+              line(call), enclosing.of(call), call.getNameAsString(), walker,
+              walk.getNameAsString().equals("stream")))));
     }
   }
 
@@ -104,7 +106,10 @@ public final class WalkedFromOutside extends IndexingRule<Set<String>, WalkedFro
         String owners = String.join(", ", gathered.declared().get(method));
         sites.forEach(site -> findings.add(new Finding(id(), site.file(), site.line(),
             site.file() + "|" + site.member() + "|" + method + "()", "what " + method + "() of " + owners
-                + " hands out is walked in " + site.member() + "; " + members.size() + " members walk it")));
+                + " hands out is walked in " + site.member() + "; " + members.size() + " members walk it")
+            .read(site.streamed() ? queried.because("a stream over what `" + method + "()` hands out, which "
+                + members.size() + " members walk") : iterated.because("a loop over what `" + method
+                + "()` hands out, which " + members.size() + " members walk"))));
       }
     });
     return findings;

@@ -157,8 +157,8 @@ final class TypeTestDiagnosis {
     }
 
     private Optional<Reading> visited() {
-      return project.visitorOf(family).map(accepted -> visitor.because(kind() + ", which already accepts `"
-          + accepted + "`"));
+      return project.visitorsOf(family).stream().findFirst().map(accepted -> visitor.because(kind()
+          + ", which already accepts `" + accepted + "`"));
     }
 
     private Optional<Reading> elsewhere() {

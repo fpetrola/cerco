@@ -339,4 +339,47 @@ class ReadingsTest {
     assertEquals("variation-as-data: every case only answers a value per constant of `Model`, asked of `machine`",
         read(found.get(1)));
   }
+
+  @Test
+  void aProcedureBelongsToTheObjectItIsHanded() {
+    List<Finding> found = found(new NonPrivateStaticMethod(List.of("of")),
+        "package p; class Speccy {} class Tools { static void reset(Speccy speccy, int times) {}"
+            + " static int clamp(int value, int top) { return value; } static Object now() { return null; }"
+            + " static void show(javax.swing.JLabel label) {} }");
+    assertEquals(List.of("behaviour-not-on-owner: it takes `Speccy speccy`, an object of this project",
+        "value-without-a-type: it takes only plain values: int value, int top", "unread", "unread"),
+        found.stream().map(this::read).toList());
+  }
+
+  @Test
+  void aRuleThatSuspectsOneModelReadsAsThatModel() {
+    List<Finding> found = found(new PublicMutableField(), "package p; class State { public int clock; }");
+    assertEquals("behaviour-not-on-owner: callers change the field to get something done", read(found.get(0)));
+  }
+
+  @Test
+  void aNullThatMeansNothingWasFoundOrNothingArrivedYet() {
+    List<Finding> found = found(new NullReturn(),
+        "package p; import java.util.*; class Shelf { List<String> books; Object line;"
+            + " String titled(String title) { for (String book : books) { if (book.equals(title)) { return book; } }"
+            + " return null; }"
+            + " Object open() { if (line == null) { return null; } return line; }"
+            + " Object broken() { try { return line; } catch (RuntimeException e) { return null; } } }");
+    assertEquals(List.of("variation-as-data: the method looks for something in a loop, and this is the case of "
+        + "finding none", "state-without-an-object: it is returned while `line` is not there yet", "unread"),
+        found.stream().map(this::read).toList());
+  }
+
+  @Test
+  void copiesInOneFamilyBelongInWhatTheyShare() {
+    String shapes = "package p; interface Shape {} class Circle implements Shape { int sides() { return 0; } }"
+        + " class Square implements Shape { int sides() { return 0; } }"
+        + " class Dot implements Shape { int sides() { return 0; } }";
+    assertEquals("shape-repeated: the 3 copies sit in types of one family, `Shape`",
+        read(found(new ClonedMethods(), shapes).get(0)));
+    String strangers = "package p; class A { int sides() { return 0; } } class B { int sides() { return 0; } }"
+        + " class C { int sides() { return 0; } }";
+    assertEquals("concept-without-a-class: the 3 copies sit in types with nothing of the project in common",
+        read(found(new ClonedMethods(), strangers).get(0)));
+  }
 }

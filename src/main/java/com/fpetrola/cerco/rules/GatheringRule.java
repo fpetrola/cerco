@@ -27,7 +27,7 @@ public abstract class GatheringRule<S> implements Rule {
 
       @Override
       public List<Finding> findings() {
-        return conclude(state, project);
+        return conclude(state, project).stream().map(diagnosis()::settle).toList();
       }
     };
   }

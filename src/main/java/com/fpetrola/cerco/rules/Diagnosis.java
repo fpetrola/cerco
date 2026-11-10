@@ -1,5 +1,6 @@
 package com.fpetrola.cerco.rules;
 
+import com.fpetrola.cerco.model.Finding;
 import java.util.List;
 
 /**
@@ -15,5 +16,11 @@ public record Diagnosis(List<Hypothesis> hypotheses, String notAFix) {
 
   public boolean says() {
     return !hypotheses.isEmpty();
+  }
+
+  /** A finding nobody read yet, of a rule that suspects one model only, reads as that model. */
+  public Finding settle(Finding finding) {
+    boolean onlyOne = hypotheses.size() == 1 && finding.reading().isEmpty();
+    return onlyOne ? finding.read(hypotheses.get(0).itself()) : finding;
   }
 }

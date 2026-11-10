@@ -3,14 +3,18 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.model.Reading;
+import com.fpetrola.cerco.rules.Decision.Effect;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.EnumConstantDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.SwitchExpr;
+import com.github.javaparser.ast.nodeTypes.SwitchNode;
 import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.stmt.SwitchStmt;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -26,12 +30,26 @@ import java.util.stream.Collectors;
  * whose labels are all its constants, or comparisons `x == E.A`. The project-wide reach of enum-decided-outside,
  * which looks at one file; a switch an enum makes over itself counts too, the case JDeodorant's type checking misses.
  */
-public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecidedAcross.Decision> {
+public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecidedAcross.Site> {
   private static final int MEMBERS = 2;
 
-  /** One decision: where, in which member, and the constants it names. */
-  public record Decision(String file, int line, String member, Set<String> constants, Optional<String> qualifier) {
+  /**
+   * One decision: where, in which member, the constants it names, the enum they were written with when they were,
+   * and what its branches do.
+   */
+  public record Site(String file, int line, String member, Set<String> constants, Optional<String> qualifier,
+      Effect effect) {
   }
+
+  private final Hypothesis meant = new Hypothesis(MissingModel.VARIATION_AS_DATA,
+      "every place asks what a constant means (a value, a label, a capability)",
+      "a field or a method on the enum, answered by each constant");
+  private final Hypothesis done = new Hypothesis(MissingModel.VARIATION_AS_DATA,
+      "the places do different things per constant",
+      "a body per constant, or a strategy each constant holds");
+  private final Hypothesis mode = new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+      "the enum is a mode some object switches between",
+      "a state object per constant");
 
 
   @Override
@@ -59,37 +77,31 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
   @Override
   public Diagnosis diagnosis() {
     return new Diagnosis("a map keyed by the constants, an EnumMap of lambdas, or the switch moved into one helper: "
-        + "the same decision, outside the constants",
-        new Hypothesis(MissingModel.VARIATION_AS_DATA,
-            "every place asks what a constant means (a value, a label, a capability)",
-            "a field or a method on the enum, answered by each constant"),
-        new Hypothesis(MissingModel.VARIATION_AS_DATA,
-            "the places do different things per constant",
-            "a body per constant, or a strategy each constant holds"),
-        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
-            "the enum is a mode some object switches between",
-            "a state object per constant"));
+        + "the same decision, outside the constants", meant, done, mode);
   }
 
-
   @Override
-  protected void gather(ParsedFile file, CompilationUnit unit, Index<Set<String>, Decision> gathered) {
+  protected void gather(ParsedFile file, CompilationUnit unit, Index<Set<String>, Site> gathered) {
     for (EnumDeclaration declared : unit.findAll(EnumDeclaration.class)) {
       gathered.declared().computeIfAbsent(declared.getNameAsString(), k -> new TreeSet<>()).addAll(declared.getEntries()
           .stream().map(EnumConstantDeclaration::getNameAsString).toList());
     }
-    unit.findAll(SwitchEntry.class).stream().map(Node::getParentNode).flatMap(Optional::stream).distinct()
-        .forEach(decision -> labels(decision).ifPresent(names -> gathered.sites().add(
-            new Decision(file.name(), line(decision), enclosing.of(decision), names, Optional.empty()))));
+    Decisions reader = new Decisions(unit);
+    unit.findAll(SwitchStmt.class).forEach(decision -> labels(decision).ifPresent(names -> gathered.sites().add(
+        new Site(file.name(), line(decision), enclosing.of(decision), names, Optional.empty(),
+            reader.effectOf(decision, decision, false)))));
+    unit.findAll(SwitchExpr.class).forEach(decision -> labels(decision).ifPresent(names -> gathered.sites().add(
+        new Site(file.name(), line(decision), enclosing.of(decision), names, Optional.empty(),
+            reader.effectOf(decision, decision, true)))));
     unit.findAll(BinaryExpr.class, this::comparesWithAConstant).forEach(test -> qualified(test).ifPresent(constant ->
-        gathered.sites().add(new Decision(file.name(), line(test), enclosing.of(test),
-            Set.of(constant.getNameAsString()), Optional.of(constant.getScope().toString())))));
+        gathered.sites().add(new Site(file.name(), line(test), enclosing.of(test),
+            Set.of(constant.getNameAsString()), Optional.of(constant.getScope().toString()), Effect.UNKNOWN))));
   }
 
   @Override
-  protected List<Finding> conclude(Index<Set<String>, Decision> gathered, Project project) {
-    Map<String, List<Decision>> byEnum = new LinkedHashMap<>();
-    for (Decision decision : gathered.sites()) {
+  protected List<Finding> conclude(Index<Set<String>, Site> gathered, Project project) {
+    Map<String, List<Site>> byEnum = new LinkedHashMap<>();
+    for (Site decision : gathered.sites()) {
       gathered.declared().entrySet().stream()
           .filter(entry -> decision.qualifier().map(entry.getKey()::equals).orElse(true))
           .filter(entry -> entry.getValue().containsAll(decision.constants()))
@@ -98,24 +110,34 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
     }
     List<Finding> findings = new ArrayList<>();
     byEnum.forEach((name, decisions) -> {
-      Set<String> members = decisions.stream().map(Decision::member).collect(Collectors.toCollection(TreeSet::new));
+      Set<String> members = decisions.stream().map(Site::member).collect(Collectors.toCollection(TreeSet::new));
       if (members.size() >= MEMBERS) {
         decisions.forEach(decision -> findings.add(new Finding(id(), decision.file(), decision.line(),
             decision.file() + "|" + decision.member() + "|" + name + "|" + String.join(",", decision.constants()),
             decision.member() + " decides over " + name + " (" + String.join(", ", decision.constants()) + "); "
-                + members.size() + " members decide over its constants")));
+                + members.size() + " members decide over its constants").read(read(decision, name, members.size()))));
       }
     });
     return findings;
   }
 
+  /** What the branches do says whether the constants lack data, behaviour, or are the states of something. */
+  private Reading read(Site decision, String name, int members) {
+    Map<Effect, Reading> byEffect = Map.of(
+        Effect.REASSIGN, mode.because("the branches change the `" + name + "` they test, in one of " + members
+            + " members that decide over it"),
+        Effect.ACT, done.because("the cases do different work per constant of `" + name + "`, in one of " + members
+            + " members that decide over it"),
+        Effect.ANSWER, meant.because("every case only answers a value per constant of `" + name + "`, in one of "
+            + members + " members that decide over it"));
+    return byEffect.getOrDefault(decision.effect(), meant.because("it asks whether a value is one of some "
+        + "constants of `" + name + "`, as " + members + " members do"));
+  }
+
   /** The constants a switch's labels name, when they are all bare names and at least two. */
-  private Optional<Set<String>> labels(Node decision) {
+  private Optional<Set<String>> labels(SwitchNode decision) {
     Set<String> names = new TreeSet<>();
-    for (SwitchEntry entry : decision.findAll(SwitchEntry.class)) {
-      if (entry.getParentNode().orElse(null) != decision) {
-        continue;
-      }
+    for (SwitchEntry entry : decision.getEntries()) {
       if (entry.getLabels().stream().anyMatch(label -> !label.isNameExpr())) {
         return Optional.empty();
       }

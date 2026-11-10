@@ -3,12 +3,14 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.model.Reading;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -54,19 +56,20 @@ public final class AbsenceAsState extends FileRule {
         + "optional one becomes a null object doing the empty thing; a phase of the object becomes its own object";
   }
 
+  private final Hypothesis mandatory = new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+      "the field is always set once the object is in use",
+      "make it a constructor argument, or build the object only when it can have it");
+  private final Hypothesis optional = new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+      "the collaborator is truly optional",
+      "a null object that does the empty thing, so no method asks");
+  private final Hypothesis phases = new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+      "the object goes through phases (before and after something arrives)",
+      "an object per phase, or two classes, the second built from the first");
+
   @Override
   public Diagnosis diagnosis() {
     return new Diagnosis("an Optional tested with isPresent or ifPresent in the same methods, or a hasX() wrapping the "
-        + "comparison: the same two lives",
-        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
-            "the field is always set once the object is in use",
-            "make it a constructor argument, or build the object only when it can have it"),
-        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
-            "the collaborator is truly optional",
-            "a null object that does the empty thing, so no method asks"),
-        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
-            "the object goes through phases (before and after something arrives)",
-            "an object per phase, or two classes, the second built from the first"));
+        + "comparison: the same two lives", mandatory, optional, phases);
   }
 
   @Override
@@ -85,12 +88,36 @@ public final class AbsenceAsState extends FileRule {
       asked.forEach((field, methods) -> {
         if (methods.size() >= METHODS) {
           String where = enclosing.nameOf(type) + "." + field.getNameAsString();
-          findings.add(finding(file, field, where, "`" + field.getNameAsString() + "` is compared with null in "
-              + methods.size() + " methods of " + enclosing.nameOf(type) + ": " + String.join(", ", methods)));
+          Finding finding = finding(file, field, where, "`" + field.getNameAsString() + "` is compared with null "
+              + "in " + methods.size() + " methods of " + enclosing.nameOf(type) + ": " + String.join(", ", methods));
+          findings.add(arrival(type, field.getNameAsString()).map(finding::read).orElse(finding));
         }
       });
     }
     return findings;
+  }
+
+  /**
+   * How the field comes to be there, which tells its absence apart: set back to null somewhere, it comes and goes;
+   * given only when the object is built, it is optional; given later by a method and kept, it arrives once.
+   */
+  private Optional<Reading> arrival(TypeDeclaration<?> type, String field) {
+    List<AssignExpr> given = type.findAll(AssignExpr.class, assignment -> assignment.getTarget().toString()
+        .replaceFirst("^this\\.", "").equals(field));
+    List<String> clearing = given.stream().filter(assignment -> assignment.getValue().isNullLiteralExpr())
+        .map(enclosing::of).toList();
+    List<String> later = given.stream().filter(assignment -> assignment.findAncestor(MethodDeclaration.class)
+        .isPresent()).map(enclosing::of).toList();
+    if (!clearing.isEmpty()) {
+      return Optional.of(phases.because("`" + field + "` is given and taken away again (set to null in "
+          + clearing.get(0) + ")"));
+    }
+    if (!later.isEmpty()) {
+      return Optional.of(mandatory.because("`" + field + "` arrives after construction, in " + later.get(0)
+          + ", and is never taken away"));
+    }
+    return Optional.of(optional.because("`" + field + "` is only given when the object is built: null there means "
+        + "it has none")).filter(reading -> !given.isEmpty());
   }
 
   /** The names this method asks about being null, its own parameters and locals left out. */

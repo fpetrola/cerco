@@ -26,7 +26,7 @@ public abstract class FileRule implements Rule {
 
       @Override
       public List<Finding> findings() {
-        return List.copyOf(findings);
+        return findings.stream().map(diagnosis()::settle).toList();
       }
     };
   }

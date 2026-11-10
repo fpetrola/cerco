@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.model.Reading;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.CallableDeclaration;
@@ -54,19 +55,20 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
         + "values come from another object, the target takes from the source, or they are one structure";
   }
 
+  private final Hypothesis oneThing = new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+      "the setters together do one thing to the object",
+      "a method of the object that does it");
+  private final Hypothesis together = new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
+      "the values set travel together elsewhere too",
+      "the class they form, given to the object whole");
+  private final Hypothesis copied = new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+      "each argument is a getter of one same other object (a copy property by property)",
+      "the target takes from the source in one call, or both are one structure and the copy goes away");
+
   @Override
   public Diagnosis diagnosis() {
     return new Diagnosis("a builder that calls the same setters, or the setters moved to a helper: the object is "
-        + "still assembled from outside",
-        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
-            "the setters together do one thing to the object",
-            "a method of the object that does it"),
-        new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
-            "the values set travel together elsewhere too",
-            "the class they form, given to the object whole"),
-        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
-            "each argument is a getter of one same other object (a copy property by property)",
-            "the target takes from the source in one call, or both are one structure and the copy goes away"));
+        + "still assembled from outside", oneThing, together, copied);
   }
 
   @Override
@@ -106,10 +108,17 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
         findings.add(new Finding(id(), site.file(), site.line(), site.file() + "|" + site.member() + "|"
             + site.receiver(), site.member() + " sets " + ours.size() + " properties of `" + clipped(site.receiver())
             + "`: " + String.join(", ", ours.stream().limit(6).toList()) + (ours.size() > 6 ? ", ..." : "")
-            + copy));
+            + copy).read(read(site, ours.size())));
       }
     }
     return findings;
+  }
+
+  /** Values read one by one from one other object are a copy; otherwise the setters are one thing done to it. */
+  private Reading read(Site site, int setters) {
+    return site.copied() >= SETTERS ? copied.because(site.copied() + " of the values set on `"
+        + clipped(site.receiver()) + "` are read from `" + clipped(site.source()) + "`, one by one")
+        : oneThing.because(setters + " setters are called on `" + clipped(site.receiver()) + "` in one go");
   }
 
   private boolean isSetter(MethodCallExpr call) {

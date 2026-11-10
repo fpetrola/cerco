@@ -2,20 +2,22 @@ package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.model.Reading;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.visitor.GenericVisitor;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * A rule that catches a value being asked its type, whatever the construct (instanceof, a cast): what such a test
  * hides is the same, so the family says it once, and reads each test against the project when the run ends.
  */
-public abstract class TypeTestRule extends GatheringRule<List<TypeTest>> {
+public abstract class TypeTestRule extends SiteRule<TypeTest> {
   private final TypeTestDiagnosis suspected = new TypeTestDiagnosis();
 
   /** The file a test is in, and who reads what surrounds it. */
@@ -37,22 +39,20 @@ public abstract class TypeTestRule extends GatheringRule<List<TypeTest>> {
   protected abstract GenericVisitor<TypeTest, In> asked();
 
   @Override
-  protected final List<TypeTest> start() {
-    return new ArrayList<>();
-  }
-
-  @Override
-  protected final void gather(ParsedFile file, CompilationUnit unit, List<TypeTest> tests) {
+  protected final List<TypeTest> sites(ParsedFile file, CompilationUnit unit) {
     In in = new In(file, new TypeTests(unit, this::clipped));
     GenericVisitor<TypeTest, In> asked = asked();
-    suspects(unit).stream().sorted(Node.NODE_BY_BEGIN_POSITION).map(node -> node.accept(asked, in))
-        .forEach(tests::add);
+    return suspects(unit).stream().sorted(Node.NODE_BY_BEGIN_POSITION).map(node -> node.accept(asked, in)).toList();
   }
 
   @Override
-  protected final List<Finding> conclude(List<TypeTest> tests, Project project) {
+  protected final Finding found(TypeTest test) {
+    return test.finding();
+  }
+
+  @Override
+  protected final Function<TypeTest, Optional<Reading>> reader(List<TypeTest> tests, Project project) {
     Map<String, Set<String>> askers = suspected.askers(tests, project);
-    return tests.stream().map(test -> suspected.read(test, project, askers).map(test.finding()::read)
-        .orElse(test.finding())).toList();
+    return test -> suspected.read(test, project, askers);
   }
 }
