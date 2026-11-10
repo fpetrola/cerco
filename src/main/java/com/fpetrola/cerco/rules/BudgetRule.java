@@ -47,7 +47,8 @@ public interface BudgetRule extends Rule {
   }
 
   default Finding finding(Measure measure, int ceiling) {
-    return new Finding(id(), measure.file(), measure.line(), measure.key(),
+    Finding finding = new Finding(id(), measure.file(), measure.line(), measure.key(),
         measure.detail() + " (ceiling " + ceiling + ")");
+    return measure.reading().map(finding::read).orElse(finding);
   }
 }

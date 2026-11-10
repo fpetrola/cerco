@@ -35,15 +35,16 @@ public final class MutableStaticField extends FileRule {
         + "a true constant becomes static final";
   }
 
+  private final Hypothesis shared = new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+      "it is state the whole program shares",
+      "an object that owns it, handed to whoever needs it");
+  private final Hypothesis changed = new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+      "callers change it to get something done",
+      "a method of its owner");
+
   @Override
   public Diagnosis diagnosis() {
-    return new Diagnosis("a singleton holding the same state",
-        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
-            "it is state the whole program shares",
-            "an object that owns it, handed to whoever needs it"),
-        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
-            "callers change it to get something done",
-            "a method of its owner"));
+    return new Diagnosis("a singleton holding the same state", shared, changed);
   }
 
   @Override
@@ -54,7 +55,10 @@ public final class MutableStaticField extends FileRule {
         String owner = enclosing.typeOf(field);
         for (VariableDeclarator variable : field.getVariables()) {
           String name = owner + "." + variable.getNameAsString();
-          out.add(finding(file, variable, name, "static mutable field " + name + " of type " + variable.getTypeAsString()));
+          out.add(finding(file, variable, name, "static mutable field " + name + " of type "
+              + variable.getTypeAsString()).read(field.isPrivate() ? shared.because("only its own class can change "
+              + "it: one state every instance and every caller of the class shares") : changed.because("it is open "
+              + "to every class: whoever sets it does a job of its owner")));
         }
       }
     }

@@ -113,8 +113,7 @@ public final class AbsenceAsState extends FileRule {
           + clearing.get(0) + ")"));
     }
     if (!later.isEmpty()) {
-      return Optional.of(mandatory.because("`" + field + "` arrives after construction, in " + later.get(0)
-          + ", and is never taken away"));
+      return Optional.of(mandatory.because("`" + field + "` arrives after construction, in " + later.get(0)));
     }
     return Optional.of(optional.because("`" + field + "` is only given when the object is built: null there means "
         + "it has none")).filter(reading -> !given.isEmpty());

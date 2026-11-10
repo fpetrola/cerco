@@ -382,4 +382,32 @@ class ReadingsTest {
     assertEquals("concept-without-a-class: the 3 copies sit in types with nothing of the project in common",
         read(found(new ClonedMethods(), strangers).get(0)));
   }
+
+  @Test
+  void aFlagSetFromOutsideIsAModeOfItsOwner() {
+    List<Finding> found = found(new FlagDrivenFromOutside(),
+        "package p; class State { boolean halted; void setHalted(boolean halted) { this.halted = halted; } }",
+        "package p; class Cpu { void stop(State state) { state.setHalted(true); } }");
+    assertEquals("state-without-an-object: `state.setHalted(true)` sets a flag its owner only stores: when it "
+        + "changes is decided out here", read(found.get(0)));
+  }
+
+  @Test
+  void aStaticThatChangesIsSharedOrOpen() {
+    List<Finding> found = found(new MutableStaticField(),
+        "package p; class Counter { private static int made; public static int limit; }");
+    assertEquals(List.of("knowledge-without-one-owner: only its own class can change it: one state every instance "
+        + "and every caller of the class shares", "behaviour-not-on-owner: it is open to every class: whoever sets "
+        + "it does a job of its owner"), found.stream().map(this::read).toList());
+  }
+
+  @Test
+  void whatALongMethodIsLongWith() {
+    String filler = " int a = 0;".repeat(1) + "\n".repeat(45);
+    List<Finding> found = found(new MethodLength(40),
+        "package p; class Loader { void fill(State state) {" + filler + " state.setA(1); state.setB(2);"
+            + " state.setC(3); }\n void tell() {" + filler + " } }");
+    assertEquals(List.of("concept-without-a-class: it calls 3 setters on `state`",
+        "procedure-instead-of-model: 46 lines and 1 locals in one method"), found.stream().map(this::read).toList());
+  }
 }

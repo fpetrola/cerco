@@ -57,15 +57,17 @@ public final class FlagDrivenFromOutside extends ProjectRule<FlagDrivenFromOutsi
         + "changes the flag and whatever goes with it, and a query for what the flag decides; drop the setter";
   }
 
+  private final Hypothesis asked = new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+      "what is asked and what is decided belong to the same object",
+      "give the owner the operation and call it");
+  private final Hypothesis driven = new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+      "a flag or a mode of the owner is being driven",
+      "the owner changes its own mode, or the mode becomes an object");
+
   @Override
   public Diagnosis diagnosis() {
     return new Diagnosis("an isX() that wraps the getter, or the setter under another name: the caller still decides",
-        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
-            "what is asked and what is decided belong to the same object",
-            "give the owner the operation and call it"),
-        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
-            "a flag or a mode of the owner is being driven",
-            "the owner changes its own mode, or the mode becomes an object"));
+        asked, driven);
   }
 
   @Override
@@ -106,7 +108,9 @@ public final class FlagDrivenFromOutside extends ProjectRule<FlagDrivenFromOutsi
         .filter(call -> seen.setters().containsKey(call.name()))
         .filter(call -> !seen.setters().get(call.name()).contains(call.file()))
         .map(call -> new Finding(id(), call.file(), call.line(), call.file() + "|" + call.member() + "|" + call.text(),
-            "`" + call.text() + "` drives a flag of another class from " + call.member()))
+            "`" + call.text() + "` drives a flag of another class from " + call.member())
+            .read(driven.because("`" + call.text() + "` sets a flag its owner only stores: when it changes is "
+                + "decided out here")))
         .toList();
   }
 }
