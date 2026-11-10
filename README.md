@@ -86,8 +86,17 @@ decide por la escritura real, no por la mención.
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 
-`mvn com.fpetrola:cerco-maven-plugin:explain` imprime cada regla con su principio, su remedio y cuánto de ella está
-congelado. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
+`mvn com.fpetrola:cerco-maven-plugin:explain` imprime cada regla con su principio, su remedio, los modelos que su smell
+suele esconder y cuánto de ella está congelado.
+
+Cada regla de diseño trae un **diagnóstico**: los modelos que suelen faltar detrás de su smell (de un vocabulario
+cerrado de once: `behaviour-not-on-owner`, `variation-as-data`, `dispatch-from-outside`, …), la pregunta que los
+distingue, la transformación habitual y los disfraces que no son un arreglo. El reporte rojo lo imprime bajo cada
+regla, y si las autopsias del proyecto ya nombraron modelos para esa regla, dice cuáles. La autopsia nombra el suyo
+con una línea `model: <id>` en la causa.
+
+Las reglas **candidatas** (hoy `absence-as-state`) no frenan: se miden con `survey` y entran al catálogo cuando su
+ficha en `doc/reglas/` muestra que encuentran casos reales más allá del que las originó. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
 
 Las nueve reglas que no son de polimorfismo clásico ni de tamaño nacieron de un experimento: un agente al que se le
 pidió un framework nuevo sobre un proyecto con el cerco 0.1.0 instalado leyó las reglas del bytecode y diseñó contra
@@ -229,6 +238,7 @@ acepta `approve`:
 | `install-hooks` | una vez por proyecto | escribe los hooks y las reglas `deny` en `.claude/settings.json` |
 | `explain` | a mano | las reglas, con su principio, su remedio y lo congelado |
 | `autopsies` | a mano | las reglas que proponen las autopsias archivadas, las más pedidas primero |
+| `survey` | a mano | mide reglas por módulo sin tocar la línea de base: las candidatas, o las de `-Dcerco.rules=a,b`; cuántos hallazgos, cuántos por mil líneas y una muestra para juzgar a mano |
 
 Los reportes también quedan en `target/cerco/<alcance>.json`.
 

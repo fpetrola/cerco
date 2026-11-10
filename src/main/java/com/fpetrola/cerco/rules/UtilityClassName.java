@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.TypeDeclaration;
@@ -34,6 +35,17 @@ public final class UtilityClassName extends FileRule {
   public String remedy() {
     return "find the concept the functions act on and move them onto it, or name the object by what it is (a Parser, "
         + "a Ledger, a Route) and give it the state those functions kept passing around";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("the same class under a name without the suffix",
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "a parameter is an object of the project",
+            "an instance method of that object"),
+        new Hypothesis(MissingModel.VALUE_WITHOUT_A_TYPE,
+            "it computes on primitives or strings that mean something",
+            "a value object that owns the computation"));
   }
 
   @Override

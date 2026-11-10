@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.AnnotationDeclaration;
@@ -32,6 +33,17 @@ public final class MutableStaticField extends FileRule {
   public String remedy() {
     return "make it an instance field of the object that owns that state and pass the object to whoever needs it; "
         + "a true constant becomes static final";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a singleton holding the same state",
+        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+            "it is state the whole program shares",
+            "an object that owns it, handed to whoever needs it"),
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "callers change it to get something done",
+            "a method of its owner"));
   }
 
   @Override

@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -37,6 +38,20 @@ public final class PropertyShuffle extends FileRule {
   @Override
   public String remedy() {
     return "give the object a method named for the transition (enterNmi(), leaveNmi(), restore()) and call it";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("an isX() that wraps the getter, or the setter under another name: the caller still decides",
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "what is asked and what is decided belong to the same object",
+            "give the owner the operation and call it"),
+        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+            "a flag or a mode of the owner is being driven",
+            "the owner changes its own mode, or the mode becomes an object"),
+        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+            "the two properties hold the same fact",
+            "one property, the other derived"));
   }
 
   @Override

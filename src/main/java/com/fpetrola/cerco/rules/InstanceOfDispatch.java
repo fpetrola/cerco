@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -34,6 +35,22 @@ public final class InstanceOfDispatch extends FileRule {
   public String remedy() {
     return "declare the behaviour as a method of the common type and implement it in each subtype, or dispatch "
         + "with a visitor the subtypes accept; a sealed hierarchy makes the set of cases explicit";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("getClass(), a kind() enum and a switch, an isX() per subtype, a map keyed by Class, a "
+        + "sealed switch: the same test, moved",
+        new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
+            "the tested types are the project's and share a supertype",
+            "a method on the common type; a visitor when two or more operations test the same family, or when "
+                + "the hierarchy cannot see the caller's module"),
+        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
+            "you are picking elements out of a collection another object owns",
+            "its owner keeps or hands out the typed view"),
+        new Hypothesis(MissingModel.VARIATION_AS_DATA,
+            "the test stands for a capability rather than a kind",
+            "a method every element answers, or a role the owner knows its members by"));
   }
 
   @Override

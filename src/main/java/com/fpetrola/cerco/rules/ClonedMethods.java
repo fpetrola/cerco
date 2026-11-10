@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -42,6 +43,23 @@ public final class ClonedMethods extends ProjectRule<Map<String, List<ClonedMeth
   public String remedy() {
     return "make it a default method of the interface they share, or pull the common part into a type they are "
         + "built from; if the copies are truly independent decisions, their bodies should say so by differing";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a static helper or a utility class both call: the shape still has no owner",
+        new Hypothesis(MissingModel.SHAPE_REPEATED,
+            "the copies differ only in literals or names",
+            "one method, the difference a parameter"),
+        new Hypothesis(MissingModel.SHAPE_REPEATED,
+            "they differ in a call",
+            "a strategy, a lambda, or a template method in a common supertype"),
+        new Hypothesis(MissingModel.SHAPE_REPEATED,
+            "they sit in sibling types",
+            "pull it up into the supertype, or a default method"),
+        new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
+            "they sit in unrelated types",
+            "an object both are built from"));
   }
 
   @Override

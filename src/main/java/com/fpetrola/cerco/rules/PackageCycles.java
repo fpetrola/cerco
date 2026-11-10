@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
@@ -35,6 +36,14 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
   public String remedy() {
     return "find the dependency that points upward, and move the thing it needs down into the lower package, or "
         + "invert it behind an interface the lower package declares";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("merging the packages",
+        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+            "both packages need one concept",
+            "move it to one of them, or to a third package both depend on"));
   }
 
   @Override

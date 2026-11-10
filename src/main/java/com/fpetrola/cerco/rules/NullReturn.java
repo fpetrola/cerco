@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -23,6 +24,17 @@ public final class NullReturn extends FileRule {
   public String remedy() {
     return "return an Optional, an empty collection or a null object that behaves as nothing; a visitor with nothing "
         + "to return is a visitor over Void and should not exist, give it a result type";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("an Optional unwrapped with get() by every caller, or a sentinel value",
+        new Hypothesis(MissingModel.VARIATION_AS_DATA,
+            "absence is a case of the domain (nothing found, nothing plugged)",
+            "a null object or a special case that does the empty thing"),
+        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+            "what is returned is null until something arrives",
+            "make it mandatory, or split the object into its two phases"));
   }
 
   @Override

@@ -152,7 +152,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
 
   protected void report(Engine engine, Outcome outcome) throws MojoFailureException {
     new JsonReport().write(outcome, root().resolve("target").resolve("cerco").resolve(outcome.label() + ".json"));
-    String text = new ConsoleReport(engine.rules()).render(outcome);
+    String text = new ConsoleReport(engine.rules(), engine.autopsies().modelsByRule()).render(outcome);
     if (outcome.green()) {
       getLog().info(text.strip());
       return;

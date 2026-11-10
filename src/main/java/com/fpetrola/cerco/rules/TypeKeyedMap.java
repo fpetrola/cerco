@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -29,6 +30,21 @@ public final class TypeKeyedMap extends FileRule {
   public String remedy() {
     return "put the behaviour on the type itself, or on an adapter you construct at the boundary where the object "
         + "enters; if the set of types is open, a visitor the types accept keeps the dispatch inside them";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a map keyed by a name or an enum of the types: the same lookup by kind",
+        new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
+            "the tested types are the project's and share a supertype",
+            "a method on the common type; a visitor when two or more operations test the same family, or when "
+                + "the hierarchy cannot see the caller's module"),
+        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
+            "you are picking elements out of a collection another object owns",
+            "its owner keeps or hands out the typed view"),
+        new Hypothesis(MissingModel.VARIATION_AS_DATA,
+            "the test stands for a capability rather than a kind",
+            "a method every element answers, or a role the owner knows its members by"));
   }
 
   @Override

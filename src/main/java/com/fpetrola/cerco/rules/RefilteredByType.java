@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.InstanceOfExpr;
@@ -38,6 +39,17 @@ public final class RefilteredByType extends FileRule {
   @Override
   public String remedy() {
     return "keep the elements of that kind where they are added and removed (a typed list or map) and ask it";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a static method that filters, called from both loops",
+        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
+            "the collection is another object's",
+            "its owner keeps the typed subset, or offers the walk"),
+        new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
+            "each loop then does something different per type",
+            "a visitor the elements accept"));
   }
 
   @Override

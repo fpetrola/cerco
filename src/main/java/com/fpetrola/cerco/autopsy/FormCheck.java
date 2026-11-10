@@ -1,11 +1,13 @@
 package com.fpetrola.cerco.autopsy;
 
+import com.fpetrola.cerco.model.MissingModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Whether an autopsy form says enough to be filed. It cannot judge the analysis, only make sure there is one: a cause
@@ -36,11 +38,19 @@ public final class FormCheck {
       missing.add(Form.CAUSE + ": word for word the cause of an autopsy already filed; if it is the same cause, "
           + "say so with `same-as:` under " + Form.CANDIDATE + " and still describe this case");
     }
+    missing.addAll(model(form.model()));
     missing.addAll(context(form.section(Form.CONTEXT), solved.files()));
     missing.addAll(elsewhere(form.section(Form.ELSEWHERE)));
     atLeast(missing, form.section(Form.PRINCIPLE), PRINCIPLE_LENGTH, Form.PRINCIPLE + ": the design principle at stake");
     missing.addAll(candidate(form.section(Form.CANDIDATE)));
     return missing;
+  }
+
+  private List<String> model(String named) {
+    List<String> ids = Stream.of(MissingModel.values()).map(MissingModel::id).toList();
+    return ids.contains(named) ? List.of() : List.of(Form.CAUSE + ": a line `" + Form.MODEL + " <id>` naming which "
+        + "model was missing, one of " + String.join(", ", ids)
+        + (named.isEmpty() ? "" : " (`" + named + "` is none of them)"));
   }
 
   private List<String> context(String text, Set<String> fixed) {

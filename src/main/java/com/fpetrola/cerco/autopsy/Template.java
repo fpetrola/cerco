@@ -1,5 +1,7 @@
 package com.fpetrola.cerco.autopsy;
 
+import com.fpetrola.cerco.model.MissingModel;
+
 /** The form an autopsy starts as: its sections, each with guidance inside a comment that counts as nothing. */
 final class Template {
 
@@ -12,7 +14,9 @@ final class Template {
         + "## " + Form.SYMPTOM + "\n\n"
         + "## " + Form.CAUSE + "\n\n"
         + "<!-- Not what the rule says, but why the code was written that way: the concept, responsibility or\n"
-        + "abstraction that was missing or in the wrong place. In your own words, not copied from another autopsy. -->\n\n"
+        + "abstraction that was missing or in the wrong place. In your own words, not copied from another autopsy.\n"
+        + "Then, on a line of its own, `" + Form.MODEL + " <id>` with the one that fits best of:\n" + models()
+        + "-->\n\n"
         + "## " + Form.CONTEXT + "\n\n"
         + "<!-- At least two places you read, path:line, one of them outside the fixed file(s): callers, the\n"
         + "hierarchy, the data that flows in, the code that forced the shape. Say what each one showed. -->\n\n"
@@ -29,5 +33,12 @@ final class Template {
         + "      while one waits every other autopsy proposes a rule\n"
         + "same-as: <id of a filed autopsy>  when one already proposed the rule; the sections above still describe\n"
         + "this case -->\n";
+  }
+  private String models() {
+    StringBuilder out = new StringBuilder();
+    for (MissingModel model : MissingModel.values()) {
+      out.append("  ").append(model.id()).append(": ").append(model.absent()).append('\n');
+    }
+    return out.toString();
   }
 }

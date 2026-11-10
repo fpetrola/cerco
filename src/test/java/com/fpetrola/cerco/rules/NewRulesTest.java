@@ -217,4 +217,22 @@ class NewRulesTest {
     assertEquals(1, found.size(), found.toString());
     assertTrue(found.get(0).detail().startsWith("`s.setPending(false)` drives a flag of another class from p.Cpu.run"));
   }
+
+  @Test
+  void aFieldAskedForNullInTwoMethodsButNotOwnNamesNorOneMethod() {
+    List<String> found = details(new AbsenceAsState(),
+        "package p; class A { private Window window; private Line line; private Sound sound; static Object shared;"
+            + " void open() { if (window != null) window.show(); if (line == null) return; }"
+            + " void close() { if (this.window == null) return; java.util.Objects.isNull(sound); }"
+            + " void play(Line line) { if (line != null) line.start(); }"
+            + " void mute() { Sound sound = null; if (sound == null) return; if (shared == null) return; } }");
+    assertEquals(List.of("`window` is compared with null in 2 methods of p.A: close(), open()"), found);
+  }
+
+  @Test
+  void candidatesAreKnownButDoNotGate() {
+    Rules rules = new Rules(com.fpetrola.cerco.model.Settings.DEFAULTS);
+    assertTrue(rules.known().contains("absence-as-state"));
+    assertTrue(!rules.ids().contains("absence-as-state"));
+  }
 }

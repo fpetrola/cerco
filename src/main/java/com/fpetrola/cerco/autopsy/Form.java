@@ -14,6 +14,7 @@ public final class Form {
   public static final String ELSEWHERE = "Same cause elsewhere";
   public static final String PRINCIPLE = "Principle";
   public static final String CANDIDATE = "Candidate rule";
+  public static final String MODEL = "model:";
 
   private final String title;
   private final Map<String, String> sections;
@@ -49,6 +50,19 @@ public final class Form {
   /** The first line under the candidate rule: what the autopsy proposes, and how it says it. */
   public String candidate() {
     return section(CANDIDATE).lines().findFirst().orElse("").strip();
+  }
+
+  /** The missing model the cause names on its `model:` line; empty when it names none. */
+  public String model() {
+    return section(CAUSE).lines().map(String::strip).filter(line -> line.startsWith(MODEL)).findFirst()
+        .map(line -> line.substring(MODEL.length()).strip()).orElse("");
+  }
+
+  /** The rule whose findings went away, as the title says it: `Autopsy <id> (<rule>)`. */
+  public String ruleId() {
+    int open = title.lastIndexOf('(');
+    int close = title.lastIndexOf(')');
+    return open >= 0 && close > open ? title.substring(open + 1, close) : "";
   }
 
   /** Whether it says no rule could catch this, which only a person can accept. */

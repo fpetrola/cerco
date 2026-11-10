@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -53,6 +54,17 @@ public final class FlagDrivenFromOutside extends ProjectRule<FlagDrivenFromOutsi
   public String remedy() {
     return "give the owner a method named after the transition (enableInterrupt(), instructionRan(), close()) that "
         + "changes the flag and whatever goes with it, and a query for what the flag decides; drop the setter";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("an isX() that wraps the getter, or the setter under another name: the caller still decides",
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "what is asked and what is decided belong to the same object",
+            "give the owner the operation and call it"),
+        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+            "a flag or a mode of the owner is being driven",
+            "the owner changes its own mode, or the mode becomes an object"));
   }
 
   @Override

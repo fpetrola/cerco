@@ -16,6 +16,11 @@ public interface Rule {
 
   String remedy();
 
+  /** The models this smell usually hides; none for the rules about honesty rather than design. */
+  default Diagnosis diagnosis() {
+    return new Diagnosis("");
+  }
+
   /** True when a change to one file can only move findings in that file, so the rule can run on a single edit. */
   default boolean perFile() {
     return true;

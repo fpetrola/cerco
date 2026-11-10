@@ -21,6 +21,8 @@ public final class ExplainMojo extends AbstractCercoMojo {
           .append("  principle: ").append(rule.principle()).append('\n')
           .append("  what: ").append(rule.description()).append('\n')
           .append("  do: ").append(rule.remedy()).append('\n');
+      rule.diagnosis().hypotheses().forEach(hypothesis -> out.append("  may hide ").append(hypothesis.line())
+          .append('\n'));
     }
     out.append("\nExemptions: .cerco/exemptions.yaml, each with a rule, a target glob, a reason, a category "
         + "(false-positive, migration, decision) and one limit (until, untilVersion or budget), signed by a human "

@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -36,6 +37,17 @@ public final class NonPrivateStaticMethod extends FileRule {
     return "make it an instance method of the type whose data it uses, or turn the parameters it keeps receiving "
         + "into an object with this as its method; a factory keeps a factory name (" + String.join(", ", factoryPrefixes)
         + ") or returns its own type";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a singleton, or a stateless instance doing the same",
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "a parameter is an object of the project",
+            "an instance method of that object"),
+        new Hypothesis(MissingModel.VALUE_WITHOUT_A_TYPE,
+            "it computes on primitives or strings that mean something",
+            "a value object that owns the computation"));
   }
 
   @Override

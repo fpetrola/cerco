@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.BodyDeclaration;
@@ -31,6 +32,17 @@ public final class ConstantHolder extends FileRule {
   public String remedy() {
     return "move each constant next to the behaviour that uses it, or make the constants objects (an enum, a value "
         + "type) that carry that behaviour; a marker string belongs to the class that reads and writes the mark";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("an interface holding the constants",
+        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+            "each constant belongs to a concept of its own",
+            "move it to its owner, or make the set an enum"),
+        new Hypothesis(MissingModel.VALUE_WITHOUT_A_TYPE,
+            "the constants are values of one kind",
+            "an enum or a value type"));
   }
 
   @Override

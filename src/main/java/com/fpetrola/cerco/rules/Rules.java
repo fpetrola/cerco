@@ -4,6 +4,7 @@ import com.fpetrola.cerco.model.Settings;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /** The catalogue: every rule the gate knows, in the order it reports them, minus the ones a project switched off. */
 public final class Rules {
@@ -21,9 +22,17 @@ public final class Rules {
     return all().stream().map(Rule::id).collect(Collectors.toSet());
   }
 
-  /** Every rule this cerco has, switched off or not. */
+  /** Every rule this cerco has, switched off or not, candidates included: a rule an autopsy asked for is owed no more. */
   public Set<String> known() {
-    return every().stream().map(Rule::id).collect(Collectors.toSet());
+    return Stream.concat(every().stream(), candidates().stream()).map(Rule::id).collect(Collectors.toSet());
+  }
+
+  /**
+   * Rules being measured before they gate anything: `mvn cerco:survey` runs them over the reactor, and they join the
+   * catalogue only after their record (doc/reglas) shows they find real cases beyond the one that gave them birth.
+   */
+  public List<Rule> candidates() {
+    return List.of(new AbsenceAsState());
   }
 
   private List<Rule> every() {

@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -33,6 +34,21 @@ public final class CastDispatch extends FileRule {
   public String remedy() {
     return "declare the variable, field or parameter with the type you need, let the producer return that type, or "
         + "move the behaviour into the type so nobody has to narrow it; a cast of a primitive is not a dispatch";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a generic method that casts inside, or an instanceof pattern: the cast is still there",
+        new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
+            "the tested types are the project's and share a supertype",
+            "a method on the common type; a visitor when two or more operations test the same family, or when "
+                + "the hierarchy cannot see the caller's module"),
+        new Hypothesis(MissingModel.STRUCTURE_WALKED_FROM_OUTSIDE,
+            "you are picking elements out of a collection another object owns",
+            "its owner keeps or hands out the typed view"),
+        new Hypothesis(MissingModel.VARIATION_AS_DATA,
+            "the test stands for a capability rather than a kind",
+            "a method every element answers, or a role the owner knows its members by"));
   }
 
   @Override

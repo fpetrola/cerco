@@ -9,6 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -45,6 +46,12 @@ public final class Catalog {
       throw new UncheckedIOException("could not list the autopsies in " + dir, e);
     }
     return forms;
+  }
+
+  /** Per rule, how many filed autopsies named each missing model: what the rule's smell has hidden here so far. */
+  public Map<String, Map<String, Long>> modelsByRule() {
+    return done().values().stream().filter(form -> !form.model().isEmpty()).collect(Collectors.groupingBy(
+        Form::ruleId, TreeMap::new, Collectors.groupingBy(Form::model, TreeMap::new, Collectors.counting())));
   }
 
   public List<String> causes() {

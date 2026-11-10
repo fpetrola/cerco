@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** A switch: the cases of a concept written out at the call site instead of living with the concept. */
-public final class SwitchDispatch extends FileRule {
+public final class SwitchDispatch extends DecisionRule {
 
   @Override
   public String id() {

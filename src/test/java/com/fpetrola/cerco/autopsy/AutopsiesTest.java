@@ -54,7 +54,8 @@ class AutopsiesTest {
   }
 
   private String filled(String cause, String candidate) {
-    return "# Autopsy\n\n## Symptom\n\n## Cause\n\n" + cause + "\n\n## Context\n\n"
+    return "# Autopsy " + FORM_ID + " (no-switch)\n\n## Symptom\n\n## Cause\n\n" + cause
+        + "\n\nmodel: variation-as-data\n\n## Context\n\n"
         + "- src/main/java/p/A.java:3 the method that switched\n- src/main/java/p/B.java:3 where x comes from\n\n"
         + "## Same cause elsewhere\n\n- src/main/java/p/B.java:4 the same integer travels on\n\n"
         + "## Principle\n\nPolymorphism over type tests: an object does what its kind does.\n\n"
@@ -94,7 +95,26 @@ class AutopsiesTest {
   void theTemplateAsGivenSaysNothing(@TempDir Path root) throws IOException {
     Engine engine = fixedOnce(root, Settings.DEFAULTS);
     List<String> missing = engine.run(scope(root)).owed().get(0).missing();
-    assertEquals(5, missing.size(), missing.toString());
+    assertEquals(6, missing.size(), missing.toString());
+  }
+
+  @Test
+  void theCauseNamesTheMissingModelFromTheVocabulary(@TempDir Path root) throws IOException {
+    Engine engine = fixedOnce(root, Settings.DEFAULTS);
+    engine.run(scope(root));
+    String complete = filled(CAUSE, proposing("no-type-code"));
+    write(root, PENDING, complete.replace("model: variation-as-data", ""));
+    List<String> missing = engine.run(scope(root)).owed().get(0).missing();
+    assertEquals(1, missing.size(), missing.toString());
+    assertTrue(missing.get(0).contains("dispatch-from-outside"), missing.get(0));
+    write(root, PENDING, complete.replace("variation-as-data", "missing-visitor"));
+    missing = engine.run(scope(root)).owed().get(0).missing();
+    assertTrue(missing.get(0).contains("`missing-visitor` is none of them"), missing.get(0));
+
+    write(root, PENDING, complete);
+    engine.run(scope(root));
+    assertEquals(java.util.Map.of("no-switch", java.util.Map.of("variation-as-data", 1L)),
+        new Catalog(root.resolve("autopsies")).modelsByRule());
   }
 
   @Test

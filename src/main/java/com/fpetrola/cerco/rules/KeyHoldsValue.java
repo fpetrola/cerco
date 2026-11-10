@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.VariableDeclarator;
@@ -42,6 +43,14 @@ public final class KeyHoldsValue extends FileRule {
   @Override
   public String remedy() {
     return "let the key answer the value it was built from (core.machine()), and drop the map and its upkeep";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("another map, or a registry class around the same map",
+        new Hypothesis(MissingModel.KNOWLEDGE_WITHOUT_ONE_OWNER,
+            "the key already holds the value it is stored with",
+            "ask the key, drop the map"));
   }
 
   @Override

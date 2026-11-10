@@ -133,4 +133,12 @@ class RulesTest {
     assertTrue(!new Rules(settings).ids().contains("no-switch"));
     assertEquals(29, new Rules(Settings.DEFAULTS).all().size());
   }
+
+  @Test
+  void everyDesignRuleSaysWhatModelItsSmellMayHide() {
+    List<String> silent = new Rules(Settings.DEFAULTS).all().stream()
+        .filter(rule -> !rule.diagnosis().says() || rule.diagnosis().notAFix().isBlank()).map(Rule::id).sorted()
+        .toList();
+    assertEquals(List.of("no-ignored-result", "no-suppressed-warning", "no-swallowed-exception", "parseable"), silent);
+  }
 }

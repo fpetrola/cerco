@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Measure;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,17 @@ public final class FileLength implements BudgetRule {
   public String remedy() {
     return "split it along the responsibilities it already has: the groups of methods that share fields are the "
         + "classes waiting to be named";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a second file with the leftovers, named Helper or Part2",
+        new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
+            "some fields and the methods using them go together",
+            "extract the class they form"),
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "many methods work on another object's data",
+            "move them to that object"));
   }
 
   @Override

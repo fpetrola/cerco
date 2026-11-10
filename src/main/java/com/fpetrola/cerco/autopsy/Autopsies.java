@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -86,6 +87,10 @@ public final class Autopsies {
   }
 
   /** The rules the filed autopsies propose that this cerco does not have and nobody declined. */
+  public Map<String, Map<String, Long>> modelsByRule() {
+    return catalog.modelsByRule();
+  }
+
   public List<Owed> unbuilt(Set<String> known, List<String> declined) {
     return new Backlog(catalog).unbuilt(known, declined);
   }

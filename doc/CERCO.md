@@ -462,6 +462,7 @@ pensarla contra el rodeo que va a provocar.
 | `f628f96` | 0.11.0 | `refiltered-by-type`, de la autopsia del escritorio de oozx; 84 tests |
 | `d64e06f` | 0.12.0 | `key-holds-value`, de la autopsia del registro de máquinas de oozx; 85 tests |
 | | 0.13.0 | `enum-decided-outside`, de la autopsia de los bordes de las ventanas de oozx; 86 tests |
+| | 0.14.0 | Fases 0 y 1 de `doc/plan-smells-de-modelo.md`: diagnóstico en cada regla (`MissingModel`, `Diagnosis`, `DecisionRule`), línea `model:` obligatoria en la autopsia y su conteo por regla en el reporte; reglas candidatas y goal `survey`; primera candidata `absence-as-state`; 90 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 

@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -42,6 +43,15 @@ public final class NotifiedByCaller extends FileRule {
   public String remedy() {
     return "let the object whose state changes announce it (listeners on that object, or the setter firing), and "
         + "subscribe the one that used to announce";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a private method in the caller that does the pair: every other caller still has to "
+        + "remember it",
+        new Hypothesis(MissingModel.PROTOCOL_BY_CONVENTION,
+            "the change and the notice must always go together",
+            "the owner announces its own changes"));
   }
 
   @Override

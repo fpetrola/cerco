@@ -1,14 +1,16 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import java.util.ArrayList;
 import java.util.List;
 
 /** A switch written as if / else if / else: the cases are still enumerated at the caller. */
-public final class ConditionalChain extends FileRule {
+public final class ConditionalChain extends DecisionRule {
   private static final int BRANCHES = 3;
 
   @Override
@@ -31,6 +33,14 @@ public final class ConditionalChain extends FileRule {
   public String remedy() {
     return "give each case an object that knows its own answer and let the caller ask one of them, or keep two "
         + "branches at most: a guard clause and the one thing the method does";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    List<Hypothesis> hypotheses = new ArrayList<>(super.diagnosis().hypotheses());
+    hypotheses.add(new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT, "the arms test whether something is there",
+        "a null object, or a mandatory collaborator"));
+    return new Diagnosis(hypotheses, super.diagnosis().notAFix());
   }
 
   @Override

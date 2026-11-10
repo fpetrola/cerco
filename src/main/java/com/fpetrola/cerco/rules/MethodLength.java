@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Measure;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import java.util.ArrayList;
@@ -35,6 +36,21 @@ public final class MethodLength implements BudgetRule {
   public String remedy() {
     return "extract each step into a method named for what it does; if the steps share many locals, they are an "
         + "object";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("part1() and part2() sharing every local, or the body moved to a helper class",
+        new Hypothesis(MissingModel.PROCEDURE_INSTEAD_OF_MODEL,
+            "the method narrates steps (comments, paragraphs, many locals)",
+            "a method per step named by what it does; an object named by the concept when the steps share three "
+                + "or more locals"),
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "it asks one other object many things",
+            "move that part to the object it asks"),
+        new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
+            "it fills an object through setters, or unpacks one into many arguments",
+            "a constructor or a method of that object"));
   }
 
   @Override

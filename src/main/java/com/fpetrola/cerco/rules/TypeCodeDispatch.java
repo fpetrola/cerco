@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * instanceof by other names: a {@code getClass()} that is not merely printed, or a type code ({@code getNodeType()},
  * {@code getKind()}, {@code getTagName()}, a class name) compared against a constant.
  */
-public final class TypeCodeDispatch extends FileRule {
+public final class TypeCodeDispatch extends DecisionRule {
   private static final Pattern TYPE_CODE = Pattern.compile(
       "get(\\w*Type|\\w*Kind|TagName|NodeName|SimpleName|TypeName|CanonicalName)|kind|typeName");
   private static final Set<String> NAMING = Set.of("getSimpleName", "getName", "getCanonicalName", "getTypeName",

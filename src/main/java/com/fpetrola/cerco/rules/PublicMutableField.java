@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.FieldDeclaration;
@@ -30,6 +31,14 @@ public final class PublicMutableField extends FileRule {
   public String remedy() {
     return "make the field private and give the object a method that does the thing callers were doing with the field; "
         + "if the object is only data, make it a record";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a trivial getter and setter: the state is still changed from outside",
+        new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
+            "callers change the field to get something done",
+            "a method that does that thing"));
   }
 
   @Override

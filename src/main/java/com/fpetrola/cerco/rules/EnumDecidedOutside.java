@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  * Born from an autopsy of oozx, where the four edges a window docks on were switched over in four methods of the
  * window, each writing the same geometry per edge, and `side == TOP || side == BOTTOM` was asked four times.
  */
-public final class EnumDecidedOutside extends FileRule {
+public final class EnumDecidedOutside extends DecisionRule {
 
   @Override
   public String id() {

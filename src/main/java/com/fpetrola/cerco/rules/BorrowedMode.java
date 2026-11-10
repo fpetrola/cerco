@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.VariableDeclarator;
@@ -41,6 +42,18 @@ public final class BorrowedMode extends FileRule {
   @Override
   public String remedy() {
     return "give the object the operation the borrow surrounds (writeUnheard(v), measureCompact()) and call it";
+  }
+
+  @Override
+  public Diagnosis diagnosis() {
+    return new Diagnosis("a private method in the caller that saves and restores: every other caller still has "
+        + "to remember it",
+        new Hypothesis(MissingModel.PROTOCOL_BY_CONVENTION,
+            "the mode is set, used and restored around some work",
+            "one operation of the owner that takes the work and restores itself (execute-around)"),
+        new Hypothesis(MissingModel.STATE_WITHOUT_AN_OBJECT,
+            "the borrowed mode is a phase the object goes through",
+            "the phase as an object of its own"));
   }
 
   @Override
