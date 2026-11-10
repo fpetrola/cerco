@@ -126,7 +126,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   }
 
   protected void failIfBaselineDeleted(Engine engine) throws MojoFailureException {
-    if (!engine.store().exists() && new TrackedInHead().tracked(root(), ".cerco/baseline/frozen")) {
+    if (!engine.store().exists() && new GitTree(root()).tracksInHead(".cerco/baseline/frozen")) {
       throw new MojoFailureException("cerco: the baseline under .cerco/baseline is in git's HEAD but not on disk. "
           + "It was deleted, and a fresh freeze would silently accept everything that is wrong today. Restore it "
           + "with `git checkout -- .cerco/baseline` and fix the findings instead.");

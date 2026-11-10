@@ -258,7 +258,7 @@ el classpath del plugin.
 ### 4.3 `quick`: qué archivos mira
 
 `QuickMojo`: si el hook nombra un archivo (`tool_input.file_path`), ese. Si no (comando de shell, o una persona en
-una terminal), los `.java` que git ve modificados, cambiados, agregados o no rastreados (`ChangedFiles`, con JGit).
+una terminal), los `.java` que git ve modificados, cambiados, agregados o no rastreados (`GitTree`, que le pregunta al `git` de la línea de comandos: JGit 6 no entendía los worktrees enlazados).
 En ambos casos se intersecan con las fuentes del reactor, así que un `.java` fuera de los source roots no se mira.
 
 Esto nació en 0.2.0: la sesión de cerco-demo escribió casi todo por heredocs y Python, y el `quick` de 0.1.0, que
@@ -285,7 +285,7 @@ coincidencia de texto (aunque aparezca en un `grep`): es el interruptor del cerc
 
 ### 4.5 Anti-borrado
 
-Si `.cerco/baseline/frozen` está en el `HEAD` de git pero no en disco (`TrackedInHead`), `check`, `audit` y `quick` se
+Si `.cerco/baseline/frozen` está en el `HEAD` de git pero no en disco (`GitTree`), `check`, `audit` y `quick` se
 niegan a recongelar y piden `git checkout -- .cerco/baseline`. Sin esto, borrar la baseline sería la forma más corta
 de "arreglar" todo.
 
@@ -311,9 +311,9 @@ de "arreglar" todo.
 | `report` | `ConsoleReport` (lo que lee el agente), `JsonReport` (`target/cerco/<label>.json`) |
 | `hooks` | `HookMain`, `HookInput`, `Guard`, `Decision`, `ShellCommand`/`ShellLexer`/`SimpleCommand`, `MavenRun`, `MavenOutput`, `Terminal`, `StdinText` |
 | `json` | parser JSON mínimo para `HookMain` |
-| `maven` | los mojos (`AbstractCercoMojo`, `CheckMojo`, `AuditMojo`, `QuickMojo`, `ApproveMojo`, `InstallHooksMojo`, `ExplainMojo`), `ClaudeSettings`, `HookSpec`, `ChangedFiles`, `TrackedInHead`, `RootLocator` |
+| `maven` | los mojos (`AbstractCercoMojo`, `CheckMojo`, `AuditMojo`, `QuickMojo`, `ApproveMojo`, `InstallHooksMojo`, `ExplainMojo`), `ClaudeSettings`, `HookSpec`, `GitTree`, `RootLocator` |
 
-Dependencias de runtime: JavaParser, Jackson, SnakeYAML, JGit. Maven es `provided`.
+Dependencias de runtime: JavaParser, Jackson, SnakeYAML. Maven es `provided`; `git` se usa como comando.
 
 ### 5.2 Una corrida (`Engine.run`)
 

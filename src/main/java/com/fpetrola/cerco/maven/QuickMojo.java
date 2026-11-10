@@ -33,7 +33,7 @@ public final class QuickMojo extends AbstractCercoMojo {
   }
 
   private Set<SourceFile> candidates() {
-    List<Path> changed = new Terminal().interactive() ? new ChangedFiles().under(root()) : fromHook();
+    List<Path> changed = new Terminal().interactive() ? new GitTree(root()).changedJava() : fromHook();
     return changed.stream().map(path -> new SourceFile(root(), path.toAbsolutePath().normalize()))
         .collect(Collectors.toSet());
   }
@@ -41,7 +41,7 @@ public final class QuickMojo extends AbstractCercoMojo {
   private List<Path> fromHook() {
     HookInput input = HookInput.parse(new StdinText(System.in).text());
     if (input.blank() || input.filePath().isEmpty()) {
-      return new ChangedFiles().under(root());
+      return new GitTree(root()).changedJava();
     }
     return List.of(Path.of(input.filePath()));
   }

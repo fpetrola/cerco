@@ -6,7 +6,7 @@
 
   <groupId>com.fpetrola</groupId>
   <artifactId>cerco-maven-plugin</artifactId>
-  <version>0.4.0</version>
+  <version>0.4.1</version>
   <packaging>maven-plugin</packaging>
 
   <name>cerco</name>
@@ -52,11 +52,6 @@
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
       <version>2.2</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jgit</groupId>
-      <artifactId>org.eclipse.jgit</artifactId>
-      <version>6.10.0.202406032230-r</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
