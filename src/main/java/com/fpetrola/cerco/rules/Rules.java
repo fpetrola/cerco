@@ -52,6 +52,7 @@ public final class Rules {
         new PropertyShuffle(),
         new NotifiedByCaller(),
         new BorrowedMode(),
+        new RefilteredByType(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

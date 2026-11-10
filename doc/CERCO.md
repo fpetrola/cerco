@@ -203,7 +203,8 @@ Tercera: `property-shuffle` (0.8.0), de `2026-11-10-ask-then-tell` (el protocolo
 IFF1 guardado en IFF2 y devuelto por RETN, escrito por los que llaman como `state.setIff1(state.isIff2())`). Cuarta: `notified-by-caller` (0.9.0), de
 `2026-11-10-flag-driven-from-outside-3` (pausar la máquina y avisarlo eran dos pasos de quien llamaba, y los que no
 avisaban pausaban en silencio). Quinta: `borrowed-mode` (0.10.0), de `2026-11-10-flag-driven-from-outside-4` (un par
-de registros guardaba, apagaba y restauraba el `listening` de cada mitad para escribirla sin que la oyeran).
+de registros guardaba, apagaba y restauraba el `listening` de cada mitad para escribirla sin que la oyeran). Sexta: `refiltered-by-type` (0.11.0), de `2026-11-10-no-instanceof-2` (el escritorio
+recorría todas sus ventanas buscando las máquinas en cada pregunta, y así tenía dos respuestas para la máquina en uso).
 
 
 La idea de Fernando: los hallazgos son síntomas de modelo faltante, y arreglarlos para cumplir la letra de la regla
@@ -454,7 +455,8 @@ pensarla contra el rodeo que va a provocar.
 | `87c7da4` | 0.7.0 | `none:` espera firma y uno solo a la vez; `same-as:` sólo hacia una autopsia que pide regla; 80 tests |
 | `e4b04f4` | 0.8.0 | `property-shuffle`, de la autopsia del NMI de oozx; 81 tests |
 | `5a26a9d` | 0.9.0 | `notified-by-caller`, de la autopsia de la pausa de oozx; 82 tests |
-| | 0.10.0 | `borrowed-mode`, de la autopsia de los registros observables de oozx; 83 tests |
+| `9a1a79d` | 0.10.0 | `borrowed-mode`, de la autopsia de los registros observables de oozx; 83 tests |
+| | 0.11.0 | `refiltered-by-type`, de la autopsia del escritorio de oozx; 84 tests |
 
 Los mensajes de commit son largos y cuentan el porqué de cada cambio: `git log` es lectura recomendada.
 

@@ -170,6 +170,17 @@ class NewRulesTest {
   }
 
   @Test
+  void loopsThatKeepPickingTheSameKindOutOfTheSameCollection() {
+    List<String> found = details(new RefilteredByType(), "package p; class A { Pane pane;"
+        + " void f() { for (Frame f : pane.getAllFrames()) { if (f instanceof Machine m) m.refill(); } }"
+        + " void g() { for (Frame f : pane.getAllFrames()) if (f instanceof Machine && f.isVisible()) use(f); }"
+        + " void h() { for (Frame f : pane.getAllFrames()) if (f instanceof Player p) p.stop(); }"
+        + " void i() { for (Frame f : frames) if (f instanceof Player p) p.stop(); }"
+        + " void j() { for (Frame f : pane.getAllFrames()) if (other instanceof Machine) use(f); } }");
+    assertEquals(List.of("2 loops over `pane.getAllFrames()` pick out Machine, in p.A.f()"), found);
+  }
+
+  @Test
   void flagsSwitchedFromAnotherClass() {
     List<Finding> found = new FlagDrivenFromOutside().inspect(List.of(
         snippets.parse("src/main/java/p/State.java", "package p; class State { private boolean pending;"
