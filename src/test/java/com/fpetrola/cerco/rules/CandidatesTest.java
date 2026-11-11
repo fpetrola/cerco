@@ -118,14 +118,14 @@ class CandidatesTest {
   }
 
   @Test
-  void twoTypesThatHoldTheSameFields() {
-    List<String> found = details(new ParallelModel(),
-        "package p; class State { int a; int b; int c; int d; int e; }"
-            + " class Snapshot { int a; int b; int c; int d; String name; }"
-            + " class Other { int a; int b; long c; long d; }"
-            + " class Base { int a; int b; int c; int d; } class Sub extends Base { int a; int b; int c; int d; }");
-    assertTrue(found.contains("p.State and Snapshot hold the same 4 fields: a, b, c, d"));
-    assertTrue(found.stream().noneMatch(detail -> detail.startsWith("p.Sub and Base")));
-    assertTrue(found.stream().noneMatch(detail -> detail.contains("Other")));
+  void aGroupOfFieldsSeveralTypesKeep() {
+    List<String> found = details(new KeptTogether(),
+        "package p; class Speccy { Cpu cpu; Display display; Memory memory; int n; }"
+            + " class Machine { Cpu cpu; Display display; Memory memory; String name; }"
+            + " class Core { Cpu cpu; Display display; Memory memory; }"
+            + " class Lone { Cpu cpu; Display display; long memory; }"
+            + " class Cpu {} class Display {} class Memory {}");
+    assertEquals(3, found.size());
+    assertTrue(found.contains("p.Core keeps `cpu, display, memory`, as 2 other types do: Machine, Speccy"));
   }
 }
