@@ -102,7 +102,10 @@ class CandidatesTest {
         "package p; class Desk { int a(Frame w) { return w.isAttached() && w.machine() == null ? 1 : 0; }"
             + " void b(Frame w) { if (w.isAttached() && w.machine() == null) { } }"
             + " void c(Frame w) { while (w.isAttached() && w.machine() == null) { } }"
-            + " void d(Frame w, int n) { if (n > 0 && n < 9) { } if (w.isAttached()) { } } }");
+            + " void d(Frame w, int n) { if (n > 0 && n < 9) { } if (w.isAttached()) { } }"
+            + " void e(java.awt.Point p) { if (p.getX() > 0 && p.getY() > 0) { } }"
+            + " void f(java.awt.Point p) { if (p.getX() > 0 && p.getY() > 0) { } } }"
+            + " class Frame { boolean isAttached() { return true; } Object machine() { return this; } }");
     assertEquals(3, found.size());
     assertTrue(found.contains("`w.isAttached() && w.machine() == null` in p.Desk.a(Frame); 3 members write this "
         + "same condition"));

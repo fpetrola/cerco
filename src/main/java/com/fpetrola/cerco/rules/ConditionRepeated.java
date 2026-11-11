@@ -3,6 +3,9 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Chain;
+import com.fpetrola.cerco.project.Imports;
+import com.fpetrola.cerco.project.Names;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.BinaryExpr;
@@ -30,7 +33,8 @@ public final class ConditionRepeated extends RepeatedRule<ConditionRepeated.Site
    * One condition: where, in which member, how it is written, and its shape: the same text with the objects it asks
    * left unnamed, so that two members asking the same of differently named variables read alike.
    */
-  public record Site(String file, int line, String member, String condition, String shape) implements Place {
+  public record Site(String file, int line, String member, String condition, String shape, List<Chain> asked)
+      implements Place {
   }
 
   public ConditionRepeated() {
@@ -68,12 +72,28 @@ public final class ConditionRepeated extends RepeatedRule<ConditionRepeated.Site
 
   @Override
   protected void gather(ParsedFile file, CompilationUnit unit, List<Site> sites) {
+    Names names = new Names(new Imports(unit));
     Stream<Expression> conditions = Stream.of(
         unit.findAll(IfStmt.class).stream().map(IfStmt::getCondition),
         unit.findAll(WhileStmt.class).stream().map(WhileStmt::getCondition),
         unit.findAll(ConditionalExpr.class).stream().map(ConditionalExpr::getCondition)).flatMap(found -> found);
     conditions.filter(this::composed).forEach(condition -> sites.add(new Site(file.name(), line(condition),
-        enclosing.of(condition), condition.toString().replaceAll("\\s+", " "), shape(condition))));
+        enclosing.of(condition), condition.toString().replaceAll("\\s+", " "), shape(condition),
+        asked(condition, names))));
+  }
+
+  /** How each object the condition asks something of is reached, for the project to say whose it is. */
+  private List<Chain> asked(Expression condition, Names names) {
+    return Stream.concat(
+        condition.findAll(MethodCallExpr.class).stream().map(MethodCallExpr::getScope).flatMap(Optional::stream),
+        condition.findAll(FieldAccessExpr.class).stream().map(FieldAccessExpr::getScope))
+        .map(names::chainOf).flatMap(Optional::stream).toList();
+  }
+
+  /** Only a question put to an object of the project: one put to a library's object is not its owner's to name. */
+  @Override
+  protected boolean counts(Site place, Project project) {
+    return place.asked().stream().anyMatch(chain -> project.typeOf(chain).filter(project::declares).isPresent());
   }
 
   /** The condition with every variable it asks something of written as `_`. */

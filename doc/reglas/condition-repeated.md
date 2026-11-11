@@ -1,6 +1,6 @@
 # Ficha: `condition-repeated` (candidata)
 
-Estado: **candidata, no rinde todavía**.
+Estado: **candidata, propuesta para adoptar** (ver §6).
 
 ## 1. Definición
 
@@ -47,3 +47,20 @@ en tres; un rango de `d.data` en `UpdFdc`) y 3 débiles, sobre objetos de librer
 
 Cambia la decisión: **propuesta para adoptar**, después de exigir que lo preguntado sea un objeto del proyecto, como
 se hizo con `told-one-by-one`.
+
+## 6. Solo preguntas a objetos del proyecto (0.15.0, segundo proyecto)
+
+En oozx-plugins daba 23 sitios, y la mitad eran preguntas a objetos de biblioteca (`Point`, `String`), que el
+proyecto no puede nombrar en su dueño. Ahora la condición cuenta solo si al menos uno de los objetos a los que les
+pregunta es de un tipo que el proyecto declara (`Names.chainOf` + `Project.typeOf`).
+
+| proyecto | sitios | condiciones distintas |
+|---|---|---|
+| oozx `emulator` | 0 | 0 |
+| oozx `machine` + `translation` | 6 | 3 |
+| oozx-plugins | 17 | 11 |
+
+Los 23 sitios leídos, todos verdaderos: `d.data >= 0xfff8 && d.data <= 0xfffb` ("¿es un puerto del ratón?", tres
+variantes en dos miembros cada una), `entry.publishers == null || entry.publishers.isEmpty()` ("¿no tiene
+editor?"), `p.keeper || wall.contains(p)`, `recording.getSnapshotBlock() == null || …`. Ningún falso positivo.
+Separa (emulator 0) y rinde en el segundo proyecto: cumple el protocolo.

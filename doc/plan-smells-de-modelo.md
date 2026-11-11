@@ -862,7 +862,7 @@ Las candidatas, en los dos proyectos:
 | candidata | emulator | machine | oozx-plugins | qué cambió |
 |---|---|---|---|---|
 | `state-asked-across-methods` | 1 | 2 | 35 | **propuesta para adoptar**: separa 9 veces, 7 de 7 en la muestra |
-| `condition-repeated` | 0 | 2 | 23 | **propuesta**, después de exigir objetos del proyecto |
+| `condition-repeated` | 0 | 6 | 17 | **propuesta**: ya exige objetos del proyecto, 23 sitios leídos sin falsos positivos |
 | `unpacked-at-the-call` | 6 | 8 | 24 | sigue sin separar |
 | `hierarchy-asked-from-outside` | 48 | 8 | 24 | sin cambio |
 | `said-in-two-calls` | 3 | 0 | 6 | un caso en cada proyecto: no rinde |
