@@ -130,6 +130,12 @@ Lo que se analiza son los *compile source roots* de cada módulo del reactor (`s
 módulos apagados. Se excluye lo que está bajo `target/`, `generated-sources/` o `generated/`, y cualquier tipo
 anotado con `@Generated`.
 
+Un archivo que pasa a ser generado (se le pone `@Generated`) no cuenta como arreglado: sus hallazgos congelados salen
+de la línea de base como una regla aflojada, que acepta una persona con `mvn cerco:approve` (desde 0.17.3). Así el
+código que escribe una herramienta, como los juegos que traduce oozx, deja de juzgarse con una sola firma y sin
+autopsias, y anotar `@Generated` una clase escrita a mano no es una salida barata. La herramienta es la que tiene que
+escribir la anotación: lo que genera la próxima vez ya llega marcado.
+
 ## Las excepciones
 
 Una excepción es una decisión humana, explícita y con fecha de vencimiento. Viven en `.cerco/exemptions.yaml`:
