@@ -892,3 +892,9 @@ propósito: no son de diseño.
   es la señal y no un umbral: en una clase grande alcanza un método que llama a todos para que sea un solo grupo.
   Para leer esas hace falta otra señal (qué campos cambian juntos, o quitar los métodos que tocan casi todo), no
   ajustar esta.
+
+### 13.11 Adoptadas `state-asked-across-methods` y `condition-repeated`
+
+Por decisión de Fernando (2026-11-11): 41 reglas adoptadas, 9 candidatas. El propio cerco no dio ningún hallazgo
+contra ellas. En oozx el `audit` sigue verde: sus hallazgos se congelan en la baseline la primera vez que corren.
+

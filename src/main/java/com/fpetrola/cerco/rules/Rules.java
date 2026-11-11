@@ -54,8 +54,8 @@ public final class Rules {
    * catalogue only after their record (doc/reglas) shows they find real cases beyond the one that gave them birth.
    */
   public List<Rule> candidates() {
-    return List.of(new HierarchyAskedFromOutside(), new SetFromOutside(), new StateAskedAcrossMethods(),
-        new UnpackedAtTheCall(), new SaidInTwoCalls(), new ConditionRepeated(), new OneAndMany(), new ToldOneByOne(),
+    return List.of(new HierarchyAskedFromOutside(), new SetFromOutside(),
+        new UnpackedAtTheCall(), new SaidInTwoCalls(), new OneAndMany(), new ToldOneByOne(),
         new OverriddenToNothing(), new MiddleMan(), new DispatchByKey());
   }
 
@@ -101,6 +101,7 @@ public final class Rules {
   private List<Rule> fromThePlanOfModelSmells() {
     return List.of(new FlagArgument(), new MapsKeyedAlike(), new NamedByText(), new HandedOutWhole(),
         new AbsenceAsState(), new ReachedThrough(), new WalkedFromOutside(), new EnumDecidedAcross(),
-        new KeptTogether(), new DataWithoutBehaviour());
+        new KeptTogether(), new DataWithoutBehaviour(), new StateAskedAcrossMethods(),
+        new ConditionRepeated());
   }
 }

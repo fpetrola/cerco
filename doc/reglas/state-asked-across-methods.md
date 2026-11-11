@@ -1,6 +1,6 @@
 # Ficha: `state-asked-across-methods` (candidata)
 
-Estado: **candidata, sin decidir**: precisa, pero encuentra poco y no separa.
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-11), después de medirla en un segundo proyecto.
 
 ## 1. Definición
 

@@ -101,7 +101,7 @@ mantiene un índice de lo que el proyecto declara (tipos, familias, visitors, m�
 que aprendió la última corrida completa (`target/cerco/project.json`). La lectura es consejo: no entra en la clave
 del hallazgo ni cambia ningún veredicto.
 
-Las reglas **candidatas** (hoy once, cada una con su ficha en `doc/reglas/`) no frenan: se miden con `survey` y entran al catálogo cuando su
+Las reglas **candidatas** (hoy nueve, cada una con su ficha en `doc/reglas/`) no frenan: se miden con `survey` y entran al catálogo cuando su
 ficha en `doc/reglas/` muestra que encuentran casos reales más allá del que las originó. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
 
 Las nueve reglas que no son de polimorfismo clásico ni de tamaño nacieron de un experimento: un agente al que se le

@@ -1,6 +1,6 @@
 # Ficha: `condition-repeated` (candidata)
 
-Estado: **candidata, propuesta para adoptar** (ver §6).
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-11).
 
 ## 1. Definición
 
