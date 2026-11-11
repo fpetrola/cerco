@@ -333,6 +333,15 @@ class ReadingsTest {
   }
 
   @Test
+  void aComparisonUnderAGuardIsStillThatComparison() {
+    List<Finding> found = found(new ConditionalChain(),
+        "package p; class Core { boolean turbo; void set(String option, boolean ready) {"
+            + " if (option.equals(\"turbo\") && ready) { turbo = true; } else if (option.equals(\"speed\")) {"
+            + " turbo = false; } else if (ready && \"mute\".equals(option)) { turbo = false; } } }");
+    assertEquals("value-without-a-type: the cases are texts, compared with `option`", read(found.get(0)));
+  }
+
+  @Test
   void aChainOfUnrelatedConditionsIsNotRead() {
     List<Finding> found = found(new ConditionalChain(),
         "package p; class Core { int f(int a, int b) { if (a > b) { return 1; } else if (b > 10) { return 2; }"

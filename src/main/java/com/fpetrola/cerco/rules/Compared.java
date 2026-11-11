@@ -60,10 +60,16 @@ final class Compared {
   private List<Term> between(Expression left, Expression right) {
     Case ofLeft = left.accept(kinds, null);
     Case ofRight = right.accept(kinds, null);
-    if (ofRight != Case.OTHER) {
+    if (ofRight.compares()) {
       return List.of(new Term(Optional.of(left), ofRight, name(right)));
     }
-    return List.of(ofLeft == Case.OTHER ? unknown() : new Term(Optional.of(right), ofLeft, name(left)));
+    return List.of(ofLeft.compares() ? new Term(Optional.of(right), ofLeft, name(left)) : unknown());
+  }
+
+  /** A comparison joined by `&&` to something else is still that comparison, under a guard. */
+  private List<Term> guarded(List<Term> both) {
+    List<Term> comparisons = both.stream().filter(term -> term.what().compares()).toList();
+    return comparisons.isEmpty() ? List.of(unknown()) : comparisons;
   }
 
   /** What kind of constant an expression is; a name counts when it is written as constants are. */
@@ -141,10 +147,13 @@ final class Compared {
 
     @Override
     public List<Term> visit(BinaryExpr binary, Void none) {
+      List<Term> both = new ArrayList<>(binary.getLeft().accept(this, none));
+      both.addAll(binary.getRight().accept(this, none));
       if (binary.getOperator() == BinaryExpr.Operator.OR) {
-        List<Term> both = new ArrayList<>(binary.getLeft().accept(this, none));
-        both.addAll(binary.getRight().accept(this, none));
         return both;
+      }
+      if (binary.getOperator() == BinaryExpr.Operator.AND) {
+        return guarded(both);
       }
       return EQUALITY.contains(binary.getOperator()) ? between(binary.getLeft(), binary.getRight())
           : List.of(unknown());

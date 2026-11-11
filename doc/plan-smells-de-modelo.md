@@ -898,3 +898,10 @@ propósito: no son de diseño.
 Por decisión de Fernando (2026-11-11): 41 reglas adoptadas, 9 candidatas. El propio cerco no dio ningún hallazgo
 contra ellas. En oozx el `audit` sigue verde: sus hallazgos se congelan en la baseline la primera vez que corren.
 
+### 13.12 Comparaciones con guarda
+
+`state == READ && datarq` se lee ahora como la comparación que es (`Compared.guarded`). Los hallazgos no cambian
+(regresión idéntica, `audit` verde); se leen 3 cadenas más en oozx (215 sin leer de 468, de las que 198 son juegos
+generados) y 4 más en oozx-plugins (44 de 61). Lo que queda sin leer son cadenas sin un sujeto común (rangos de
+valores, "el primero que no esté vacío"): ahí no hay evidencia de un modelo y se deja sin lectura.
+

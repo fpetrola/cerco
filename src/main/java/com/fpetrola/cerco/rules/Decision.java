@@ -32,7 +32,12 @@ public record Decision(Finding finding, Selector selector, String inside, Set<Ca
 
   /** What a case compares with. */
   public enum Case {
-    NAMED, TEXT, NUMBER, TYPE, ABSENT, OTHER
+    NAMED, TEXT, NUMBER, TYPE, ABSENT, OTHER;
+
+    /** Whether it says what something is compared with. */
+    boolean compares() {
+      return this != OTHER;
+    }
   }
 
   /** What the branches do with the decision, and how that is said of the enum whose constants they name. */
