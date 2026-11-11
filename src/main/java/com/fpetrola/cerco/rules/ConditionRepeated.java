@@ -13,7 +13,9 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -24,8 +26,11 @@ public final class ConditionRepeated extends RepeatedRule<ConditionRepeated.Site
   private static final int MEMBERS = 2;
   private static final Set<BinaryExpr.Operator> JOINING = Set.of(BinaryExpr.Operator.AND, BinaryExpr.Operator.OR);
 
-  /** One condition: where, in which member, and how it is written. */
-  public record Site(String file, int line, String member, String condition) implements Place {
+  /**
+   * One condition: where, in which member, how it is written, and its shape: the same text with the objects it asks
+   * left unnamed, so that two members asking the same of differently named variables read alike.
+   */
+  public record Site(String file, int line, String member, String condition, String shape) implements Place {
   }
 
   public ConditionRepeated() {
@@ -68,7 +73,21 @@ public final class ConditionRepeated extends RepeatedRule<ConditionRepeated.Site
         unit.findAll(WhileStmt.class).stream().map(WhileStmt::getCondition),
         unit.findAll(ConditionalExpr.class).stream().map(ConditionalExpr::getCondition)).flatMap(found -> found);
     conditions.filter(this::composed).forEach(condition -> sites.add(new Site(file.name(), line(condition),
-        enclosing.of(condition), condition.toString().replaceAll("\\s+", " "))));
+        enclosing.of(condition), condition.toString().replaceAll("\\s+", " "), shape(condition))));
+  }
+
+  /** The condition with every variable it asks something of written as `_`. */
+  private String shape(Expression condition) {
+    String shape = condition.toString().replaceAll("\\s+", " ");
+    Set<String> asked = Stream.concat(
+        condition.findAll(MethodCallExpr.class).stream().map(MethodCallExpr::getScope).flatMap(Optional::stream),
+        condition.findAll(FieldAccessExpr.class).stream().map(FieldAccessExpr::getScope))
+        .filter(Expression::isNameExpr).map(Expression::toString)
+        .filter(name -> Character.isLowerCase(name.charAt(0))).collect(Collectors.toSet());
+    for (String name : asked) {
+      shape = shape.replaceAll("\\b" + name + "\\.", "_.");
+    }
+    return shape;
   }
 
   /** Joined by `&&` or `||`, and asking another object at least twice: more than one thing put together. */
@@ -82,12 +101,12 @@ public final class ConditionRepeated extends RepeatedRule<ConditionRepeated.Site
 
   @Override
   protected String what(Site place, Project project) {
-    return place.condition();
+    return place.shape();
   }
 
   @Override
   protected Finding found(Site place, Shared<Site> shared, Project project) {
-    return finding(place, shared.what(), "`" + clipped(shared.what()) + "` in " + place.member() + "; "
+    return finding(place, shared.what(), "`" + clipped(place.condition()) + "` in " + place.member() + "; "
         + shared.members() + " members write this same condition");
   }
 }

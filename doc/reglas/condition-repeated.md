@@ -31,3 +31,10 @@ Con 3 miembros no encontraba nada.
 Un caso: no cumple. Exigir el mismo texto es demasiado estricto, porque dos lugares que hacen la misma pregunta casi
 nunca usan los mismos nombres de variable. La forma que puede rendir compara la forma de la condición (los mismos
 miembros pedidos, en el mismo orden) y no su texto.
+
+## 5. Por forma y no por texto (0.15.0)
+
+Ahora compara la forma: la condición con las variables a las que les pregunta escritas como `_`. En oozx no sumó
+ningún caso (`emulator` 0, `machine` 2, `translation` 4): la regla no rinde aquí porque casi no hay condiciones
+compuestas repetidas, no por cómo se comparan.
+
