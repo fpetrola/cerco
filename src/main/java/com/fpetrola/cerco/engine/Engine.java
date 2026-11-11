@@ -131,7 +131,7 @@ public final class Engine {
     if (!scope.full()) {
       runs.remember(recall).ifPresent(notes::add);
     }
-    int parsed = feed.each(scope.files(), runs::visit);
+    int parsed = feed.each(scope.files(), runs::visit, runs::generated);
     feed.each(scope.tests(), runs::hear);
     if (scope.full()) {
       runs.sawTheWholeProject(recall);

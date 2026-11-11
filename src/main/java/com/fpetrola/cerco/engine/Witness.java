@@ -40,7 +40,8 @@ public final class Witness {
 
   /**
    * The solved keys whose code changed. The others are recorded as loosened: a per-file finding whose file has the
-   * digest it had, or a project-wide one when no file of the project changed since the last full run.
+   * digest it had, a project-wide one when no file of the project changed since the last full run, and any finding
+   * of a file that is now generated, since saying a tool wrote it is no fix and a person accepts it.
    */
   List<Solved> fixedInCode(List<Solved> solved, Digests digests, boolean full) {
     Map<String, String> before = read(DIGESTS);
@@ -49,7 +50,8 @@ public final class Witness {
     List<Solved> fixed = new ArrayList<>();
     for (Solved one : solved) {
       Map<Boolean, List<String>> untouched = one.keys().stream().collect(Collectors.partitioningBy(key ->
-          projectWide.contains(one.ruleId()) ? projectSame : digests.sameAsIn(before, new Key(key).file())));
+          digests.isGenerated(new Key(key).file()) || (projectWide.contains(one.ruleId()) ? projectSame
+              : digests.sameAsIn(before, new Key(key).file()))));
       untouched.get(true).forEach(key -> loosened.add(one.ruleId() + "\t" + key));
       fixed.add(new Solved(one.ruleId(), untouched.get(false)));
     }
@@ -89,8 +91,8 @@ public final class Witness {
     }
     List<String> loosened = store.lines(LOOSENED);
     if (!loosened.isEmpty()) {
-      problems.add(loosened.size() + " frozen finding(s) left the baseline while their code stayed the same, so a "
-          + "rule changed, not the code (.cerco/baseline/" + LOOSENED + ", the first: " + loosened.get(0) + "). A "
+      problems.add(loosened.size() + " frozen finding(s) left the baseline while their code stayed the same, or "
+          + "because their file is now generated, so a rule or a marking changed, not the code (.cerco/baseline/" + LOOSENED + ", the first: " + loosened.get(0) + "). A "
           + "person reviews that change of cerco and accepts it with `mvn cerco:approve`");
     }
     return problems;

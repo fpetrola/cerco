@@ -39,6 +39,20 @@ class EngineTest {
   }
 
   @Test
+  void aFileMarkedGeneratedLeavesTheBaselineOnlyWhenAPersonAcceptsIt(@TempDir Path root) throws IOException {
+    Path a = write(root, "A.java", SWITCHY);
+    write(root, "B.java", CLEAN);
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true));
+    Files.writeString(a, SWITCHY.replace("class A", "@javax.annotation.processing.Generated(\"tool\") class A"));
+    Outcome marked = engine.run(scope(root, true));
+    assertFalse(marked.green(), marked.toString());
+    assertTrue(marked.owed().isEmpty(), marked.owed().toString());
+    assertTrue(marked.problems().stream().anyMatch(problem -> problem.contains("now generated")),
+        marked.problems().toString());
+  }
+
+  @Test
   void testsAreHeardButNeverJudged(@TempDir Path root) throws IOException {
     write(root, "B.java", CLEAN);
     Path test = root.resolve("src/test/java/p/ATest.java");

@@ -9,8 +9,19 @@ import java.util.TreeMap;
 final class Digests {
   private final Map<String, String> byFile = new TreeMap<>();
 
+  private static final String GENERATED = "generated:";
+
   void keep(ParsedFile file) {
     byFile.put(file.name(), file.digest());
+  }
+
+  /** A file a tool wrote: kept apart, so that what it had frozen is not taken for fixed by hand. */
+  void keepGenerated(ParsedFile file) {
+    byFile.put(file.name(), GENERATED + file.digest());
+  }
+
+  boolean isGenerated(String file) {
+    return byFile.getOrDefault(file, "").startsWith(GENERATED);
   }
 
   /** Whether a file reads now as it did when those digests were kept. */

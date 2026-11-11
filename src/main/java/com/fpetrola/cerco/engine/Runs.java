@@ -42,6 +42,11 @@ final class Runs {
     digests.keep(file);
   }
 
+  /** A file a tool wrote: no rule judges it, and the digests say it is generated. */
+  void generated(ParsedFile file) {
+    digests.keepGenerated(file);
+  }
+
   /** A test of the project: heard by every run for who uses what, and part of what the project's digest covers. */
   void hear(ParsedFile test) {
     byRule.values().forEach(run -> run.inspection().ifPresent(looking -> looking.hear(test)));

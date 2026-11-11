@@ -6,7 +6,7 @@
 
   <groupId>com.fpetrola</groupId>
   <artifactId>cerco-maven-plugin</artifactId>
-  <version>0.17.2</version>
+  <version>0.17.3</version>
   <packaging>maven-plugin</packaging>
 
   <name>cerco</name>

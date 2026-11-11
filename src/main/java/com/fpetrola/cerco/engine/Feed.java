@@ -27,27 +27,34 @@ public final class Feed {
 
   /** Feeds every non-generated file to the visitor and answers how many it fed. */
   public int each(List<SourceFile> files, Consumer<ParsedFile> visitor) {
+    return each(files, visitor, generatedOne -> { });
+  }
+
+  /** The same, handing each generated file, which is not judged, to the other visitor. */
+  public int each(List<SourceFile> files, Consumer<ParsedFile> visitor, Consumer<ParsedFile> generatedOnes) {
     int fed = 0;
     List<SourceFile> chunk = new ArrayList<>();
     long bytes = 0;
     for (SourceFile file : files) {
       long size = sizeOf(file);
       if (!chunk.isEmpty() && (chunk.size() == MAX_FILES || bytes + size > MAX_BYTES)) {
-        fed += flush(chunk, visitor);
+        fed += flush(chunk, visitor, generatedOnes);
         bytes = 0;
       }
       chunk.add(file);
       bytes += size;
     }
-    return fed + flush(chunk, visitor);
+    return fed + flush(chunk, visitor, generatedOnes);
   }
 
-  private int flush(List<SourceFile> chunk, Consumer<ParsedFile> visitor) {
+  private int flush(List<SourceFile> chunk, Consumer<ParsedFile> visitor, Consumer<ParsedFile> generatedOnes) {
     int fed = 0;
     for (ParsedFile file : parser.parseAll(List.copyOf(chunk))) {
       if (!generated.marks(file)) {
         visitor.accept(file);
         fed++;
+      } else {
+        generatedOnes.accept(file);
       }
     }
     chunk.clear();
