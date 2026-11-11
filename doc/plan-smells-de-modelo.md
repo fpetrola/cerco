@@ -809,3 +809,15 @@ Después de esos arreglos, las 35 reglas anteriores siguen dando en oozx los mis
 
 Quedan doce candidatas con ficha.
 
+### 13.7 Segunda parte de la tanda (misma fecha)
+
+- **Adoptada `handed-out-whole`** (decisión de Fernando): 33 reglas. En el propio cerco encontró cinco colecciones
+  entregadas tal cual, arregladas dándole a cada dueño la operación que se le pedía (`Digests`, `Signed`).
+- **`kept-together`** reemplaza a `parallel-model`: un grupo de campos que guardan tres o más tipos. 2 en `emulator`,
+  7 en `machine` (las partes de la máquina).
+- **El índice sigue cadenas** (`Chain`, `Project.typeOf`): `a.b()`, campos heredados, `Tipo.estatico()`. Con eso
+  `walked-from-outside` cuenta por dueño y quedó en 9 de 9.
+- **Patrones que faltaban.** Command es una lectura nueva de las decisiones: textos que eligen cada uno una acción
+  (3 en `machine`: los `setGeneralOption(String, Object)`). Observer y Composite son dos candidatas,
+  `told-one-by-one` (1 y 2) y `one-and-many` (0 y 1), que en oozx encuentran poco.
+

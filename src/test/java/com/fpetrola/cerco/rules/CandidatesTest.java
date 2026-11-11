@@ -141,4 +141,31 @@ class CandidatesTest {
     assertEquals(3, found.size());
     assertTrue(found.stream().allMatch(detail -> detail.startsWith("what all() of Tools hands out")));
   }
+
+  @Test
+  void oneAndManyThroughSeparateMethods() {
+    List<String> found = details(new OneAndMany(),
+        "package p; import java.util.*; class Bus { void plug(Device d) {} void plug(List<Device> all) {}"
+            + " void wire(Device... all) {} void wire(Device d) {} void lone(List<Device> all) {} }");
+    assertEquals(2, found.size());
+    assertTrue(found.get(0).startsWith("p.Bus has plug for one `Device` and for many"));
+  }
+
+  @Test
+  void theSameThingSaidToEachByHand() {
+    List<String> found = details(new ToldOneByOne(),
+        "package p; class Machine { Part cpu, ula, sound; void reset() { cpu.reset(); ula.reset(); sound.reset();"
+            + " cpu.start(); cpu.start(); } void two() { cpu.reset(); ula.reset(); } }");
+    assertEquals(List.of("3 objects in a row are told `reset()` in p.Machine.reset()"), found);
+  }
+
+  @Test
+  void requestsNamedByTextAreCommands() {
+    List<Finding> found = new SwitchDispatch().inspect(List.of(new Snippets().parse("src/main/java/p/A.java",
+        "package p; class Core { void run(String command) { switch (command) { case \"reset\": stop(); clear();"
+            + " break; case \"go\": start(); break; default: stop(); } } void stop() {} void clear() {}"
+            + " void start() {} }")));
+    assertEquals("each text compared with `command` picks an action of its own",
+        found.get(0).reading().orElseThrow().because());
+  }
 }

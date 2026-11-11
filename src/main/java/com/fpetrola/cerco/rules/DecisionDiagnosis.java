@@ -36,6 +36,9 @@ final class DecisionDiagnosis {
   private final Hypothesis untyped = new Hypothesis(MissingModel.VALUE_WITHOUT_A_TYPE,
       "the cases are strings, numbers or loose constants",
       "a type or an enum for the value, owning what the cases decide");
+  private final Hypothesis requested = new Hypothesis(MissingModel.VARIATION_AS_DATA,
+      "a request named by a text is dispatched to the action that serves it",
+      "a command per request, registered under its name and looked up once");
   private final Hypothesis kinds = new Hypothesis(MissingModel.DISPATCH_FROM_OUTSIDE,
       "the cases are types",
       "a method on the common type, or a visitor the family accepts");
@@ -44,7 +47,7 @@ final class DecisionDiagnosis {
       "a type of the project at the boundary, made once from the library's, and the decision on that");
 
   List<Hypothesis> hypotheses() {
-    return List.of(answered, behaved, state, absent, untyped, kinds, foreign);
+    return List.of(answered, behaved, state, absent, untyped, requested, kinds, foreign);
   }
 
   /** Which hypothesis the code at one decision shows, when it can be told. */
@@ -67,8 +70,8 @@ final class DecisionDiagnosis {
     }
 
     Optional<Reading> reading() {
-      return clues.first(this::types, this::reassigned, this::absence, this::foreignCode, this::loose, this::ofAnEnum,
-          this::looseConstants);
+      return clues.first(this::types, this::reassigned, this::absence, this::foreignCode, this::dispatched,
+          this::loose, this::ofAnEnum, this::looseConstants);
     }
 
     private String decided() {
@@ -100,6 +103,14 @@ final class DecisionDiagnosis {
           .filter(method -> project.isWhole() && project.declaring(method, 0).isEmpty())
           .map(method -> foreign.because("`" + method + "()` is not a method of this project: what it answers is a "
               + "library's"));
+    }
+
+    /** Texts that name what to do, each with work of its own: requests dispatched by hand. */
+    private Optional<Reading> dispatched() {
+      return Optional.of(requested.because("each text" + comparedWith().replace(",", "")
+          + " picks an action of its own"))
+          .filter(reading -> decision.effect() == Effect.ACT && cases.contains(Case.TEXT)
+              && EnumSet.of(Case.TEXT, Case.ABSENT).containsAll(cases));
     }
 
     private Optional<Reading> loose() {
