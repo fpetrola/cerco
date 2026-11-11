@@ -219,6 +219,25 @@ class ReadingsTest {
         found.stream().map(this::read).toList());
   }
 
+  @Test
+  void aLongFileIsReadByTheGroupsItsMethodsFallInto() {
+    String two = "package p; class Deck { int tape; int head; int volume; int balance;"
+        + " void play() { tape++; wind(); } void wind() { head = tape; }"
+        + " void louder() { volume++; } void left() { balance = volume; } }";
+    String handed = "package p; class Tools { int made;"
+        + " int a(int x) { return x; } int b(int x) { return x; } int c(int x) { return x; } void d() { made++; } }";
+    Measuring measuring = new FileLength(0).measuring();
+    String inherited = "package p; class Game extends Machine { void a() { } void b() { } void c() { } }";
+    List.of(two, handed, inherited).forEach(source -> measuring.visit(snippets.parse("src/main/java/p/X.java", source)));
+    assertEquals(List.of(
+        Optional.of("concept-without-a-class: `Deck` has 2 groups of methods that share no field and never call each "
+            + "other: `head`, `tape` with 2 methods; `balance`, `volume` with 2 methods"),
+        Optional.of("behaviour-not-on-owner: 3 of the 4 methods of `Tools` reach none of its fields"),
+        Optional.empty()),
+        measuring.measures().stream().map(measure -> measure.reading()
+            .map(reading -> reading.model().id() + ": " + reading.because())).toList());
+  }
+
   private static final String KINDS = "package p; enum Kind { CHOICE, SWITCH, NUMBER }"
       + " class Knob { Kind kind; Kind kind() { return kind; } }";
 

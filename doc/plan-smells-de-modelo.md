@@ -875,3 +875,20 @@ Once candidatas con ficha. Lo que queda sin hacer y no depende de una decisión:
 varía entre dos copias) y la lectura de `file-length`, `no-repeated-statements`, `ask-then-tell`, `property-shuffle`
 y `borrowed-mode`.
 
+### 13.10 Lecturas que faltaban: clones y archivos largos
+
+Reglas que todavía daban hallazgos sin lectura en oozx: `no-repeated-statements` (4.121), `no-ignored-result` (725),
+`file-length` (50), `no-swallowed-exception` (29), `no-suppressed-warning` (19). Las tres de honestidad no leen a
+propósito: no son de diseño.
+
+- **Clones.** Las copias son idénticas por construcción (se compara el texto), así que "qué varía" no distingue nada.
+  Lo que distingue es dónde están las dos copias: mismo miembro (1.145), mismo tipo (482), tipos de una misma
+  jerarquía (2.470, casi todos juegos generados bajo `SpectrumApplication`), tipos sin relación (24, los únicos que
+  leen `concept-without-a-class`). Los 4.121 quedan leídos.
+- **Archivos largos.** `Cohesion` parte los métodos del tipo más grande en grupos que comparten campo o se llaman.
+  Dos o más grupos: `concept-without-a-class`; la mitad o más de los métodos sin tocar ningún campo:
+  `behaviour-not-on-owner`. Un tipo sin campos propios no se lee. Rinde poco: 3 de 50 en oozx (las tres ciertas:
+  `OOZxConfiguration` con 9 grupos, `InstructionCloner`, `RemoteZ80Translator`) y 0 de 26 en oozx-plugins. La causa
+  es la señal y no un umbral: en una clase grande alcanza un método que llama a todos para que sea un solo grupo.
+  Para leer esas hace falta otra señal (qué campos cambian juntos, o quitar los métodos que tocan casi todo), no
+  ajustar esta.
