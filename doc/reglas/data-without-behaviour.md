@@ -1,7 +1,6 @@
 # Ficha: `data-without-behaviour` (candidata)
 
-Estado: **candidata, propuesta para adoptar**, sujeta a la pregunta 3 de §11 del plan (si los estados de snapshot
-son un diseño legítimo).
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-10).
 
 ## 1. Definición
 

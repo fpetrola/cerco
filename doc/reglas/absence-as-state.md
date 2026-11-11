@@ -1,6 +1,6 @@
 # Ficha: `absence-as-state` (candidata)
 
-Estado: **candidata**, propuesta para adoptar. Falta la revisión de Fernando de la muestra (§3).
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-10).
 
 ## 1. Definición
 

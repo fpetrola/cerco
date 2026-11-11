@@ -49,7 +49,7 @@ final class TypeTestDiagnosis {
     Map<String, Set<String>> askers = new HashMap<>();
     for (TypeTest test : tests) {
       test.tested().filter(project::declares).map(TypeName::simple).map(project::family)
-          .filter(family -> !family.holds(test.inside()))
+          .filter(test::outside)
           .ifPresent(family -> askers.computeIfAbsent(family.root(), k -> new TreeSet<>()).add(test.member()));
     }
     return askers;

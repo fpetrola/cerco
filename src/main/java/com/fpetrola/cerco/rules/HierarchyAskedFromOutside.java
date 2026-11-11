@@ -31,6 +31,11 @@ public final class HierarchyAskedFromOutside extends RepeatedRule<HierarchyAsked
   /** A test of a type: where, in which member of which type, and how. */
   public record Test(String file, int line, String member, String enclosingType, String tested, String how)
       implements Place {
+
+    /** The test as written: how, and for what type. */
+    String asked() {
+      return how + " " + tested;
+    }
   }
 
   public HierarchyAskedFromOutside() {
@@ -111,8 +116,8 @@ public final class HierarchyAskedFromOutside extends RepeatedRule<HierarchyAsked
         + (visitors.isEmpty() ? "" : "; the family already accepts " + String.join(", ", visitors));
     String kind = "`" + test.tested() + "` is one of `" + family.root() + "`, which " + shared.members()
         + " members ask";
-    return finding(test, family.root() + "|" + test.how() + " " + test.tested(), "`" + test.how() + " "
-        + test.tested() + "` in " + test.member() + "; " + evidence).read(visitors.stream().findFirst()
+    return finding(test, family.root() + "|" + test.asked(), "`" + test.asked() + "` in " + test.member() + "; "
+        + evidence).read(visitors.stream().findFirst()
         .map(accepted -> visitor.because(kind + " though it already accepts `" + accepted + "`"))
         .orElseGet(() -> visitor.because(kind)));
   }

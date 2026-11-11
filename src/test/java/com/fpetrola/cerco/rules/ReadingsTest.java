@@ -313,7 +313,7 @@ class ReadingsTest {
     List<Finding> found = found(new EnumDecidedOutside(), "package p; enum Dock { TOP, BOTTOM, LEFT, RIGHT }",
         "package p; class Frame { Dock side; boolean flat() { return side == Dock.TOP || side == Dock.BOTTOM; }"
             + " boolean wide() { return side == Dock.TOP || side == Dock.BOTTOM; } }");
-    assertEquals("variation-as-data: it asks whether `side` is one of some constants of `Dock`",
+    assertEquals("variation-as-data: it asks whether a value is one of some constants of `Dock`",
         read(found.get(0)));
   }
 

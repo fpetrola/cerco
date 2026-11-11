@@ -89,14 +89,14 @@ public final class Engine {
 
   public Outcome run(Scope scope) {
     long start = System.nanoTime();
-    List<Rule> active = rules.all().stream().filter(rule -> scope.full() || rule.perFile()).toList();
+    List<Rule> active = scope.rulesOf(rules);
     List<String> notes = new ArrayList<>();
     if (store.exists()) {
       active = adopt(active, scope.full(), notes);
     }
     Runs runs = new Runs(active);
     int parsed = fed(scope, runs, notes);
-    Set<String> inScope = scope.files().stream().map(SourceFile::name).collect(Collectors.toSet());
+    Set<String> inScope = scope.names();
     Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();
     List<Solved> solved = new ArrayList<>();

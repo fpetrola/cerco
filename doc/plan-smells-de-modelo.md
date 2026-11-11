@@ -829,3 +829,25 @@ Estado del catálogo: 33 reglas adoptadas y 16 candidatas con ficha. Las que pro
 `absence-as-state`, `reached-through`, `walked-from-outside`, `enum-decided-across` (de la primera tanda),
 `kept-together` y `data-without-behaviour`.
 
+### 13.8 Adoptadas otras seis
+
+`absence-as-state`, `reached-through`, `walked-from-outside`, `enum-decided-across`, `kept-together` y
+`data-without-behaviour`, por decisión de Fernando. El catálogo queda en **39 reglas** y diez candidatas.
+`enum-decided-outside` sigue en el catálogo junto a `enum-decided-across`, que la contiene: sacar una regla es una
+decisión que se firma.
+
+En oozx `87e376742` el `audit` de 0.15.0 da verde: de 9.972 congelados pasa a 10.413 (441 de las diez reglas
+adoptadas en esta tanda), 0 nuevos.
+
+En el propio cerco encontraron 27 cosas:
+
+| hallazgo | arreglo |
+|---|---|
+| `Rules.all()` recorrida desde cinco lugares | `Rules` contesta: `perFile()`, `projectWide()`, `each(…)`, `toSurvey(…)` |
+| `Kind` y `Effect` decididos desde afuera | cada constante trae su dato (`onlyPromises`, `isClosed`; `changes`, `works`, `about(…)`) |
+| 16 records o beans que solo llevaban datos mientras otro trabajaba con ellos | el trabajo pasó a cada uno: `Scope.rulesOf`, `Owed.told`, `HookSpec.into`, `ExemptionEntry.wrong/limit/exemption`, `Members.of`, y un método propio en los `Site` de seis reglas |
+| `Rules.every()` de 42 líneas | las reglas del plan, en su propia lista |
+
+Y un defecto de `data-without-behaviour` que el autochequeo destapó: con varios records llamados `Site`, el índice
+tomaba el primero. Ahora un nombre anidado es el del tipo donde está escrito (`Project.declaredAt`).
+

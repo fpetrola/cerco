@@ -39,6 +39,18 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
    */
   public record Site(String file, int line, String member, Set<String> constants, Optional<String> qualifier,
       Effect effect) {
+
+    /** Whether the constants it names may be those of an enum: all of them are, and it was not written with another. */
+    boolean decidesOver(String name, Set<String> itsConstants) {
+      return qualifier.map(name::equals).orElse(true) && itsConstants.containsAll(constants);
+    }
+
+    /** The finding of this decision over an enum that so many members decide over. */
+    Finding found(String rule, String name, int members) {
+      return new Finding(rule, file, line, file + "|" + member + "|" + name + "|" + String.join(",", constants),
+          member + " decides over " + name + " (" + String.join(", ", constants) + "); " + members
+              + " members decide over its constants");
+    }
   }
 
   private final Hypothesis meant = new Hypothesis(MissingModel.VARIATION_AS_DATA,
@@ -103,8 +115,7 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
     Map<String, List<Site>> byEnum = new LinkedHashMap<>();
     for (Site decision : gathered.sites()) {
       gathered.declared().entrySet().stream()
-          .filter(entry -> decision.qualifier().map(entry.getKey()::equals).orElse(true))
-          .filter(entry -> entry.getValue().containsAll(decision.constants()))
+          .filter(entry -> decision.decidesOver(entry.getKey(), entry.getValue()))
           .map(Map.Entry::getKey).sorted().findFirst()
           .ifPresent(name -> byEnum.computeIfAbsent(name, k -> new ArrayList<>()).add(decision));
     }
@@ -112,10 +123,8 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
     byEnum.forEach((name, decisions) -> {
       Set<String> members = decisions.stream().map(Site::member).collect(Collectors.toCollection(TreeSet::new));
       if (members.size() >= MEMBERS) {
-        decisions.forEach(decision -> findings.add(new Finding(id(), decision.file(), decision.line(),
-            decision.file() + "|" + decision.member() + "|" + name + "|" + String.join(",", decision.constants()),
-            decision.member() + " decides over " + name + " (" + String.join(", ", decision.constants()) + "); "
-                + members.size() + " members decide over its constants").read(read(decision, name, members.size()))));
+        decisions.forEach(decision -> findings.add(decision.found(id(), name, members.size())
+            .read(read(decision, name, members.size()))));
       }
     });
     return findings;
@@ -123,15 +132,8 @@ public final class EnumDecidedAcross extends IndexingRule<Set<String>, EnumDecid
 
   /** What the branches do says whether the constants lack data, behaviour, or are the states of something. */
   private Reading read(Site decision, String name, int members) {
-    Map<Effect, Reading> byEffect = Map.of(
-        Effect.REASSIGN, mode.because("the branches change the `" + name + "` they test, in one of " + members
-            + " members that decide over it"),
-        Effect.ACT, done.because("the cases do different work per constant of `" + name + "`, in one of " + members
-            + " members that decide over it"),
-        Effect.ANSWER, meant.because("every case only answers a value per constant of `" + name + "`, in one of "
-            + members + " members that decide over it"));
-    return byEffect.getOrDefault(decision.effect(), meant.because("it asks whether a value is one of some "
-        + "constants of `" + name + "`, as " + members + " members do"));
+    Hypothesis shown = decision.effect().changes() ? mode : decision.effect().works() ? done : meant;
+    return shown.because(decision.effect().about(name) + ", in one of " + members + " members that decide over it");
   }
 
   /** The constants a switch's labels name, when they are all bare names and at least two. */

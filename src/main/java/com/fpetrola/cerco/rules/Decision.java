@@ -35,8 +35,35 @@ public record Decision(Finding finding, Selector selector, String inside, Set<Ca
     NAMED, TEXT, NUMBER, TYPE, ABSENT, OTHER
   }
 
-  /** What the branches do with the decision. */
+  /** What the branches do with the decision, and how that is said of the enum whose constants they name. */
   public enum Effect {
-    REASSIGN, ANSWER, ACT, UNKNOWN
+    REASSIGN(true, false, "the branches change the `%s` they test"),
+    ANSWER(false, false, "every case only answers a value per constant of `%s`"),
+    ACT(false, true, "the cases do different work per constant of `%s`"),
+    UNKNOWN(false, false, "it asks whether a value is one of some constants of `%s`");
+
+    private final boolean changes;
+    private final boolean works;
+    private final String said;
+
+    Effect(boolean changes, boolean works, String said) {
+      this.changes = changes;
+      this.works = works;
+      this.said = said;
+    }
+
+    /** The branches assign anew the field they test: what is decided on is a state on the move. */
+    public boolean changes() {
+      return changes;
+    }
+
+    /** The branches do work of their own, more than giving a value. */
+    public boolean works() {
+      return works;
+    }
+
+    public String about(String owner) {
+      return String.format(said, owner);
+    }
   }
 }

@@ -91,53 +91,13 @@ public final class ExemptionsFile {
   }
 
   private Optional<Exemption> exemption(int ordinal, ExemptionEntry entry, List<String> problems) {
-    List<String> wrong = new ArrayList<>();
-    if (!knownRules.contains(entry.getRule())) {
-      wrong.add("rule '" + entry.getRule() + "' is not one of " + knownRules.stream().sorted().toList());
-    }
-    if (entry.getTarget().isBlank()) {
-      wrong.add("target is empty; it is a glob over paths relative to the project root");
-    }
-    if (entry.getReason().strip().length() < 20) {
-      wrong.add("reason must say why in at least 20 characters");
-    }
-    if (!CATEGORIES.contains(entry.getCategory())) {
-      wrong.add("category must be one of " + CATEGORIES.stream().sorted().toList());
-    }
-    Optional<Limit> limit = limit(entry, wrong);
+    List<String> wrong = entry.wrong(knownRules, CATEGORIES);
+    Optional<Limit> limit = entry.limit(wrong);
     if (!wrong.isEmpty()) {
       problems.add("exemption #" + ordinal + ": " + String.join("; ", wrong));
       return Optional.empty();
     }
-    return limit.map(l -> new Exemption(ordinal, entry.getRule(), entry.getTarget(), entry.getReason().strip(),
-        entry.getCategory(), l));
-  }
-
-  private Optional<Limit> limit(ExemptionEntry entry, List<String> wrong) {
-    List<Limit> limits = new ArrayList<>();
-    if (!entry.getUntil().isBlank()) {
-      date(entry.getUntil(), wrong).ifPresent(date -> limits.add(new Limit.Until(date)));
-    }
-    if (!entry.getUntilVersion().isBlank()) {
-      limits.add(new Limit.UntilVersion(entry.getUntilVersion().strip()));
-    }
-    if (entry.getBudget() != null) {
-      limits.add(new Limit.Budget(entry.getBudget()));
-    }
-    if (limits.size() != 1) {
-      wrong.add("exactly one limit is required: until (a date), untilVersion, or budget (a count)");
-      return Optional.empty();
-    }
-    return Optional.of(limits.get(0));
-  }
-
-  private Optional<LocalDate> date(String text, List<String> wrong) {
-    try {
-      return Optional.of(LocalDate.parse(text.strip()));
-    } catch (DateTimeParseException e) {
-      wrong.add("until must be a date like 2027-03-31, not '" + text + "' (" + e.getMessage() + ")");
-      return Optional.empty();
-    }
+    return limit.map(set -> entry.exemption(ordinal, set));
   }
 
   private byte[] read() {

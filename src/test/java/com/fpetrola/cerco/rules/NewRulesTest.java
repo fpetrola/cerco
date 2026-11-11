@@ -232,8 +232,8 @@ class NewRulesTest {
   @Test
   void candidatesAreKnownButDoNotGate() {
     Rules rules = new Rules(com.fpetrola.cerco.model.Settings.DEFAULTS);
-    assertTrue(rules.known().contains("absence-as-state"));
-    assertTrue(!rules.ids().contains("absence-as-state"));
+    assertTrue(rules.known().contains("set-from-outside"));
+    assertTrue(!rules.ids().contains("set-from-outside"));
   }
 
   @Test

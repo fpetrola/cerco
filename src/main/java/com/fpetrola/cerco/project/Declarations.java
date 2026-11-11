@@ -64,13 +64,17 @@ final class Declarations extends VoidVisitorAdapter<Consumer<Declared>> {
 
   /** What a type holds, however its kind declares it. */
   private record Members(Map<String, String> fields, List<Operation> operations, List<String> constants) {
+
+    /** The declaration these are the members of. */
+    Declared of(TypeDeclaration<?> type, Kind kind, List<String> supertypes, String top, String file) {
+      return new Declared(type.getNameAsString(), type.getFullyQualifiedName().orElse(type.getNameAsString()), kind,
+          supertypes, fields, operations, constants, top, file);
+    }
   }
 
   private Declared declared(TypeDeclaration<?> type, Kind kind, Stream<ClassOrInterfaceType> supertypes,
       Members members) {
-    return new Declared(type.getNameAsString(), type.getFullyQualifiedName().orElse(type.getNameAsString()), kind,
-        supertypes.map(ClassOrInterfaceType::getNameAsString).toList(), members.fields(), members.operations(),
-        members.constants(), top(type), file);
+    return members.of(type, kind, supertypes.map(ClassOrInterfaceType::getNameAsString).toList(), top(type), file);
   }
 
   private List<Operation> operations(TypeDeclaration<?> type) {

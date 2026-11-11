@@ -6,6 +6,7 @@ import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.rules.Diagnosis;
 import com.fpetrola.cerco.rules.Rule;
 import com.fpetrola.cerco.rules.Rules;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,8 +27,8 @@ public final class ConsoleReport {
 
   /** The rules, and per rule how many autopsies of this project named each missing model. */
   public ConsoleReport(Rules rules, Map<String, Map<String, Long>> modelsByRule) {
-    this.rules = rules.all().stream().collect(Collectors.toMap(Rule::id,
-        rule -> new Known(rule, modelsByRule.getOrDefault(rule.id(), Map.of()))));
+    this.rules = new HashMap<>();
+    rules.each(rule -> this.rules.put(rule.id(), new Known(rule, modelsByRule.getOrDefault(rule.id(), Map.of()))));
   }
 
   public String render(Outcome outcome) {
@@ -75,10 +76,7 @@ public final class ConsoleReport {
         .append("  principle, and the rule that would catch it next time. cerco files a complete form in autopsies/ by\n")
         .append("  itself; until then it stays red, and .cerco/autopsies keeps the debt even if the form is deleted.\n")
         .append("  A rule a filed autopsy proposes is owed the same way until the running cerco has it.\n");
-    for (Owed one : owed) {
-      out.append("  ").append(one.form()).append("  (").append(one.ruleId()).append(")\n");
-      one.missing().forEach(missing -> out.append("    - ").append(missing).append('\n'));
-    }
+    owed.forEach(one -> out.append(one.told()));
     return out.toString();
   }
 

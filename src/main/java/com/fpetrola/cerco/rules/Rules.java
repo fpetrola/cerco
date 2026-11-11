@@ -3,6 +3,7 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Settings;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,6 +17,27 @@ public final class Rules {
 
   public List<Rule> all() {
     return every().stream().filter(rule -> !settings.disabledRules().contains(rule.id())).toList();
+  }
+
+  /** The rules a change to one file can only move findings of in that file: the ones a single edit is run on. */
+  public List<Rule> perFile() {
+    return all().stream().filter(Rule::perFile).toList();
+  }
+
+  /** The ids of the rules whose findings depend on the whole project. */
+  public Set<String> projectWide() {
+    return all().stream().filter(rule -> !rule.perFile()).map(Rule::id).collect(Collectors.toSet());
+  }
+
+  /** Every active rule in turn, in the order the gate reports them. */
+  public void each(Consumer<Rule> told) {
+    all().forEach(told);
+  }
+
+  /** The rules to measure: those named, every one when `all` is named, the candidates when none is. */
+  public List<Rule> toSurvey(List<String> named) {
+    return named.isEmpty() ? candidates() : Stream.concat(all().stream(), candidates().stream())
+        .filter(rule -> named.contains(rule.id()) || named.contains("all")).toList();
   }
 
   public Set<String> ids() {
@@ -32,13 +54,17 @@ public final class Rules {
    * catalogue only after their record (doc/reglas) shows they find real cases beyond the one that gave them birth.
    */
   public List<Rule> candidates() {
-    return List.of(new AbsenceAsState(), new HierarchyAskedFromOutside(), new SetFromOutside(), new ReachedThrough(),
-        new WalkedFromOutside(), new EnumDecidedAcross(), new StateAskedAcrossMethods(), new UnpackedAtTheCall(),
-        new SaidInTwoCalls(), new ConditionRepeated(), new KeptTogether(), new OneAndMany(), new ToldOneByOne(), new OverriddenToNothing(),
-        new MiddleMan(), new DataWithoutBehaviour());
+    return List.of(new HierarchyAskedFromOutside(), new SetFromOutside(), new StateAskedAcrossMethods(),
+        new UnpackedAtTheCall(), new SaidInTwoCalls(), new ConditionRepeated(), new OneAndMany(), new ToldOneByOne(),
+        new OverriddenToNothing(), new MiddleMan());
   }
 
   private List<Rule> every() {
+    return Stream.concat(first().stream(), fromThePlanOfModelSmells().stream()).toList();
+  }
+
+  /** The rules cerco started with and those its autopsies asked for. */
+  private List<Rule> first() {
     return List.of(
         new Unparseable(),
         new PackageCycles(),
@@ -67,11 +93,14 @@ public final class Rules {
         new RefilteredByType(),
         new KeyHoldsValue(),
         new EnumDecidedOutside(),
-        new FlagArgument(),
-        new MapsKeyedAlike(),
-        new NamedByText(),
-        new HandedOutWhole(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
+  }
+
+  /** The rules that were candidates of the plan of model smells, measured and then adopted. */
+  private List<Rule> fromThePlanOfModelSmells() {
+    return List.of(new FlagArgument(), new MapsKeyedAlike(), new NamedByText(), new HandedOutWhole(),
+        new AbsenceAsState(), new ReachedThrough(), new WalkedFromOutside(), new EnumDecidedAcross(),
+        new KeptTogether(), new DataWithoutBehaviour());
   }
 }

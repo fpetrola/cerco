@@ -1,7 +1,6 @@
 # Ficha: `kept-together` (candidata)
 
-Estado: **candidata, propuesta para adoptar con una reserva** (§4). Reemplaza a `parallel-model`, que miraba pares y
-no encontró lo que buscaba.
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-10).
 
 ## 1. Definición
 

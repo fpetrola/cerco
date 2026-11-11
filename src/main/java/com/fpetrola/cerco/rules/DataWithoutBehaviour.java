@@ -88,7 +88,7 @@ public final class DataWithoutBehaviour extends PlacesRule<DataWithoutBehaviour.
 
   @Override
   protected List<Finding> conclude(List<Site> sites, Project project) {
-    return sites.stream().flatMap(site -> site.reached().flatMap(project::typeOf).flatMap(project::declared)
+    return sites.stream().flatMap(site -> site.reached().flatMap(project::declaredAt)
             .filter(this::onlyHolds).filter(data -> !site.member().startsWith(data.qualified() + "."))
             .map(data -> new Finding(id(), site.file(), site.line(), site.file() + "|" + site.member() + "|"
                 + data.name(), site.member() + " asks `" + site.asked() + "`, a " + data.name()

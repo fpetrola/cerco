@@ -14,7 +14,7 @@ public final class ExplainMojo extends AbstractCercoMojo {
     Engine engine = engine();
     StringBuilder out = new StringBuilder("cerco rules (baseline frozen on "
         + engine.store().frozenOn().orElse("never") + "):\n");
-    for (Rule rule : engine.rules().all()) {
+    engine.rules().each(rule -> {
       int frozen = rule.asBudget().map(budget -> engine.store().readCeilings(budget.id()).size())
           .orElseGet(() -> engine.store().read(rule.id()).total());
       out.append("\n").append(rule.id()).append("  (frozen: ").append(frozen).append(")\n")
@@ -23,7 +23,7 @@ public final class ExplainMojo extends AbstractCercoMojo {
           .append("  do: ").append(rule.remedy()).append('\n');
       rule.diagnosis().hypotheses().forEach(hypothesis -> out.append("  may hide ").append(hypothesis.line())
           .append('\n'));
-    }
+    });
     out.append("\nExemptions: .cerco/exemptions.yaml, each with a rule, a target glob, a reason, a category "
         + "(false-positive, migration, decision) and one limit (until, untilVersion or budget), signed by a human "
         + "with `mvn cerco:approve` at a terminal. The file looks like this:\n\n")

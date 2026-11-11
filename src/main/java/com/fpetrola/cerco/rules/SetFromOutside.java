@@ -27,6 +27,16 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
   /** The setters one member calls on one receiver, and how many of their arguments are getters of one same object. */
   public record Site(String file, int line, String member, String receiver, Set<String> setters, int copied,
       String source) {
+
+    /** The finding as the baseline keys it: this member, on this receiver. */
+    String key() {
+      return file + "|" + member + "|" + receiver;
+    }
+
+    /** Whether enough of the values set are read from one same other object for it to be a copy. */
+    boolean copies(int atLeast) {
+      return copied >= atLeast;
+    }
   }
 
   /** The project's names, and the candidate sites. */
@@ -103,10 +113,9 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
       Set<String> ours = site.setters().stream().filter(gathered.vocabulary()::declaresMethod)
           .collect(Collectors.toCollection(TreeSet::new));
       if (!site.receiver().isEmpty() && ours.size() >= SETTERS) {
-        String copy = site.copied() >= SETTERS ? "; " + site.copied() + " of the values are getters of "
+        String copy = site.copies(SETTERS) ? "; " + site.copied() + " of the values are getters of "
             + site.source() + ", a copy property by property" : "";
-        findings.add(new Finding(id(), site.file(), site.line(), site.file() + "|" + site.member() + "|"
-            + site.receiver(), site.member() + " sets " + ours.size() + " properties of `" + clipped(site.receiver())
+        findings.add(new Finding(id(), site.file(), site.line(), site.key(), site.member() + " sets " + ours.size() + " properties of `" + clipped(site.receiver())
             + "`: " + String.join(", ", ours.stream().limit(6).toList()) + (ours.size() > 6 ? ", ..." : "")
             + copy).read(read(site, ours.size())));
       }
@@ -116,7 +125,7 @@ public final class SetFromOutside extends ProjectRule<SetFromOutside.Gathered> {
 
   /** Values read one by one from one other object are a copy; otherwise the setters are one thing done to it. */
   private Reading read(Site site, int setters) {
-    return site.copied() >= SETTERS ? copied.because(site.copied() + " of the values set on `"
+    return site.copies(SETTERS) ? copied.because(site.copied() + " of the values set on `"
         + clipped(site.receiver()) + "` are read from `" + clipped(site.source()) + "`, one by one")
         : oneThing.because(setters + " setters are called on `" + clipped(site.receiver()) + "` in one go");
   }

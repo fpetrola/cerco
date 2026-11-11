@@ -6,7 +6,6 @@ import com.fpetrola.cerco.project.Declared;
 import com.fpetrola.cerco.project.Project;
 import com.fpetrola.cerco.project.TypeName;
 import com.fpetrola.cerco.rules.Decision.Case;
-import com.fpetrola.cerco.rules.Decision.Effect;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -89,7 +88,7 @@ final class DecisionDiagnosis {
 
     private Optional<Reading> reassigned() {
       return Optional.of(state.because("the branches reassign `" + selector + "`, the value they test"))
-          .filter(reading -> decision.effect() == Effect.REASSIGN);
+          .filter(reading -> decision.effect().changes());
     }
 
     private Optional<Reading> absence() {
@@ -109,7 +108,7 @@ final class DecisionDiagnosis {
     private Optional<Reading> dispatched() {
       return Optional.of(requested.because("each text" + comparedWith().replace(",", "")
           + " picks an action of its own"))
-          .filter(reading -> decision.effect() == Effect.ACT && cases.contains(Case.TEXT)
+          .filter(reading -> decision.effect().works() && cases.contains(Case.TEXT)
               && EnumSet.of(Case.TEXT, Case.ABSENT).containsAll(cases));
     }
 
@@ -137,11 +136,8 @@ final class DecisionDiagnosis {
     private Optional<Reading> ofAnEnum() {
       return owner().filter(owner -> cases.contains(Case.NAMED)
               && EnumSet.of(Case.NAMED, Case.ABSENT).containsAll(cases))
-          .map(owner -> decision.effect() == Effect.ACT
-              ? behaved.because(told(owner, "the cases do different work per constant of `" + owner.name() + "`"))
-              : answered.because(told(owner, decision.effect() == Effect.ANSWER
-                  ? "every case only answers a value per constant of `" + owner.name() + "`"
-                  : "it asks whether `" + selector + "` is one of some constants of `" + owner.name() + "`")));
+          .map(owner -> (decision.effect().works() ? behaved : answered)
+              .because(told(owner, decision.effect().about(owner.name()))));
     }
 
     private String told(Declared owner, String what) {

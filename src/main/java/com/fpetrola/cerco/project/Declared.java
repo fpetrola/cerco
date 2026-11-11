@@ -29,11 +29,11 @@ public record Declared(String name, String qualified, Kind kind, List<String> su
   }
 
   public boolean isInterface() {
-    return kind == Kind.INTERFACE;
+    return kind.onlyPromises();
   }
 
   public boolean isEnum() {
-    return kind == Kind.ENUM;
+    return kind.isClosed();
   }
 
   /** The visitor this type accepts, when it declares `accept(SomethingVisitor)`. */

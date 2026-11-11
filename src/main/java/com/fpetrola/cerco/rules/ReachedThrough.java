@@ -37,6 +37,11 @@ public final class ReachedThrough extends ProjectRule<ReachedThrough.Gathered> {
    */
   public record Site(String file, int line, String member, String path, String field, boolean ownField,
       String topLevelType, boolean onlyThePart) {
+
+    /** The object reached through: `a` in `a.b`. */
+    String whole() {
+      return path.substring(0, path.lastIndexOf('.'));
+    }
   }
 
   private final Hypothesis delegated = new Hypothesis(MissingModel.BEHAVIOUR_NOT_ON_OWNER,
@@ -120,9 +125,8 @@ public final class ReachedThrough extends ProjectRule<ReachedThrough.Gathered> {
   }
 
   private Reading read(Site site, int members) {
-    String whole = site.path().substring(0, site.path().lastIndexOf('.'));
-    return site.onlyThePart() ? handed.because("here `" + whole + "` is used only to reach `" + site.field()
-        + "`, as in " + members + " members") : delegated.because("here `" + whole + "` is used for more than `"
+    return site.onlyThePart() ? handed.because("here `" + site.whole() + "` is used only to reach `" + site.field()
+        + "`, as in " + members + " members") : delegated.because("here `" + site.whole() + "` is used for more than `"
         + site.field() + "`: what is done through `" + site.path() + "` in " + members + " members is its to offer");
   }
 

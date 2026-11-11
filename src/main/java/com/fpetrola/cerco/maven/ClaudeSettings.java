@@ -49,9 +49,8 @@ public final class ClaudeSettings {
       return;
     }
     ObjectNode group = groups.addObject();
-    hook.matcher().ifPresent(matcher -> group.put("matcher", matcher));
-    group.withArray("hooks").addObject().put("type", "command").put("command", hook.command())
-        .put("timeout", hook.timeoutSeconds());
+    hook.matching(group);
+    hook.into(group.withArray("hooks").addObject());
   }
 
   /** Finds the hook again by its marker and rewrites it in place, matcher included; false when it is not there. */
@@ -60,11 +59,10 @@ public final class ClaudeSettings {
       ObjectNode group = groups.get(g).deepCopy();
       ArrayNode commands = group.withArray("hooks");
       for (int i = 0; i < commands.size(); i++) {
-        if (commands.get(i).path("command").asText("").contains(hook.marker())) {
+        if (hook.wrote(commands.get(i))) {
           ObjectNode command = commands.get(i).deepCopy();
-          command.put("command", hook.command()).put("timeout", hook.timeoutSeconds());
-          commands.set(i, command);
-          hook.matcher().ifPresent(matcher -> group.put("matcher", matcher));
+          commands.set(i, hook.into(command));
+          hook.matching(group);
           groups.set(g, group);
           return true;
         }

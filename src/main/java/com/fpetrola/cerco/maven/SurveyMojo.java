@@ -32,9 +32,7 @@ public final class SurveyMojo extends AbstractCercoMojo {
   @Override
   protected void run() throws MojoFailureException {
     Rules catalogue = new Rules(settings());
-    List<Rule> chosen = rules == null || rules.isEmpty() ? catalogue.candidates()
-        : Stream.concat(catalogue.all().stream(), catalogue.candidates().stream())
-            .filter(rule -> rules.contains(rule.id()) || rules.contains("all")).toList();
+    List<Rule> chosen = catalogue.toSurvey(rules == null ? List.of() : rules);
     if (chosen.isEmpty()) {
       throw new MojoFailureException("cerco: no rule to survey; known are " + catalogue.known());
     }

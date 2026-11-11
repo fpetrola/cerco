@@ -22,6 +22,11 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
 
   /** Where a run was first seen; the file and member strings are shared across every window of the same block. */
   public record Site(String file, String member, int line) {
+
+    /** Where it is, as a finding points at it. */
+    String where() {
+      return file + ":" + line + " (" + member + ")";
+    }
   }
 
   /** Every run seen so far by its digest, and the repeats found. */
@@ -94,8 +99,7 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
         Site first = seen.putIfAbsent(digest, new Site(name, member, line));
         if (first != null) {
           out.add(new Finding(id(), name, line, name + "|" + member + "|" + Long.toHexString(digest),
-              WINDOW + " statements in " + member + " repeat " + first.file() + ":" + first.line()
-                  + " (" + first.member() + ")"));
+              WINDOW + " statements in " + member + " repeat " + first.where()));
         }
       }
     }

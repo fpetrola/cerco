@@ -30,6 +30,16 @@ public final class SaidInTwoCalls extends RepeatedRule<SaidInTwoCalls.Site> {
    */
   public record Site(String file, int line, String member, String receiver, Optional<Chain> told, Said first,
       Said second) implements Place {
+
+    /** The two calls as one phrase: `stop(); clear()`. */
+    String pair() {
+      return first.name() + "(); " + second.name() + "()";
+    }
+
+    /** Two setters in a row: an object being assembled from outside, which another rule looks at. */
+    boolean setsTwice() {
+      return Stream.of(first, second).allMatch(said -> said.name().matches("set[A-Z].*"));
+    }
   }
 
   /** A call by its name and how many arguments it takes. */
@@ -102,7 +112,7 @@ public final class SaidInTwoCalls extends RepeatedRule<SaidInTwoCalls.Site> {
 
   @Override
   protected String what(Site place, Project project) {
-    return place.first().name() + "(); " + place.second().name() + "()";
+    return place.pair();
   }
 
   /**
@@ -111,8 +121,7 @@ public final class SaidInTwoCalls extends RepeatedRule<SaidInTwoCalls.Site> {
    */
   @Override
   protected boolean counts(Site place, Project project) {
-    boolean setters = Stream.of(place.first(), place.second()).allMatch(said -> said.name().matches("set[A-Z].*"));
-    return !setters && place.told().flatMap(project::typeOf).filter(project::declares).isPresent();
+    return !place.setsTwice() && place.told().flatMap(project::typeOf).filter(project::declares).isPresent();
   }
 
   @Override

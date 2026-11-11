@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.project.Family;
 import com.fpetrola.cerco.project.TypeName;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +25,11 @@ public record TypeTest(Finding finding, Optional<TypeName> tested, Subject subje
    * What is tested: as written, whether it is `this`, the type it was declared as when the file shows it, and the
    * call that looked it up by its class, when one did.
    */
+  /** Whether the test is made from outside a family: by a type that is not one of its members. */
+  boolean outside(Family family) {
+    return !family.holds(inside);
+  }
+
   public record Subject(String text, boolean self, Optional<TypeName> declared, Optional<String> lookedUpBy) {
   }
 }

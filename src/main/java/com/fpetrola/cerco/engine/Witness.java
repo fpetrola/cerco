@@ -35,7 +35,7 @@ public final class Witness {
   public Witness(BaselineStore store, Rules rules) {
     this.store = store;
     this.rules = rules;
-    this.projectWide = rules.all().stream().filter(rule -> !rule.perFile()).map(Rule::id).collect(Collectors.toSet());
+    this.projectWide = rules.projectWide();
   }
 
   /**

@@ -1,7 +1,6 @@
 # Ficha: `enum-decided-across` (candidata)
 
-Estado: **candidata, propuesta para adoptar**, como reemplazo de `enum-decided-outside` (que mira un solo archivo).
-Pendiente la revisión de Fernando.
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-10).
 
 ## 1. Definición
 

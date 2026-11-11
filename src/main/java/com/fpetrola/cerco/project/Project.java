@@ -108,6 +108,20 @@ public final class Project {
     return at;
   }
 
+  /**
+   * The declaration a chain ends in. A chain that asks nothing ends in the type it starts from, and of several types
+   * of that name the one meant is the one nested where the name is written.
+   */
+  public Optional<Declared> declaredAt(Chain chain) {
+    Optional<Declared> start = chain.start().filter(type -> chain.hops().isEmpty()).flatMap(type -> {
+      List<Declared> meant = Optional.ofNullable(names.get(type.simple())).map(Named::declared).orElse(List.of())
+          .stream().filter(type::means).toList();
+      String top = declared(chain.within()).map(Declared::top).orElse(chain.within());
+      return meant.stream().filter(one -> one.top().equals(top)).findFirst().or(() -> meant.stream().findFirst());
+    });
+    return start.or(() -> typeOf(chain).flatMap(this::declared));
+  }
+
   /** What a member of a type is declared as, looked for in the type and then in the types above it. */
   private Optional<String> answerOf(String type, String member) {
     Set<String> seen = new TreeSet<>();
