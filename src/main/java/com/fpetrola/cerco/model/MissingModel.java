@@ -26,7 +26,9 @@ public enum MissingModel {
   PROCEDURE_INSTEAD_OF_MODEL("a procedure is narrated step by step",
       "a method per step, and an object named by the concept when the steps share state"),
   PROTOCOL_BY_CONVENTION("a collaboration works only if callers do things in order",
-      "the owner does the whole thing: execute-around, notifying itself, a builder");
+      "the owner does the whole thing: execute-around, notifying itself, a builder"),
+  HIERARCHY_WITHOUT_IS_A("a type inherits what it does not do, or stands between others doing nothing",
+      "split what is inherited into what each one really does, or hold the other instead of extending it");
 
   private final String absent;
   private final String transformation;

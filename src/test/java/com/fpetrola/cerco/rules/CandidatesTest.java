@@ -168,4 +168,37 @@ class CandidatesTest {
     assertEquals("each text compared with `command` picks an action of its own",
         found.get(0).reading().orElseThrow().because());
   }
+
+  @Test
+  void anInheritedOperationAnsweredWithNothing() {
+    List<String> found = details(new OverriddenToNothing(),
+        "package p; interface Device { void reset(); void write(int v); int read(); }"
+            + " class Rom implements Device, Runnable { @Override public void reset() { }"
+            + " @Override public void write(int v) { throw new UnsupportedOperationException(); }"
+            + " @Override public int read() { return 1; } @Override public void run() { } void own() { } }");
+    assertEquals(List.of("p.Rom.reset() overrides with nothing what `Device` promises",
+        "p.Rom.write(int) overrides with a refusal what `Device` promises"), found);
+  }
+
+  @Test
+  void aClassThatOnlyPassesCallsOn() {
+    List<String> found = details(new MiddleMan(),
+        "package p; class Front { private final Back back = new Back(); void a() { back.a(); }"
+            + " int b() { return back.b(); } void c(int n) { this.back.c(n); } }"
+            + " class Works { Back back; void a() { back.a(); } int b() { return 1; } void c() { back.c(1); } }");
+    assertEquals(List.of("p.Front only passes its 3 methods on to `back`"), found);
+  }
+
+  @Test
+  void dataInOneClassAndTheWorkInAnother() {
+    List<String> found = details(new DataWithoutBehaviour(),
+        "package p; class State { int a; int b; int c; int getA() { return a; } int getB() { return b; }"
+            + " int getC() { return c; } void setA(int a) { this.a = a; } }"
+            + " class Model { int a; int b; int c; int getA() { return a; } int getB() { return b; }"
+            + " int getC() { return c; } int sum() { return a + b + c; } }",
+        "package p; class Saver { int save(State s, Model m) { return s.getA() + s.getB() + s.getC()"
+            + " + m.getA() + m.getB() + m.getC(); } }");
+    assertEquals(List.of("p.Saver.save(State, Model) asks `s`, a State that only holds data, 3 things: getA, getB, "
+        + "getC"), found);
+  }
 }

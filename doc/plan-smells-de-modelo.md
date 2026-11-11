@@ -820,4 +820,12 @@ Quedan doce candidatas con ficha.
 - **Patrones que faltaban.** Command es una lectura nueva de las decisiones: textos que eligen cada uno una acción
   (3 en `machine`: los `setGeneralOption(String, Object)`). Observer y Composite son dos candidatas,
   `told-one-by-one` (1 y 2) y `one-and-many` (0 y 1), que en oozx encuentran poco.
+- **Un modelo número doce: `hierarchy-without-is-a`.** El vocabulario de §4 nombraba lo que falta; no tenía cómo
+  nombrar un modelo de más o mal armado. Lo usan `overridden-to-nothing` (6 y 2) y `middle-man` (0 y 2). Las
+  autopsias lo aceptan como cualquier otro id.
+- **`data-without-behaviour`**: el par clase de datos más quien la interroga. 0 en `emulator`, 12 en `machine`.
+
+Estado del catálogo: 33 reglas adoptadas y 16 candidatas con ficha. Las que propongo adoptar y esperan a Fernando:
+`absence-as-state`, `reached-through`, `walked-from-outside`, `enum-decided-across` (de la primera tanda),
+`kept-together` y `data-without-behaviour`.
 
