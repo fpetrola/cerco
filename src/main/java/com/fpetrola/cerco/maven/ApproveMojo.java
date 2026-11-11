@@ -47,7 +47,8 @@ public final class ApproveMojo extends AbstractCercoMojo {
       throw new MojoFailureException("cerco: not approved, nothing was written to " + engine.approvalFile()
           + " (the answer has to be exactly 'yes')");
     }
-    Approval.of(loaded.digest(), engine.configDigest(), settings().isDefault(), approver(), LocalDate.now())
+    Approval.of(loaded.digest(), Optional.of(engine.configDigest()).filter(digest -> !settings().isDefault()),
+        approver(), LocalDate.now())
         .write(engine.approvalFile());
     engine.witness().accept();
     engine.autopsies().accept(awaiting);

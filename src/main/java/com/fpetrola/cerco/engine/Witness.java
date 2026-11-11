@@ -57,16 +57,22 @@ public final class Witness {
     return fixed;
   }
 
-  /** Keeps the digests of this run: of the files it read, and of the whole project when it read all of it. */
-  void record(Map<String, String> digests, boolean full) {
-    Map<String, String> files = full ? new TreeMap<>() : read(DIGESTS);
+  /** Keeps the digests of the files a run over part of the project read, beside those already kept. */
+  void recordSome(Map<String, String> digests) {
+    Map<String, String> files = read(DIGESTS);
     files.putAll(digests);
     write(DIGESTS, files);
     Map<String, String> self = read(SELF);
     self.putIfAbsent(DEFAULTS, defaults());
-    if (full) {
-      self.put(PROJECT, digestOf(digests));
-    }
+    write(SELF, self);
+  }
+
+  /** Keeps the digests of a run that read the whole project, in place of what was kept, and the project's own. */
+  void recordAll(Map<String, String> digests) {
+    write(DIGESTS, new TreeMap<>(digests));
+    Map<String, String> self = read(SELF);
+    self.putIfAbsent(DEFAULTS, defaults());
+    self.put(PROJECT, digestOf(digests));
     write(SELF, self);
   }
 

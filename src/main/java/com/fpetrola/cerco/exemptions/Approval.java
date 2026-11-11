@@ -34,10 +34,10 @@ public record Approval(Optional<String> exemptionsDigest, Optional<String> confi
         properties.getProperty("on", ""));
   }
 
-  public static Approval of(Optional<String> exemptionsDigest, String configDigest, boolean configIsDefault,
-      String by, LocalDate on) {
-    return new Approval(exemptionsDigest, configIsDefault ? Optional.empty() : Optional.of(configDigest), by,
-        on.toString());
+  /** A signature over the exemptions as they stand and, when the configuration is not the default, over it. */
+  public static Approval of(Optional<String> exemptionsDigest, Optional<String> configDigest, String by,
+      LocalDate on) {
+    return new Approval(exemptionsDigest, configDigest, by, on.toString());
   }
 
   /** What stands in the way of applying the current exemptions and configuration. */

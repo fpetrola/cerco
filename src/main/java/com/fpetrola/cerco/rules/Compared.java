@@ -28,6 +28,7 @@ import java.util.Set;
 final class Compared {
   private static final Set<BinaryExpr.Operator> EQUALITY = Set.of(BinaryExpr.Operator.EQUALS,
       BinaryExpr.Operator.NOT_EQUALS);
+  private final ObjectProtocol everyObject = new ObjectProtocol();
   private final Kinds kinds = new Kinds();
   private final Terms terms = new Terms();
 
@@ -151,8 +152,8 @@ final class Compared {
 
     @Override
     public List<Term> visit(MethodCallExpr call, Void none) {
-      return call.getScope().filter(scope -> call.getNameAsString().equals("equals")
-          && call.getArguments().size() == 1).map(scope -> between(scope, call.getArgument(0)))
+      return call.getScope().filter(scope -> everyObject.compares(call))
+          .map(scope -> between(scope, call.getArgument(0)))
           .orElseGet(() -> List.of(unknown()));
     }
 

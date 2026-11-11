@@ -8,8 +8,8 @@ import com.fpetrola.cerco.rules.Rule;
 import com.fpetrola.cerco.rules.Rules;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -18,13 +18,16 @@ import java.util.stream.Collectors;
  */
 public final class ConsoleReport {
   private static final int PER_RULE = 25;
-  private final Map<String, Rule> rules;
-  private final Map<String, Map<String, Long>> modelsByRule;
+  private final Map<String, Known> rules;
+
+  /** A rule, and how many autopsies of this project named each missing model for it. */
+  private record Known(Rule rule, Map<String, Long> found) {
+  }
 
   /** The rules, and per rule how many autopsies of this project named each missing model. */
   public ConsoleReport(Rules rules, Map<String, Map<String, Long>> modelsByRule) {
-    this.rules = rules.all().stream().collect(Collectors.toMap(Rule::id, Function.identity()));
-    this.modelsByRule = modelsByRule;
+    this.rules = rules.all().stream().collect(Collectors.toMap(Rule::id,
+        rule -> new Known(rule, modelsByRule.getOrDefault(rule.id(), Map.of()))));
   }
 
   public String render(Outcome outcome) {
@@ -83,8 +86,8 @@ public final class ConsoleReport {
    * Which models the smell usually hides, so the fix starts from the design: the agent names the one it found in the
    * autopsy, and what earlier autopsies of this project found is said first.
    */
-  private String diagnosis(Rule rule, List<Finding> findings) {
-    Diagnosis diagnosis = rule.diagnosis();
+  private String diagnosis(Known known, List<Finding> findings) {
+    Diagnosis diagnosis = known.rule().diagnosis();
     if (!diagnosis.says()) {
       return "";
     }
@@ -96,7 +99,7 @@ public final class ConsoleReport {
       diagnosis.hypotheses().forEach(hypothesis -> out.append("    ").append(hypothesis.line()).append('\n'));
     }
     out.append("  not a fix: ").append(diagnosis.notAFix()).append('\n');
-    Map<String, Long> found = modelsByRule.getOrDefault(rule.id(), Map.of());
+    Map<String, Long> found = known.found();
     if (!found.isEmpty()) {
       out.append("  in this project so far: ").append(found.entrySet().stream()
           .map(entry -> entry.getKey() + " " + entry.getValue()).collect(Collectors.joining(", "))).append('\n');
@@ -112,13 +115,12 @@ public final class ConsoleReport {
 
   private String section(String ruleId, List<Finding> findings) {
     StringBuilder out = new StringBuilder();
-    Rule rule = rules.get(ruleId);
     out.append("\n[").append(ruleId).append("] ").append(findings.size()).append(" new\n");
-    if (rule != null) {
-      out.append("  principle: ").append(rule.principle()).append('\n');
-      out.append("  do: ").append(rule.remedy()).append('\n');
-      out.append(diagnosis(rule, findings));
-    }
+    Optional.ofNullable(rules.get(ruleId)).ifPresent(known -> {
+      out.append("  principle: ").append(known.rule().principle()).append('\n');
+      out.append("  do: ").append(known.rule().remedy()).append('\n');
+      out.append(diagnosis(known, findings));
+    });
     findings.stream().limit(PER_RULE).forEach(finding -> out.append("  ").append(finding.file()).append(':')
         .append(finding.line()).append("  ").append(finding.detail()).append('\n').append(reading(finding)));
     if (findings.size() > PER_RULE) {

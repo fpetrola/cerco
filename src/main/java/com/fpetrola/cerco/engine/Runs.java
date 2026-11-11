@@ -13,27 +13,33 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 /** The live runs of every active rule, each fed the same file in turn, and the digest of each file's code. */
 final class Runs {
-  private final Map<String, Inspection> inspections = new LinkedHashMap<>();
-  private final Map<String, Measuring> measurings = new LinkedHashMap<>();
-  private final Map<String, String> digests = new TreeMap<>();
+  private final Map<String, Run> byRule = new LinkedHashMap<>();
+  private final Digests digests = new Digests();
   private final Project project = new Project();
+
+  /** One rule at work: looking for findings, or measuring sizes. */
+  private record Run(Optional<Inspection> inspection, Optional<Measuring> measuring) {
+    void visit(ParsedFile file) {
+      inspection.ifPresent(looking -> looking.visit(file));
+      measuring.ifPresent(sizing -> sizing.visit(file));
+    }
+  }
 
   Runs(List<Rule> rules) {
     for (Rule rule : rules) {
-      rule.asBudget().ifPresentOrElse(budget -> measurings.put(budget.id(), budget.measuring()),
-          () -> inspections.put(rule.id(), rule.inspection(project)));
+      Optional<Measuring> measuring = rule.asBudget().map(BudgetRule::measuring);
+      byRule.put(rule.id(), new Run(Optional.of(rule).filter(plain -> measuring.isEmpty())
+          .map(plain -> plain.inspection(project)), measuring));
     }
   }
 
   void visit(ParsedFile file) {
     project.learn(file);
-    inspections.values().forEach(inspection -> inspection.visit(file));
-    measurings.values().forEach(measuring -> measuring.visit(file));
-    digests.put(file.name(), file.digest());
+    byRule.values().forEach(run -> run.visit(file));
+    digests.keep(file);
   }
 
   /**
@@ -51,14 +57,14 @@ final class Runs {
   }
 
   Map<String, String> digests() {
-    return digests;
+    return digests.byFile();
   }
 
   List<Finding> findings(Rule rule) {
-    return inspections.get(rule.id()).findings();
+    return byRule.get(rule.id()).inspection().map(Inspection::findings).orElse(List.of());
   }
 
   List<Measure> measures(BudgetRule rule) {
-    return measurings.get(rule.id()).measures();
+    return byRule.get(rule.id()).measuring().map(Measuring::measures).orElse(List.of());
   }
 }

@@ -33,9 +33,8 @@ public final class Rules {
    */
   public List<Rule> candidates() {
     return List.of(new AbsenceAsState(), new HierarchyAskedFromOutside(), new SetFromOutside(), new ReachedThrough(),
-        new WalkedFromOutside(), new EnumDecidedAcross(), new FlagArgument(), new StateAskedAcrossMethods(),
-        new MapsKeyedAlike(), new UnpackedAtTheCall(), new NamedByText(), new SaidInTwoCalls(),
-        new ConditionRepeated());
+        new WalkedFromOutside(), new EnumDecidedAcross(), new StateAskedAcrossMethods(), new UnpackedAtTheCall(),
+        new SaidInTwoCalls(), new ConditionRepeated());
   }
 
   private List<Rule> every() {
@@ -67,6 +66,9 @@ public final class Rules {
         new RefilteredByType(),
         new KeyHoldsValue(),
         new EnumDecidedOutside(),
+        new FlagArgument(),
+        new MapsKeyedAlike(),
+        new NamedByText(),
         new FileLength(settings.fileCeiling()),
         new MethodLength(settings.methodCeiling()));
   }

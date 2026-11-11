@@ -7,7 +7,6 @@ import com.fpetrola.cerco.project.TypeName;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.InstanceOfExpr;
@@ -31,6 +30,7 @@ final class TypeTests {
       "limit", "skip");
   private static final Set<String> ANSWER_OBJECT = Set.of("newInstance", "readObject");
   private final Enclosing enclosing = new Enclosing();
+  private final ObjectProtocol everyObject = new ObjectProtocol();
   private final Imports imports;
   private final Names names;
   private final Set<String> typeVariables;
@@ -49,7 +49,7 @@ final class TypeTests {
   TypeTest of(Finding finding, Node test, Type type, Expression subject) {
     Optional<TypeName> tested = type.toClassOrInterfaceType().map(imports::name);
     String text = subject.toString();
-    boolean mute = inEquals(test) || tested.filter(this::namesNoModel).isPresent() || subject.isLambdaExpr()
+    boolean mute = everyObject.insideEquals(test) || tested.filter(this::namesNoModel).isPresent() || subject.isLambdaExpr()
         || subject.isMethodReferenceExpr() || subject.isNullLiteralExpr();
     return new TypeTest(finding, tested, new TypeTest.Subject(text, subject.isThisExpr(), declared(subject),
         lookedUpBy(subject)), enclosing.of(test), inside(test), alongside(test, text), pickedFrom(test, text), mute);
@@ -96,12 +96,6 @@ final class TypeTests {
 
   private String inside(Node test) {
     return test.findAncestor(TypeDeclaration.class).map(TypeDeclaration::getNameAsString).orElse("");
-  }
-
-  private boolean inEquals(Node test) {
-    return test.findAncestor(MethodDeclaration.class)
-        .filter(method -> method.getNameAsString().equals("equals") && method.getParameters().size() == 1)
-        .isPresent();
   }
 
   /** Every type the same value is asked for, with instanceof, in the member the test sits in. */

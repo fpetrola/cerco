@@ -7,7 +7,6 @@ import com.fpetrola.cerco.project.Family;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.InstanceOfExpr;
@@ -27,6 +26,7 @@ import java.util.Set;
 public final class HierarchyAskedFromOutside extends RepeatedRule<HierarchyAskedFromOutside.Test> {
   private static final int MEMBERS = 2;
   private static final int SUBTYPES = 2;
+  private final ObjectProtocol everyObject = new ObjectProtocol();
 
   /** A test of a type: where, in which member of which type, and how. */
   public record Test(String file, int line, String member, String enclosingType, String tested, String how)
@@ -82,8 +82,7 @@ public final class HierarchyAskedFromOutside extends RepeatedRule<HierarchyAsked
   }
 
   private void keep(ParsedFile file, Node test, Type type, String how, List<Test> tests) {
-    boolean inEquals = test.findAncestor(MethodDeclaration.class)
-        .map(method -> method.getNameAsString().equals("equals")).orElse(false);
+    boolean inEquals = everyObject.insideEquals(test);
     simpleName(type).filter(tested -> !inEquals).ifPresent(tested -> tests.add(new Test(file.name(),
         line(test), enclosing.of(test), test.findAncestor(TypeDeclaration.class)
         .map(TypeDeclaration::getNameAsString).orElse(""), tested, how)));

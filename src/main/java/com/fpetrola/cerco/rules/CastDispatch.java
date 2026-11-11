@@ -14,6 +14,7 @@ import java.util.List;
 
 /** Forcing a value into a type it was not declared as: a cast, or {@code Class.cast} dressed as a method. */
 public final class CastDispatch extends TypeTestRule {
+  private final ObjectProtocol everyObject = new ObjectProtocol();
 
   @Override
   public String id() {
@@ -46,19 +47,14 @@ public final class CastDispatch extends TypeTestRule {
   protected List<Node> suspects(CompilationUnit unit) {
     List<Node> suspects = new ArrayList<>();
     unit.findAll(CastExpr.class).stream().filter(cast -> cast.getType().isClassOrInterfaceType()).forEach(suspects::add);
-    unit.findAll(MethodCallExpr.class).stream().filter(this::isClassCast).forEach(suspects::add);
-    unit.findAll(MethodReferenceExpr.class).stream().filter(ref -> ref.getIdentifier().equals("cast"))
-        .forEach(suspects::add);
+    unit.findAll(MethodCallExpr.class).stream().filter(everyObject::casts).forEach(suspects::add);
+    unit.findAll(MethodReferenceExpr.class).stream().filter(everyObject::casts).forEach(suspects::add);
     return suspects;
   }
 
   @Override
   protected GenericVisitor<TypeTest, In> asked() {
     return new Asked();
-  }
-
-  private boolean isClassCast(MethodCallExpr call) {
-    return call.getNameAsString().equals("cast") && call.getArguments().size() == 1 && call.getScope().isPresent();
   }
 
   private Finding found(In in, Node node) {

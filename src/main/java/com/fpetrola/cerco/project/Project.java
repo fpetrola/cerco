@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,10 +20,15 @@ import java.util.stream.Collectors;
  * Two types with one simple name are one to it: the first declared answers.
  */
 public final class Project {
-  private final Map<String, Declared> types = new LinkedHashMap<>();
   private final List<Declared> everyone = new ArrayList<>();
-  private final Map<String, List<Declared>> homonyms = new HashMap<>();
-  private final Map<String, Set<String>> under = new HashMap<>();
+  private final Map<String, Named> names = new HashMap<>();
+
+  /** What goes by one simple name: the types declared with it, and the project types right below it. */
+  private record Named(List<Declared> declared, Set<String> below) {
+    Named() {
+      this(new ArrayList<>(), new TreeSet<>());
+    }
+  }
   private boolean whole;
   private boolean recalled;
 
@@ -51,17 +55,16 @@ public final class Project {
   private void forget(String file) {
     List<Declared> kept = everyone.stream().filter(type -> !type.file().equals(file)).toList();
     everyone.clear();
-    homonyms.clear();
-    types.clear();
-    under.clear();
+    names.clear();
     kept.forEach(this::declare);
   }
 
   private void declare(Declared type) {
     everyone.add(type);
-    homonyms.computeIfAbsent(type.name(), k -> new ArrayList<>()).add(type);
-    if (types.putIfAbsent(type.name(), type) == null) {
-      type.supertypes().forEach(parent -> under.computeIfAbsent(parent, k -> new TreeSet<>()).add(type.name()));
+    List<Declared> sharing = named(type.name()).declared();
+    sharing.add(type);
+    if (sharing.size() == 1) {
+      type.supertypes().forEach(parent -> named(parent).below().add(type.name()));
     }
   }
 
@@ -74,22 +77,27 @@ public final class Project {
     return whole;
   }
 
+  private Named named(String name) {
+    return names.computeIfAbsent(name, k -> new Named());
+  }
+
   public boolean declares(String type) {
-    return types.containsKey(type);
+    return declared(type).isPresent();
   }
 
   /** Whether the type a file names is one of the project's, going by its full name when the file says it. */
   public boolean declares(TypeName type) {
-    return homonyms.getOrDefault(type.simple(), List.of()).stream().anyMatch(type::means);
+    return Optional.ofNullable(names.get(type.simple())).stream().flatMap(named -> named.declared().stream())
+        .anyMatch(type::means);
   }
 
   public Optional<Declared> declared(String type) {
-    return Optional.ofNullable(types.get(type));
+    return Optional.ofNullable(names.get(type)).flatMap(named -> named.declared().stream().findFirst());
   }
 
   /** The project types that extend or implement a type directly. */
   public Set<String> directlyBelow(String type) {
-    return under.getOrDefault(type, Set.of());
+    return Optional.ofNullable(names.get(type)).map(Named::below).orElse(Set.of());
   }
 
   /** A type and everything below it in the project. */
@@ -99,7 +107,7 @@ public final class Project {
     while (!pending.isEmpty()) {
       String current = pending.pop();
       if (found.add(current)) {
-        pending.addAll(under.getOrDefault(current, Set.of()));
+        pending.addAll(directlyBelow(current));
       }
     }
     return found;
@@ -131,7 +139,7 @@ public final class Project {
 
   /** The enums of the project that have all those constants, by name. */
   public List<Declared> enumsWith(Set<String> constants) {
-    return types.values().stream().filter(Declared::isEnum).filter(type -> type.constants().containsAll(constants))
+    return everyone.stream().filter(Declared::isEnum).filter(type -> type.constants().containsAll(constants))
         .sorted(Comparator.comparing(Declared::name)).toList();
   }
 

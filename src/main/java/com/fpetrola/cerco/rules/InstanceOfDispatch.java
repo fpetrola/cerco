@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 /** Asking a value what type it is, with instanceof or by comparing classes, instead of letting the type answer. */
 public final class InstanceOfDispatch extends TypeTestRule {
+  private final ObjectProtocol everyObject = new ObjectProtocol();
 
   @Override
   public String id() {
@@ -61,7 +62,7 @@ public final class InstanceOfDispatch extends TypeTestRule {
 
   /** The comparison a `getClass()` call sits in, when it is one side of an == or a !=. */
   private Optional<BinaryExpr> comparison(MethodCallExpr call) {
-    if (!call.getNameAsString().equals("getClass") || !call.getArguments().isEmpty()) {
+    if (!everyObject.asksItsClass(call)) {
       return Optional.empty();
     }
     return call.findAncestor(BinaryExpr.class, binary -> binary.getLeft() == call || binary.getRight() == call)

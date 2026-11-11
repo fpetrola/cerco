@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  * {@code getKind()}, {@code getTagName()}, a class name) compared against a constant.
  */
 public final class TypeCodeDispatch extends DecisionRule {
+  private final ObjectProtocol everyObject = new ObjectProtocol();
   private static final Pattern TYPE_CODE = Pattern.compile(
       "get(\\w*Type|\\w*Kind|TagName|NodeName|SimpleName|TypeName|CanonicalName)|kind|typeName");
   private static final Set<String> NAMING = Set.of("getSimpleName", "getName", "getCanonicalName", "getTypeName",
@@ -64,7 +65,7 @@ public final class TypeCodeDispatch extends DecisionRule {
   }
 
   private boolean inspectsClass(MethodCallExpr call) {
-    if (!call.getNameAsString().equals("getClass") || !call.getArguments().isEmpty()) {
+    if (!everyObject.asksItsClass(call)) {
       return false;
     }
     return enclosing.parentOf(call, MethodCallExpr.class)
@@ -88,7 +89,7 @@ public final class TypeCodeDispatch extends DecisionRule {
 
   private boolean comparedWithEquals(MethodCallExpr call) {
     return enclosing.parentOf(call, MethodCallExpr.class)
-        .filter(parent -> parent.getNameAsString().equals("equals") && parent.getArguments().size() == 1)
+        .filter(everyObject::compares)
         .map(parent -> parent.getScope().filter(scope -> scope == call).isPresent()
             || parent.getArgument(0) == call || isStringConstant(parent.getArgument(0)))
         .orElse(false);

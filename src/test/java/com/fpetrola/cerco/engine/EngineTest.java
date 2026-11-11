@@ -143,7 +143,7 @@ class EngineTest {
     assertTrue(unsigned.problems().get(0).contains("not approved"));
 
     String digest = new Digest(Files.readAllBytes(yaml)).hex();
-    Approval.of(Optional.of(digest), engine.configDigest(), true, "fernando", LocalDate.of(2026, 11, 9))
+    Approval.of(Optional.of(digest), Optional.empty(), "fernando", LocalDate.of(2026, 11, 9))
         .write(engine.approvalFile());
     Outcome signed = engine.run(scope(root, true));
     assertTrue(signed.green(), signed.toString());
@@ -229,7 +229,7 @@ class EngineTest {
             budget: 1
         """);
     String digest = new Digest(Files.readAllBytes(yaml)).hex();
-    Approval.of(Optional.of(digest), engine.configDigest(), true, "fernando", LocalDate.of(2026, 11, 9))
+    Approval.of(Optional.of(digest), Optional.empty(), "fernando", LocalDate.of(2026, 11, 9))
         .write(engine.approvalFile());
 
     Outcome full = engine.run(scope(root, true));

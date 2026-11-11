@@ -113,7 +113,7 @@ public final class Engine {
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
     if (store.exists()) {
-      witness.record(runs.digests(), scope.full());
+      witnessed(witness, runs, scope);
       problems.addAll(witness.problems());
     } else {
       notes.add("no baseline is frozen yet: every finding counts as new until `mvn verify` freezes the project");
@@ -138,6 +138,15 @@ public final class Engine {
     return parsed;
   }
 
+  /** What a run read is kept as witness: in place of what was kept when it read everything, beside it otherwise. */
+  private void witnessed(Witness witness, Runs runs, Scope scope) {
+    if (scope.full()) {
+      witness.recordAll(runs.digests());
+    } else {
+      witness.recordSome(runs.digests());
+    }
+  }
+
   /** Freezes the project as it stands: every current finding and every oversize measure become the baseline. */
   public int freeze(List<SourceFile> files) {
     List<Rule> active = rules.all();
@@ -149,7 +158,7 @@ public final class Engine {
           .orElseGet(() -> freeze(rule, runs.findings(rule)));
     }
     store.markFrozen(LocalDate.now(clock), active.stream().map(Rule::id).toList());
-    witness().record(runs.digests(), true);
+    witness().recordAll(runs.digests());
     return total;
   }
 

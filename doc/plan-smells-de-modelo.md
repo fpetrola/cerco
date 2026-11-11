@@ -779,3 +779,24 @@ Con las seis de §12 son trece candidatas con ficha en `doc/reglas/`. Ninguna es
 - **El resto del catálogo** de §7.2 y de lo que se cruzó con los catálogos: diferencia entre clones, despacho
   encubierto, grupos de datos que viajan juntos, modelo paralelo, mismos literales en dos archivos, jerarquías de más.
 - **Un segundo proyecto de referencia.** Todo está medido sobre oozx.
+
+### 13.5 Adoptadas: `flag-argument`, `maps-keyed-alike` y `named-by-text`
+
+Fernando las adoptó el 2026-11-10. El catálogo pasa a 32 reglas y quedan diez candidatas. En un proyecto con línea de
+base, la primera corrida completa con 0.15.0 congela lo que encuentran (en oozx `87e376742`: 16, 20 y 27 hallazgos).
+
+El autochequeo no tiene línea de base, así que cerco tuvo que cumplirlas. Encontraron 15 cosas en su propio código:
+
+| hallazgo | arreglo |
+|---|---|
+| `Project` con tres mapas por nombre de tipo | un `Named` por nombre: los tipos declarados con él y los que tiene debajo |
+| `Runs` con tres mapas | un `Run` por regla (inspección o medida); los digests, aparte, en `Digests` |
+| `PackageGraph` con `edges`, `index` y `low` por paquete | un `Node` por paquete, que sabe cuándo se lo alcanzó y a cuál vuelve |
+| `PackageCycles.Graph` con dos mapas por paquete | un `Seen` por paquete |
+| `ConsoleReport` con las reglas y sus conteos por id | un `Known` por regla |
+| `Witness.record(digests, full)` | `recordAll` y `recordSome` |
+| `Approval.of(…, configIsDefault, …)` | recibe el digest de la configuración solo cuando hay uno que firmar |
+| `"equals"`, `"getClass"` y `"cast"` comparados en ocho lugares de las reglas | `ObjectProtocol`, que es el único que los nombra |
+
+Después de esos arreglos, las 35 reglas anteriores siguen dando en oozx los mismos 10.619 hallazgos.
+

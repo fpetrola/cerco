@@ -1,6 +1,6 @@
 # Ficha: `named-by-text` (candidata)
 
-Estado: **candidata, propuesta para adoptar**. Pendiente la revisión de Fernando.
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-10). Al adoptarla hubo que arreglar lo que encontró en el propio cerco (ver §13.5 del plan).
 
 ## 1. Definición
 

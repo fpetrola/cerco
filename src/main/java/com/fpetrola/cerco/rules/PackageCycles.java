@@ -62,17 +62,19 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
     return graph.findings();
   }
 
+  /** What is seen of one package: its first file, and everything its files import, as written. */
+  record Seen(String firstFile, List<String> imports) {
+  }
+
   /** Remembers each package's first file and raw imports; resolves them against the package set at the end. */
   final class Graph implements Inspection {
-    private final Map<String, String> firstFileOf = new TreeMap<>();
-    private final Map<String, List<String>> imports = new TreeMap<>();
+    private final Map<String, Seen> packages = new TreeMap<>();
 
     @Override
     public void visit(ParsedFile file) {
       file.unit().ifPresent(unit -> {
-        String name = packageOf(unit);
-        firstFileOf.putIfAbsent(name, file.name());
-        List<String> mine = imports.computeIfAbsent(name, key -> new ArrayList<>());
+        List<String> mine = packages.computeIfAbsent(packageOf(unit), key -> new Seen(file.name(),
+            new ArrayList<>())).imports();
         for (ImportDeclaration imported : unit.getImports()) {
           mine.add(imported.isAsterisk() && !imported.isStatic() ? imported.getNameAsString() + ".*"
               : imported.getNameAsString());
@@ -83,9 +85,9 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
     @Override
     public List<Finding> findings() {
       Map<String, Set<String>> edges = new TreeMap<>();
-      imports.forEach((from, names) -> {
+      packages.forEach((from, seen) -> {
         Set<String> targets = new TreeSet<>();
-        names.forEach(name -> target(name).filter(to -> !to.equals(from)).ifPresent(targets::add));
+        seen.imports().forEach(name -> target(name).filter(to -> !to.equals(from)).ifPresent(targets::add));
         edges.put(from, targets);
       });
       return new PackageGraph(edges).cycles().stream().map(this::finding).toList();
@@ -94,7 +96,7 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
     private Optional<String> target(String imported) {
       String candidate = parentOf(imported);
       while (!candidate.isEmpty()) {
-        if (imports.containsKey(candidate)) {
+        if (packages.containsKey(candidate)) {
           return Optional.of(candidate);
         }
         candidate = parentOf(candidate);
@@ -103,7 +105,7 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
     }
 
     private Finding finding(Set<String> cycle) {
-      String file = firstFileOf.get(cycle.iterator().next());
+      String file = packages.get(cycle.iterator().next()).firstFile();
       return new Finding(id(), file, 1, file + "|cycle:" + String.join(",", cycle),
           "packages depend on each other in a cycle: " + String.join(" <-> ", cycle));
     }

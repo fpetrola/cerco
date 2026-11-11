@@ -22,7 +22,7 @@ class ApprovalTest {
   @Test
   void aSignatureRoundTripsAndMatchesWhatItSigned(@TempDir Path dir) {
     Path file = dir.resolve("approved");
-    Approval.of(Optional.of("abc"), "cfg", false, "fernando", LocalDate.of(2026, 11, 9)).write(file);
+    Approval.of(Optional.of("abc"), Optional.of("cfg"), "fernando", LocalDate.of(2026, 11, 9)).write(file);
     Approval read = Approval.read(file);
     assertEquals("fernando", read.by());
     assertEquals("2026-11-09", read.on());

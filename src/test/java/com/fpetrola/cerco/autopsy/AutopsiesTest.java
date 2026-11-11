@@ -171,7 +171,7 @@ class AutopsiesTest {
         Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), true, List.of("kind-without-type"));
     Engine declined = new Engine(declining, root, "1.0", clock);
     assertEquals(1, declined.run(scope(root)).owed().size(), "a decline nobody signed declines nothing");
-    Approval.of(Optional.empty(), declined.configDigest(), false, "fernando", LocalDate.of(2026, 11, 10))
+    Approval.of(Optional.empty(), Optional.of(declined.configDigest()), "fernando", LocalDate.of(2026, 11, 10))
         .write(declined.approvalFile());
     assertTrue(declined.run(scope(root)).green());
   }
