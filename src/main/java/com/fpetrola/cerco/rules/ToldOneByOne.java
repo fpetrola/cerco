@@ -3,6 +3,10 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Chain;
+import com.fpetrola.cerco.project.Imports;
+import com.fpetrola.cerco.project.Names;
+import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
@@ -16,8 +20,18 @@ import java.util.Optional;
  * something is told by hand, and whoever tells keeps the list of them in its code. Candidate from the plan of model
  * smells (Kerievsky's Replace Hard-Coded Notifications with Observer).
  */
-public final class ToldOneByOne extends FileRule {
+public final class ToldOneByOne extends PlacesRule<ToldOneByOne.Site> {
   private static final int TOLD = 3;
+
+  /** One run of calls: where, what is said, to how many, and how the first of them is reached. */
+  public record Site(String file, int line, String member, String said, int told, Optional<Chain> first)
+      implements Place {
+
+    Finding found(String rule) {
+      return new Finding(rule, file, line, file + "|" + member + "|" + said + "()", told
+          + " objects in a row are told `" + said + "()` in " + member);
+    }
+  }
 
   @Override
   public String id() {
@@ -50,8 +64,8 @@ public final class ToldOneByOne extends FileRule {
   }
 
   @Override
-  protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
-    List<Finding> findings = new ArrayList<>();
+  protected void gather(ParsedFile file, CompilationUnit unit, List<Site> sites) {
+    Names names = new Names(new Imports(unit));
     for (BlockStmt block : unit.findAll(BlockStmt.class)) {
       List<Statement> statements = block.getStatements();
       int at = 0;
@@ -59,13 +73,19 @@ public final class ToldOneByOne extends FileRule {
         int run = run(statements, at);
         if (run >= TOLD) {
           MethodCallExpr first = told(statements.get(at)).orElseThrow();
-          findings.add(finding(file, first, enclosing.of(first) + "|" + first.getNameAsString() + "()", run
-              + " objects in a row are told `" + first.getNameAsString() + "()` in " + enclosing.of(first)));
+          sites.add(new Site(file.name(), line(first), enclosing.of(first), first.getNameAsString(), run,
+              first.getScope().flatMap(names::chainOf)));
         }
         at += Math.max(run, 1);
       }
     }
-    return findings;
+  }
+
+  /** Only objects of the project: a row of buttons given their listeners is how a library's widgets are set up. */
+  @Override
+  protected List<Finding> conclude(List<Site> sites, Project project) {
+    return sites.stream().filter(site -> site.first().flatMap(project::typeOf).filter(project::declares).isPresent())
+        .map(site -> site.found(id())).toList();
   }
 
   /** How many statements from there on make the same call as the first, each on another object. */
@@ -90,6 +110,6 @@ public final class ToldOneByOne extends FileRule {
   }
 
   private String on(MethodCallExpr call) {
-    return receiver(call).orElse("");
+    return call.getScope().map(Object::toString).orElse("");
   }
 }

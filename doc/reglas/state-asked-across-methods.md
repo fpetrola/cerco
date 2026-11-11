@@ -37,3 +37,11 @@ No separa por tasa.
 
 No cumple la condición de separar, y la muestra es chica. Dos salidas: bajar el umbral a 2 métodos y volver a
 sondear, o dejarla como evidencia de `enum-decided-across` y `absence-as-state`.
+
+## 5. Segundo proyecto: oozx-plugins (0.15.0)
+
+En oozx-plugins (74 módulos, 64 mil líneas, casi todo escrito por el agente) da **35**: 0,54 por mil líneas, contra
+0,06 en `emulator`. Muestra de 7, juzgada por Claude: `WdFdc.direction` e `idMark`, `SetPiece.kind`,
+`MultifacePeripheral.model`, `SensibleScheme.dead` (6 métodos) y `throwIn`, `GolpeScheme.dead`: los 7 verdaderos.
+
+Cambia la decisión de §4: **propuesta para adoptar**. Con dos proyectos separa 9 veces y pasa de 3 casos reales.

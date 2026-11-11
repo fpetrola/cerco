@@ -39,3 +39,8 @@ es el paso siguiente de la infraestructura.
 El tipo del receptor ya se resuelve a través del índice (`a.b()`, campos heredados). El resultado en oozx no cambió:
 el único caso sigue siendo el par del visitor en `emulator`. La regla no rinde en este proyecto por falta de casos,
 no por falta de tipos.
+
+## 6. Segundo proyecto: oozx-plugins
+
+6 hallazgos que son un solo caso (`steps.add(…); steps.repeat(…)` en tres métodos de `Sounds`), contado en los dos
+órdenes. Sigue sin rendir.

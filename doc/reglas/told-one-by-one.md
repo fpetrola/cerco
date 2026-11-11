@@ -33,3 +33,9 @@ No separa.
 ## 4. Decisión
 
 2 verdaderos y 1 débil: no llega a 3 casos reales fuera de `translation`. Mirar los 8 de `translation` antes de decidir.
+
+## 5. Segundo proyecto, y solo objetos del proyecto (0.15.0)
+
+En oozx-plugins daba 30, casi todos filas de botones de Swing (`addActionListener`, `setEnabled`). Ahora la regla
+exige que el primer receptor sea de un tipo del proyecto (resuelto por el índice): quedan 1 en `emulator`, 1 en
+`machine` (`Speccy.accept`) y 0 en oozx-plugins. Precisa, y casi sin casos: no rinde.

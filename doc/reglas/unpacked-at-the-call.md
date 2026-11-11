@@ -45,3 +45,7 @@ cumple por la otra salida del plan.
 ## 5. Con los tipos resueltos por el índice (0.15.0)
 
 6 en `emulator` y 8 en `machine` (uno más: el objeto era un campo heredado).
+
+## 6. Segundo proyecto: oozx-plugins
+
+24 (0,37 por mil líneas, igual que `emulator`). Sigue sin separar.

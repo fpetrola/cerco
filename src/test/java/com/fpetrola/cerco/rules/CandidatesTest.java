@@ -155,7 +155,9 @@ class CandidatesTest {
   void theSameThingSaidToEachByHand() {
     List<String> found = details(new ToldOneByOne(),
         "package p; class Machine { Part cpu, ula, sound; void reset() { cpu.reset(); ula.reset(); sound.reset();"
-            + " cpu.start(); cpu.start(); } void two() { cpu.reset(); ula.reset(); } }");
+            + " cpu.start(); cpu.start(); } void two() { cpu.reset(); ula.reset(); }"
+            + " void swing(javax.swing.JButton a, javax.swing.JButton b, javax.swing.JButton c) {"
+            + " a.doClick(); b.doClick(); c.doClick(); } } class Part { void reset() {} void start() {} }");
     assertEquals(List.of("3 objects in a row are told `reset()` in p.Machine.reset()"), found);
   }
 
@@ -200,5 +202,15 @@ class CandidatesTest {
             + " + m.getA() + m.getB() + m.getC(); } }");
     assertEquals(List.of("p.Saver.save(State, Model) asks `s`, a State that only holds data, 3 things: getA, getB, "
         + "getC"), found);
+  }
+
+  @Test
+  void aSwitchKeptAsAMapOfCode() {
+    List<String> found = details(new DispatchByKey(),
+        "package p; import java.util.*; import java.util.function.*; class Core {"
+            + " Map<String, Runnable> commands = new HashMap<>(); Map<String, Integer> sizes;"
+            + " void f() { Map<Kind, Function<Integer, Integer>> byKind = new EnumMap<>(Kind.class); } } enum Kind { A }");
+    assertEquals(List.of("`commands` in p.Core maps a key to code: Map<String,Runnable>",
+        "`byKind` in p.Core.f() maps a key to code: Map<Kind,Function<Integer,Integer>>"), found);
   }
 }

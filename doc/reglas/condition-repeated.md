@@ -38,3 +38,12 @@ Ahora compara la forma: la condición con las variables a las que les pregunta e
 ningún caso (`emulator` 0, `machine` 2, `translation` 4): la regla no rinde aquí porque casi no hay condiciones
 compuestas repetidas, no por cómo se comparan.
 
+## 6. Segundo proyecto: oozx-plugins (0.15.0)
+
+En oozx-plugins da **23** (0 en `emulator`). Muestra de 7, juzgada por Claude: 4 verdaderos (`owner != null &&
+owner.keeper && owner.team != …` en dos métodos de `Match`; `entry.publishers == null || entry.publishers.isEmpty()`
+en tres; un rango de `d.data` en `UpdFdc`) y 3 débiles, sobre objetos de librería (`evt.isAltDown() && …`,
+`icon.getIconWidth() > 0 && …`).
+
+Cambia la decisión: **propuesta para adoptar**, después de exigir que lo preguntado sea un objeto del proyecto, como
+se hizo con `told-one-by-one`.

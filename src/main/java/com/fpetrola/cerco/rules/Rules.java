@@ -56,7 +56,7 @@ public final class Rules {
   public List<Rule> candidates() {
     return List.of(new HierarchyAskedFromOutside(), new SetFromOutside(), new StateAskedAcrossMethods(),
         new UnpackedAtTheCall(), new SaidInTwoCalls(), new ConditionRepeated(), new OneAndMany(), new ToldOneByOne(),
-        new OverriddenToNothing(), new MiddleMan());
+        new OverriddenToNothing(), new MiddleMan(), new DispatchByKey());
   }
 
   private List<Rule> every() {

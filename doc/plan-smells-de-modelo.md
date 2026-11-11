@@ -851,3 +851,27 @@ En el propio cerco encontraron 27 cosas:
 Y un defecto de `data-without-behaviour` que el autochequeo destapó: con varios records llamados `Site`, el índice
 tomaba el primero. Ahora un nombre anidado es el del tipo donde está escrito (`Project.declaredAt`).
 
+### 13.9 Segundo proyecto: oozx-plugins
+
+Todo estaba medido sobre oozx. Corrí `survey -Dcerco.rules=all` sobre oozx-plugins (rama `main`, solo lectura):
+74 módulos, 64.320 líneas, 2.091 hallazgos, 1.834 con lectura (88 %). Lo que más le falta: `behaviour-not-on-owner`
+665, `variation-as-data` 334, `concept-without-a-class` 313.
+
+Las candidatas, en los dos proyectos:
+
+| candidata | emulator | machine | oozx-plugins | qué cambió |
+|---|---|---|---|---|
+| `state-asked-across-methods` | 1 | 2 | 35 | **propuesta para adoptar**: separa 9 veces, 7 de 7 en la muestra |
+| `condition-repeated` | 0 | 2 | 23 | **propuesta**, después de exigir objetos del proyecto |
+| `unpacked-at-the-call` | 6 | 8 | 24 | sigue sin separar |
+| `hierarchy-asked-from-outside` | 48 | 8 | 24 | sin cambio |
+| `said-in-two-calls` | 3 | 0 | 6 | un caso en cada proyecto: no rinde |
+| `told-one-by-one` | 1 | 1 | 0 | daba 30 falsos de Swing; con el índice, casi nada |
+| `overridden-to-nothing` | 6 | 2 | 5 | sin cambio |
+| `set-from-outside` | 0 | 8 | 3 | sin cambio |
+| `middle-man`, `one-and-many`, `dispatch-by-key` | 0 | 2, 1, 2 | 0 | no rinden |
+
+Once candidatas con ficha. Lo que queda sin hacer y no depende de una decisión: la diferencia entre clones (qué
+varía entre dos copias) y la lectura de `file-length`, `no-repeated-statements`, `ask-then-tell`, `property-shuffle`
+y `borrowed-mode`.
+
