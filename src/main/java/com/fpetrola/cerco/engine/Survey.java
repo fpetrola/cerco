@@ -25,8 +25,8 @@ public final class Survey {
     this.rules = List.copyOf(rules);
   }
 
-  /** Each module by name with its files, in the order to report them. */
-  public List<Surveyed> take(Map<String, List<SourceFile>> modules) {
+  /** Each module by name with its files, in the order to report them; the tests are only heard for who uses what. */
+  public List<Surveyed> take(Map<String, List<SourceFile>> modules, List<SourceFile> tests) {
     Map<String, String> moduleOf = new HashMap<>();
     List<SourceFile> all = new ArrayList<>();
     modules.forEach((module, files) -> files.forEach(file -> {
@@ -43,6 +43,7 @@ public final class Survey {
       inspections.values().forEach(inspection -> inspection.visit(file));
     });
     project.markWhole();
+    feed.each(tests, test -> inspections.values().forEach(inspection -> inspection.hear(test)));
     Map<String, Map<String, List<Finding>>> found = new HashMap<>();
     inspections.forEach((id, inspection) -> inspection.findings().forEach(finding ->
         found.computeIfAbsent(moduleOf.getOrDefault(finding.file(), ""), k -> new HashMap<>())

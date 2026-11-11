@@ -230,7 +230,7 @@ class CandidatesTest {
         "package p; class Other { void run(java.util.List<Integer> l, Buffer b) {"
             + " l.forEach(this::wind); wind(1); wind(1); } void wind(int by) { } }");
     assertEquals(List.of("all 2 calls of p.Buffer.read(int[], int, boolean) pass `true` as `stereo`",
-        "all 3 calls of p.Buffer.seek(int) pass `0` as `at`; it is public, and callers outside this project are not seen",
+        "all 3 calls of p.Buffer.seek(int) pass `0` as `at`; if a consumer outside this project uses it, write a test that uses it the same way",
         "all 2 calls of p.Synth.read(int[], int, boolean) pass `true` as `stereo`"), found);
   }
 
@@ -258,7 +258,28 @@ class CandidatesTest {
             + ".forEach(this::count); } private void wind() { } private void rewind() { rewind(); }"
             + " private void count(int n) { } }");
     assertEquals(List.of("nobody reads private field p.Deck.head", "nobody reads private field p.Deck.made",
-        "nobody calls private method p.Deck.rewind()"),
+        "nobody calls private method p.Deck.rewind()", "nothing in main or in the tests calls p.Deck.play(); if a "
+            + "consumer outside this project uses it, write a test that uses it the same way"),
         found);
+  }
+
+  @Test
+  void aTestThatUsesItAsAConsumerDoesCountsAsACaller() {
+    List<ParsedFile> main = List.of(snippets.parse("src/main/java/p/Knob.java",
+        "package p; public class Knob { public void number(String name, double step) { } public void gone() { }"
+            + " public void kept() { } void a() { number(\"x\", 0.05); number(\"y\", 0.05); } }"));
+    List<ParsedFile> tests = List.of(snippets.parse("src/test/java/p/PluginTest.java",
+        "package p; class PluginTest { void asThePluginDoes(Knob k) { k.number(\"z\", 0.1); k.kept(); unseen(); }"
+            + " void unseen() { } }"));
+    String outside = "; if a consumer outside this project uses it, write a test that uses it the same way";
+    assertEquals(List.of("all 2 calls of p.Knob.number(String, double) pass `0.05` as `step`" + outside),
+        new ConstantArgument().inspect(main).stream().map(Finding::detail).toList());
+    assertEquals(List.of(), new ConstantArgument().inspect(main, tests));
+    assertEquals(List.of("nothing in main or in the tests calls p.Knob.gone()" + outside,
+        "nothing in main or in the tests calls p.Knob.kept()" + outside, "nothing in main or in the tests calls "
+            + "p.Knob.a()" + outside), new UnusedMember().inspect(main).stream().map(Finding::detail).toList());
+    assertEquals(List.of("nothing in main or in the tests calls p.Knob.gone()" + outside,
+        "nothing in main or in the tests calls p.Knob.a()" + outside),
+        new UnusedMember().inspect(main, tests).stream().map(Finding::detail).toList());
   }
 }

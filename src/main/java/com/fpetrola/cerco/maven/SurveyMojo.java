@@ -39,7 +39,7 @@ public final class SurveyMojo extends AbstractCercoMojo {
     Map<String, List<SourceFile>> reactor = new LinkedHashMap<>();
     session.getProjects().forEach(module -> reactor.put(
         root().relativize(module.getBasedir().toPath().toAbsolutePath()).toString(), sourcesOf(module)));
-    List<Surveyed> modules = new Survey(chosen).take(reactor).stream().filter(module -> module.lines() > 0).toList();
+    List<Surveyed> modules = new Survey(chosen).take(reactor, reactorTests()).stream().filter(module -> module.lines() > 0).toList();
     System.out.print(new SurveyReport(chosen.stream().map(Rule::id).toList(), sample).render(modules));
   }
 }

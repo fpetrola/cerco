@@ -1,6 +1,6 @@
-# Ficha: `unused-member` (candidata, mitad privada)
+# Ficha: `unused-member` (candidata)
 
-Estado: **candidata; hecha solo la mitad que no sale del archivo**.
+Estado: **candidata; la mitad privada es precisa, la pública todavía es ruidosa** (§6).
 
 ## 1. Definición
 
@@ -32,13 +32,44 @@ que hace el inicializador; el campo solo lo retiene. Desde 0.16.1 un campo inici
 no se marca (uno inicializado con `new` sí). Los otros ocho que marcó en `machine` eran ciertos y se borraron (oozx
 `41228a9b9`).
 
-## 4. Lo que no hace, y por qué
+## 4. Lo que no hacía en 0.16 (resuelto en §5 y §6)
 
 Los métodos públicos sin llamadores, que fueron la mayor parte de lo borrado. Dentro del reactor se pueden contar,
 pero la API para plugins da falsos positivos: `savedBy` y `aboutNotDoingIt` los llama plugdesk, no el reactor. Verlos
 exige leer jars de afuera (`~/.oozx/plugin-cache`, plugdesk), y eso choca con "cero configuración". Lo decide
 Fernando.
 
-## 5. Decisión
+## 5. Decisión de Fernando (2026-11-11): cerco no lee consumidores de afuera
 
-Pendiente de Fernando: adoptar la mitad privada, y si la mitad pública vale una configuración.
+Ni `~/.m2`, ni jars, ni otros repos. El uso que hacen los plugins se escribe como tests en el propio proyecto, y
+cerco cuenta esos tests como llamadores. Muerto quiere decir que nadie lo nombra en main ni en test.
+
+Desde 0.17.0 las reglas pueden oír los tests (`Inspection.hear`): se leen solo para saber quién llama a qué, ningún
+hallazgo sale de un archivo de test e `includeTests` sigue en false para el resto. Hoy los oye `survey`; el motor de
+`check`/`audit` todavía no, y hay que dárselo antes de adoptar una regla que los necesite (los tests tendrían que
+entrar también en lo que el motor recuerda como testigo de cada corrida).
+
+## 6. La mitad pública (0.17.0)
+
+Un método que no es privado, con cuerpo y sin anotaciones (`@Override` lo saca), cuyo nombre nadie llama ni pasa
+como referencia en main ni en test. Se compara por nombre solo, sin aridad ni tipo: es conservador. El hallazgo
+termina con "if a consumer outside this project uses it, write a test that uses it the same way".
+
+| proyecto | privados | públicos |
+|---|---|---|
+| oozx `87e376742` | 31 | 1.231 (790 en juegos generados) |
+| oozx-plugins | 15 | 195 |
+
+Muestra de 25 de los 441 de oozx fuera del código generado. Hay de tres clases: muertos de verdad
+(`Z80State.setRegHLx`, `RegistersBase.triggerNMI`, `Routine.getInstructions`); API que usan los plugins
+(`Desk.machines()`, `Cpu.stopTellingAboutInterrupts`), que con esta decisión piden su test; y falsos positivos por
+reflexión, que un test no arregla: los getters y setters de `OOZxConfiguration` que lee el serializador de JSON, y los
+`retro_*` de `LocalLibretroCore` que llama JNA. 237 de los 441 son `get`/`set`/`is`. Los métodos de los juegos
+generados se llaman por dirección, no por nombre.
+
+Para que rinda falta decidir qué hacer con lo que se usa por reflexión (propiedades de tipos que se serializan,
+callbacks nativos) y con el código generado.
+
+## 7. Decisión
+
+Pendiente de Fernando: adoptar la mitad privada tal como está; la pública necesita primero el criterio de §6.

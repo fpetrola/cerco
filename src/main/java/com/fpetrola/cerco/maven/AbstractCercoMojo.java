@@ -129,6 +129,12 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
     return new Sources(root(), settings().generatedGlobs()).under(roots.map(Path::of).toList());
   }
 
+  /** The tests of the reactor: never judged, heard by the rules that ask who uses what. */
+  protected List<SourceFile> reactorTests() {
+    return new Sources(root(), settings().generatedGlobs()).under(session.getProjects().stream()
+        .flatMap(module -> module.getTestCompileSourceRoots().stream()).map(Path::of).toList());
+  }
+
   protected List<SourceFile> reactorSources() {
     return session.getProjects().stream().flatMap(module -> sourcesOf(module).stream()).toList();
   }

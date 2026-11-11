@@ -35,11 +35,17 @@ public interface Rule {
 
   /** The rule over these files as if they were the whole project. */
   default List<Finding> inspect(List<ParsedFile> files) {
+    return inspect(files, List.of());
+  }
+
+  /** The rule over these files as the whole project, with its tests heard for who uses what. */
+  default List<Finding> inspect(List<ParsedFile> files, List<ParsedFile> tests) {
     Project project = new Project();
     files.forEach(project::learn);
     project.markWhole();
     Inspection inspection = inspection(project);
     files.forEach(inspection::visit);
+    tests.forEach(inspection::hear);
     return inspection.findings();
   }
 

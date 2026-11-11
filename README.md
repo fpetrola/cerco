@@ -122,6 +122,10 @@ el `check` de un proyecto de un módulo) congela sus hallazgos actuales y lo ano
 parciales (`quick`, `check` de un módulo) la saltan hasta entonces, con una nota, para no tomar un módulo por el
 proyecto. El archivo `.cerco/baseline/frozen` lleva la fecha y la lista de reglas congeladas.
 
+cerco no lee nada de afuera del proyecto: ni jars, ni `~/.m2`, ni otros repos. Cuando una regla necesita saber quién
+usa algo (`unused-member`, `constant-argument`), cuenta main y los tests: el uso que hace un consumidor de afuera se
+escribe como un test que lo usa igual. Los tests solo se oyen como llamadores; ningún hallazgo sale de ellos.
+
 Lo que se analiza son los *compile source roots* de cada módulo del reactor (`src/main/java`), no los tests ni los
 módulos apagados. Se excluye lo que está bajo `target/`, `generated-sources/` o `generated/`, y cualquier tipo
 anotado con `@Generated`.

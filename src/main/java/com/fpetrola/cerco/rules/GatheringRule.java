@@ -26,6 +26,11 @@ public abstract class GatheringRule<S> implements Rule {
       }
 
       @Override
+      public void hear(ParsedFile use) {
+        use.unit().ifPresent(unit -> overhear(unit, state));
+      }
+
+      @Override
       public List<Finding> findings() {
         return conclude(state, project).stream().map(diagnosis()::settle).toList();
       }
@@ -35,6 +40,10 @@ public abstract class GatheringRule<S> implements Rule {
   protected abstract S start();
 
   protected abstract void gather(ParsedFile file, CompilationUnit unit, S state);
+
+  /** What a test of the project says about who uses what; nothing, for most rules. */
+  protected void overhear(CompilationUnit test, S state) {
+  }
 
   protected abstract List<Finding> conclude(S state, Project project);
 

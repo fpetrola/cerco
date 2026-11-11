@@ -30,9 +30,9 @@ public final class ConstantArgument extends ProjectRule<ConstantArgument.Seen> {
   public record Site(String file, int line, String member, String called, List<String> parameters, boolean open)
       implements Place {
 
-    /** What a finding adds about who may call it: of a public method only the callers of this project are seen. */
+    /** What a finding adds about who may call it: of what is public, only main and the tests of the project are seen. */
     String reach() {
-      return open ? "; it is public, and callers outside this project are not seen" : "";
+      return open ? Place.FOR_OUTSIDERS : "";
     }
   }
 
@@ -100,6 +100,11 @@ public final class ConstantArgument extends ProjectRule<ConstantArgument.Seen> {
             method.getNameAsString() + "/" + method.getParameters().size(),
             method.getParameters().stream().map(Parameter::getNameAsString).toList(),
             method.isPublic() || method.isProtected())));
+    overhear(unit, seen);
+  }
+
+  @Override
+  protected void overhear(CompilationUnit unit, Seen seen) {
     unit.findAll(MethodCallExpr.class).forEach(call -> seen.call(
         call.getNameAsString() + "/" + call.getArguments().size(), passed(call)));
     unit.findAll(MethodReferenceExpr.class).forEach(reference -> seen.referred().add(reference.getIdentifier()));

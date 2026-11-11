@@ -47,13 +47,14 @@ oozx-plugins (`TubeCurve`, `MouseInternalFrame`) y los jars publicados. `SpeccyE
 es API para plugins: mismo caso. Aciertos en `machine`: `Scalers.resize` (borrado en oozx `df45987c4`) y
 `MemoryState.setIF1RomPaged` (cierto; es código de snapshots y espera otra decisión).
 
-Es el mismo límite que la mitad pública de `unused-member`: cerco solo ve el reactor. Desde 0.16.1 el hallazgo de un
-método público o protegido lo dice ("it is public, and callers outside this project are not seen"), pero se sigue
-marcando: limitarla a métodos privados o de paquete dejaría afuera el caso que le dio origen
-(`BlipBuffer.readSamples` es público).
+Es el mismo límite que la mitad pública de `unused-member`: cerco solo ve el proyecto. Decisión de Fernando
+(2026-11-11): cerco no lee consumidores de afuera; el uso de los plugins se escribe como tests del proyecto y esos
+tests cuentan como llamadores. Desde 0.17.0 la regla oye las llamadas de `src/test` (solo en `survey`, ver la ficha
+de `unused-member` §5), y el hallazgo de un método público o protegido termina con "if a consumer outside this
+project uses it, write a test that uses it the same way". Con los tests oídos: oozx 17, oozx-plugins 19 (suben
+porque un método con una sola llamada en main y otra igual en un test ahora llega a dos).
 
 ## 6. Decisión
 
-Pendiente de Fernando, y atada a la misma pregunta que `unused-member`: o cerco lee a los consumidores de afuera del
-reactor, o esta regla se limita a lo que no es público y pierde `BlipBuffer`. Así como está no se puede adoptar en un
-proyecto que publica API. En `emulator` los 5 son constantes de la tabla de opcodes y de los tiempos.
+Pendiente de Fernando. Para adoptarla falta que el motor de `check`/`audit` oiga los tests como hace `survey`, y que
+estén escritos los tests que imitan a los consumidores conocidos. En `emulator` los 5 son constantes de la tabla de opcodes y de los tiempos.
