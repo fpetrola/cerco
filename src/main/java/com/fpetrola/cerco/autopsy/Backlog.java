@@ -73,16 +73,8 @@ public final class Backlog {
 
   /** The rule an autopsy proposes, following `same-as:` to the autopsy it names; empty when it proposes none. */
   private String proposal(Map<String, Form> done, Form form, int depth) {
-    String first = form.candidate();
-    String rule = first.startsWith("rule:") ? word(first.substring("rule:".length())) : "";
-    String same = first.startsWith("same-as:") ? word(first.substring("same-as:".length())) : "";
+    String same = form.named("same-as:");
     boolean follow = !same.isEmpty() && done.containsKey(same) && depth < done.size();
-    return follow ? proposal(done, done.get(same), depth + 1) : rule;
-  }
-
-  private String word(String text) {
-    String stripped = text.strip();
-    int space = stripped.indexOf(' ');
-    return space < 0 ? stripped : stripped.substring(0, space);
+    return follow ? proposal(done, done.get(same), depth + 1) : form.named("rule:");
   }
 }

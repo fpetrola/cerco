@@ -31,6 +31,9 @@ final class Template {
         + "rule: <new-rule-id>  then what it would detect, what it would tell the agent, and an example path:line\n"
         + "none: why no deterministic check could catch this cause; a person files it with mvn cerco:approve, and\n"
         + "      while one waits every other autopsy proposes a rule\n"
+        + "covered-by: <id of a rule this cerco has>  when that rule had marked this code and what it told already\n"
+        + "      led to the missing model: say why, in " + FormCheck.COVERED_LENGTH + " characters or more. Not the way out when the rule\n"
+        + "      found the symptom and something else was the cause\n"
         + "same-as: <id of a filed autopsy>  when one already proposed the rule; the sections above still describe\n"
         + "this case -->\n";
   }

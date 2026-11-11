@@ -52,6 +52,12 @@ public final class Form {
     return section(CANDIDATE).lines().findFirst().orElse("").strip();
   }
 
+  /** What the candidate line names after that way of saying it: the id in `rule: <id>`; empty when it says another. */
+  public String named(String saying) {
+    String rest = candidate().startsWith(saying) ? candidate().substring(saying.length()).strip() : "";
+    return rest.split(" ")[0];
+  }
+
   /** The missing model the cause names on its `model:` line; empty when it names none. */
   public String model() {
     return section(CAUSE).lines().map(String::strip).filter(line -> line.startsWith(MODEL)).findFirst()

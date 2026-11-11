@@ -201,7 +201,7 @@ cerco no puede juzgar el análisis, pero sí obligar a que exista y a que mire a
 | `Context` | al menos dos lugares leídos (`ruta:línea`, relativos a la raíz, que existan), uno fuera de lo arreglado |
 | `Same cause elsewhere` | otros lugares (`ruta:línea`) con la misma causa, o `none` y cómo se buscó |
 | `Principle` | el principio de diseño en juego |
-| `Candidate rule` | `rule: <id>` con qué detectaría y un ejemplo `ruta:línea`; o `none:` y por qué ninguna regla podría; o `same-as: <id>` de una autopsia archivada |
+| `Candidate rule` | `rule: <id>` de una regla **nueva**, con qué detectaría y un ejemplo `ruta:línea`; o `covered-by: <id>` de una regla que ya existe y alcanzó; o `same-as: <id>` de una autopsia archivada; o `none:` y por qué ninguna regla podría |
 
 Cuando el formulario está completo, la siguiente corrida lo mueve a `autopsies/` y salda la deuda. El catálogo va a
 git: es el registro de por qué el código tenía la forma que tenía. `mvn com.fpetrola:cerco-maven-plugin:autopsies`
@@ -215,6 +215,12 @@ Proponer no alcanza: una regla que pide una autopsia archivada (`rule:` o `same-
 tiene queda como deuda del agente, roja como una autopsia pendiente, con la ruta del código de cerco (embebida en el
 jar al compilar) y la autopsia como especificación. Se cierra sola cuando llega una versión de cerco que tiene una
 regla con ese id, o cuando una persona la descarta en `<declinedRules>` y firma.
+
+`rule:` propone una regla que cerco no tiene (desde 0.16.0). La regla que encontró el síntoma no es una propuesta, y
+ninguna otra regla adoptada tampoco: el formulario las rechaza. Cuando la regla que ya existe alcanzó, se dice con
+`covered-by: <id>`, que se archiva sola y pide tres cosas: que la regla esté en el catálogo del cerco que corre, que
+haya marcado ese código antes del arreglo (es la de la autopsia, o tiene hallazgos congelados en los archivos
+arreglados) y al menos 150 caracteres que digan por qué lo que la regla dijo ya llevaba al modelo que faltaba.
 
 `none:` no es la salida barata: una autopsia que dice que ninguna regla podría atrapar su caso no se archiva sola,
 espera a que una persona la lea y firme con `mvn cerco:approve` (el hook la deja pasar, el build no). Espera una sola

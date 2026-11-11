@@ -1,5 +1,6 @@
 package com.fpetrola.cerco.autopsy;
 
+import com.fpetrola.cerco.baseline.BaselineStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -20,10 +21,10 @@ public final class Autopsies {
   private final Catalog catalog;
   private final FormCheck check;
 
-  public Autopsies(Path root) {
+  public Autopsies(Path root, Set<String> rules, BaselineStore frozen) {
     this.ledger = new Ledger(root.resolve(".cerco").resolve("autopsies"));
     this.catalog = new Catalog(root.resolve("autopsies"));
-    this.check = new FormCheck(new References(root), catalog);
+    this.check = new FormCheck(new References(root), catalog, rules, frozen);
   }
 
   /** Owes an autopsy for each rule that lost findings in this run, or adds them to the one already owed for it. */
@@ -75,7 +76,7 @@ public final class Autopsies {
     }
     return List.of(Form.CANDIDATE + ": autopsies/pending/" + awaiting.get(0) + ".md already says no rule could "
         + "catch its case and waits for a person; while it does, every other autopsy proposes a rule, with `rule:` "
-        + "or with `same-as:` an autopsy that asks for one");
+        + "or with `same-as:` an autopsy that asks for one, or names the rule that was enough with `covered-by:`");
   }
 
   /** Files these autopsies; for the `none:` ones waiting, a person read them and accepts them. */

@@ -59,7 +59,7 @@ public final class Engine {
     this.approvalFile = root.resolve(".cerco").resolve("approved");
     this.projectVersion = projectVersion;
     this.clock = clock;
-    this.autopsies = new Autopsies(root);
+    this.autopsies = new Autopsies(root, rules.ids(), store);
     this.recall = new Recall(root.resolve("target").resolve("cerco").resolve("project.json"));
   }
 

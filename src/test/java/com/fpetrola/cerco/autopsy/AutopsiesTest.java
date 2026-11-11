@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -62,6 +63,12 @@ class AutopsiesTest {
         + "## Candidate rule\n\n" + candidate + "\n";
   }
 
+  private String covered(String rule) {
+    return "covered-by: " + rule + "\nWhat the rule told about the switch was that x is a kind without a type and "
+        + "asked for the type that does what its kind does; following that was the whole fix, nothing else was "
+        + "missing.";
+  }
+
   private String proposing(String rule) {
     return "rule: " + rule + "\nAn int parameter that a switch or an if chain compares against literals is a kind "
         + "without a type; the rule would ask for the type, as in src/main/java/p/A.java:4.";
@@ -83,7 +90,7 @@ class AutopsiesTest {
     assertTrue(form.contains("src/main/java/p/A.java|"), form);
     assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".owed")));
 
-    write(root, PENDING, filled(CAUSE, proposing("no-type-code")));
+    write(root, PENDING, filled(CAUSE, covered("no-switch")));
     Outcome done = engine.run(scope(root));
     assertTrue(done.green(), done.toString());
     assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
@@ -102,7 +109,7 @@ class AutopsiesTest {
   void theCauseNamesTheMissingModelFromTheVocabulary(@TempDir Path root) throws IOException {
     Engine engine = fixedOnce(root, Settings.DEFAULTS);
     engine.run(scope(root));
-    String complete = filled(CAUSE, proposing("no-type-code"));
+    String complete = filled(CAUSE, covered("no-switch"));
     write(root, PENDING, complete.replace("model: variation-as-data", ""));
     List<String> missing = engine.run(scope(root)).owed().get(0).missing();
     assertEquals(1, missing.size(), missing.toString());
@@ -152,6 +159,27 @@ class AutopsiesTest {
     assertEquals(List.of("kind-without-type"), engine.run(scope(root)).owed().stream().map(Owed::ruleId).toList());
     assertEquals(List.of(new Backlog.Wanted("kind-without-type", List.of("2026-11-01-no-cast", FORM_ID))),
         new Backlog(new Catalog(root.resolve("autopsies"))).wanted());
+  }
+
+  @Test
+  void theRuleThatFoundTheSymptomIsNoProposalAndCoveringSaysWhyItWasEnough(@TempDir Path root) throws IOException {
+    Engine engine = fixedOnce(root, Settings.DEFAULTS);
+    engine.run(scope(root));
+    Map<String, String> refused = Map.of(
+        proposing("no-switch"), "is the rule that found the symptom",
+        proposing("no-cast"), "is a rule this cerco already has",
+        covered("kind-without-type"), "names no rule this cerco gates with",
+        covered("no-cast"), "did not mark this code",
+        "covered-by: no-switch\nIt was enough.", "at least 150 characters");
+    for (Map.Entry<String, String> one : refused.entrySet()) {
+      write(root, PENDING, filled(CAUSE, one.getKey()));
+      List<String> missing = engine.run(scope(root)).owed().get(0).missing();
+      assertEquals(1, missing.size(), missing.toString());
+      assertTrue(missing.get(0).contains(one.getValue()), missing.get(0));
+    }
+    write(root, PENDING, filled(CAUSE, covered("no-switch")));
+    assertTrue(engine.run(scope(root)).green());
+    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
   }
 
   @Test
@@ -224,7 +252,7 @@ class AutopsiesTest {
   void whileANoneWaitsEveryOtherAutopsyProposesARule(@TempDir Path root) throws IOException {
     write(root, "src/main/java/p/A.java", CLEAN);
     write(root, "src/main/java/p/B.java", OTHER);
-    Autopsies autopsies = new Autopsies(root);
+    Autopsies autopsies = new Engine(Settings.DEFAULTS, root, "1.0", clock).autopsies();
     String key = "src/main/java/p/A.java|A.f|x";
     autopsies.owe(List.of(new Solved("no-switch", List.of(key)), new Solved("no-cast", List.of(key))),
         LocalDate.of(2026, 11, 10));

@@ -1,12 +1,14 @@
 package com.fpetrola.cerco.autopsy;
 
+import com.fpetrola.cerco.baseline.BaselineStore;
+import com.fpetrola.cerco.baseline.Key;
 import com.fpetrola.cerco.model.MissingModel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 /**
@@ -18,16 +20,23 @@ public final class FormCheck {
   static final int CAUSE_LENGTH = 150;
   static final int PRINCIPLE_LENGTH = 40;
   static final int REASON_LENGTH = 100;
+  static final int COVERED_LENGTH = 150;
   private final References references;
   private final Catalog catalog;
-  private final Map<String, Function<String, List<String>>> candidates = Map.of(
+  private final Set<String> rules;
+  private final BaselineStore frozen;
+  private final Map<String, BiFunction<Form, Solved, List<String>>> candidates = Map.of(
       "rule:", this::proposed,
+      "covered-by:", this::covered,
       "none:", this::declined,
       "same-as:", this::repeated);
 
-  public FormCheck(References references, Catalog catalog) {
+  /** With the rules the running cerco gates with, and the baseline that says what each one had marked. */
+  public FormCheck(References references, Catalog catalog, Set<String> rules, BaselineStore frozen) {
     this.references = references;
     this.catalog = catalog;
+    this.rules = rules;
+    this.frozen = frozen;
   }
 
   public List<String> missing(Form form, Solved solved) {
@@ -42,7 +51,7 @@ public final class FormCheck {
     missing.addAll(context(form.section(Form.CONTEXT), solved.files()));
     missing.addAll(elsewhere(form.section(Form.ELSEWHERE)));
     atLeast(missing, form.section(Form.PRINCIPLE), PRINCIPLE_LENGTH, Form.PRINCIPLE + ": the design principle at stake");
-    missing.addAll(candidate(form.section(Form.CANDIDATE)));
+    missing.addAll(candidate(form, solved));
     return missing;
   }
 
@@ -68,17 +77,29 @@ public final class FormCheck {
         + "model shows, or `none` with how you looked");
   }
 
-  private List<String> candidate(String text) {
-    String first = text.lines().findFirst().orElse("").strip();
-    Optional<Map.Entry<String, Function<String, List<String>>>> kind = candidates.entrySet().stream()
-        .filter(entry -> first.startsWith(entry.getKey())).findFirst();
-    return kind.map(entry -> entry.getValue().apply(text)).orElse(List.of(Form.CANDIDATE + ": start with "
+  private List<String> candidate(Form form, Solved solved) {
+    Optional<BiFunction<Form, Solved, List<String>>> kind = candidates.entrySet().stream()
+        .filter(entry -> form.candidate().startsWith(entry.getKey())).map(Map.Entry::getValue).findFirst();
+    return kind.map(check -> check.apply(form, solved)).orElse(List.of(Form.CANDIDATE + ": start with "
         + "`rule: <new-rule-id>` and describe what it would detect with an example (path:line), or `same-as: <autopsy id>` "
-        + "when an autopsy already filed proposed the rule, or `none:` and why no rule could catch this, which waits "
-        + "until a person accepts it"));
+        + "when an autopsy already filed proposed the rule, or `covered-by: <rule id>` when a rule this cerco has "
+        + "already led to the missing model, or `none:` and why no rule could catch this, which waits until a "
+        + "person accepts it"));
   }
 
-  private List<String> proposed(String text) {
+  /** A rule this cerco already gates with is no proposal: it found the symptom, or it could have and did not. */
+  private List<String> proposed(Form form, Solved solved) {
+    String text = form.section(Form.CANDIDATE);
+    String id = form.named("rule:");
+    if (id.equals(solved.ruleId())) {
+      return List.of(Form.CANDIDATE + ": `" + id + "` already exists and is the rule that found the symptom; "
+          + "propose the rule that would have caught the cause, or say why this one is enough with `covered-by: "
+          + id + "`");
+    }
+    if (rules.contains(id)) {
+      return List.of(Form.CANDIDATE + ": `" + id + "` is a rule this cerco already has; propose a new one, or say "
+          + "with `covered-by: " + id + "` why what it told was enough");
+    }
     List<String> missing = new ArrayList<>();
     atLeast(missing, text, REASON_LENGTH, Form.CANDIDATE + ": what the rule would detect and what it would tell");
     if (references.in(text).isEmpty()) {
@@ -87,14 +108,32 @@ public final class FormCheck {
     return missing;
   }
 
-  private List<String> declined(String text) {
+  /** An existing rule was enough: it had marked this code, and what it told led to the model that was missing. */
+  private List<String> covered(Form form, Solved solved) {
+    String id = form.named("covered-by:");
+    if (!rules.contains(id)) {
+      return List.of(Form.CANDIDATE + ": `covered-by: " + id + "` names no rule this cerco gates with");
+    }
     List<String> missing = new ArrayList<>();
-    atLeast(missing, text, REASON_LENGTH, Form.CANDIDATE + ": why no deterministic rule could catch this");
+    atLeast(missing, form.section(Form.CANDIDATE), COVERED_LENGTH, Form.CANDIDATE + ": why what `" + id
+        + "` told about this code already led to the model that was missing");
+    boolean marked = id.equals(solved.ruleId()) || frozen.read(id).keys().stream()
+        .anyMatch(key -> solved.files().contains(new Key(key).file()));
+    if (!marked) {
+      missing.add(Form.CANDIDATE + ": `" + id + "` neither lost the findings of this autopsy nor has any frozen in "
+          + "the file(s) that were fixed, so it did not mark this code; name the rule that did, or propose one");
+    }
     return missing;
   }
 
-  private List<String> repeated(String text) {
-    String id = text.lines().findFirst().orElse("").strip().substring("same-as:".length()).strip();
+  private List<String> declined(Form form, Solved solved) {
+    List<String> missing = new ArrayList<>();
+    atLeast(missing, form.section(Form.CANDIDATE), REASON_LENGTH, Form.CANDIDATE + ": why no deterministic rule could catch this");
+    return missing;
+  }
+
+  private List<String> repeated(Form form, Solved solved) {
+    String id = form.named("same-as:");
     if (!catalog.holds(id)) {
       return List.of(Form.CANDIDATE + ": `same-as: " + id + "` names no filed autopsy");
     }
