@@ -14,6 +14,6 @@ public final class AuditMojo extends AbstractCercoMojo {
     Engine engine = engine();
     failIfBaselineDeleted(engine);
     freezeIfAbsent(engine);
-    report(engine, engine.run(new Scope("reactor", reactorSources(), true)));
+    report(engine, engine.run(reactor()));
   }
 }

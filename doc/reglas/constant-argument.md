@@ -56,5 +56,5 @@ porque un método con una sola llamada en main y otra igual en un test ahora lle
 
 ## 6. Decisión
 
-Pendiente de Fernando. Para adoptarla falta que el motor de `check`/`audit` oiga los tests como hace `survey`, y que
-estén escritos los tests que imitan a los consumidores conocidos. En `emulator` los 5 son constantes de la tabla de opcodes y de los tiempos.
+Pendiente de Fernando. Desde 0.17.1 el motor oye los tests como `survey`; falta que estén escritos los tests que
+imitan a los consumidores conocidos. En `emulator` los 5 son constantes de la tabla de opcodes y de los tiempos.

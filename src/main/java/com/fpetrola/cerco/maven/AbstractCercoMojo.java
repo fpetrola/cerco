@@ -1,6 +1,7 @@
 package com.fpetrola.cerco.maven;
 
 import com.fpetrola.cerco.engine.Engine;
+import com.fpetrola.cerco.engine.Scope;
 import com.fpetrola.cerco.engine.Outcome;
 import com.fpetrola.cerco.engine.Sources;
 import com.fpetrola.cerco.model.Settings;
@@ -135,6 +136,11 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
         .flatMap(module -> module.getTestCompileSourceRoots().stream()).map(Path::of).toList());
   }
 
+  /** The whole reactor as one run reads it: its sources judged, its tests heard. */
+  protected Scope reactor() {
+    return new Scope("reactor", reactorSources(), true, reactorTests());
+  }
+
   protected List<SourceFile> reactorSources() {
     return session.getProjects().stream().flatMap(module -> sourcesOf(module).stream()).toList();
   }
@@ -149,7 +155,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
 
   protected void freezeIfAbsent(Engine engine) {
     if (!engine.store().exists()) {
-      int frozen = engine.freeze(reactorSources());
+      int frozen = engine.freeze(reactor());
       getLog().warn("cerco: no baseline existed, so the project was frozen as it stands: " + frozen
           + " findings and oversize measures across the reactor are now the baseline under .cerco/baseline. "
           + "Commit that directory. From now on anything new is red, and the baseline only shrinks.");

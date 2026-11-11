@@ -22,6 +22,6 @@ public final class CheckMojo extends AbstractCercoMojo {
       return;
     }
     boolean full = project.getBasedir().toPath().toAbsolutePath().equals(root()) && session.getProjects().size() == 1;
-    report(engine, engine.run(new Scope(project.getArtifactId(), sourcesOf(project), full)));
+    report(engine, engine.run(full ? reactor() : new Scope(project.getArtifactId(), sourcesOf(project), false)));
   }
 }

@@ -132,6 +132,7 @@ public final class Engine {
       runs.remember(recall).ifPresent(notes::add);
     }
     int parsed = feed.each(scope.files(), runs::visit);
+    feed.each(scope.tests(), runs::hear);
     if (scope.full()) {
       runs.sawTheWholeProject(recall);
     }
@@ -148,10 +149,11 @@ public final class Engine {
   }
 
   /** Freezes the project as it stands: every current finding and every oversize measure become the baseline. */
-  public int freeze(List<SourceFile> files) {
+  public int freeze(Scope scope) {
     List<Rule> active = rules.all();
     Runs runs = new Runs(active);
-    feed.each(files, runs::visit);
+    feed.each(scope.files(), runs::visit);
+    feed.each(scope.tests(), runs::hear);
     int total = 0;
     for (Rule rule : active) {
       total += rule.asBudget().map(budget -> freeze(budget, runs.measures(budget)))

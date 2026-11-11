@@ -42,6 +42,12 @@ final class Runs {
     digests.keep(file);
   }
 
+  /** A test of the project: heard by every run for who uses what, and part of what the project's digest covers. */
+  void hear(ParsedFile test) {
+    byRule.values().forEach(run -> run.inspection().ifPresent(looking -> looking.hear(test)));
+    digests.keep(test);
+  }
+
   /**
    * Every file of the project went through: the rules may take what the project does not declare as foreign, and
    * what it declares is kept for the runs over a few files.

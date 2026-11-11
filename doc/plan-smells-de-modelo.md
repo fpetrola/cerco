@@ -912,3 +912,10 @@ la salida automática cuando la regla existente alcanzó (README, "Candidate rul
 medidas en oozx y oozx-plugins: `constant-argument` (13 y 15), `static-filled-by-instances` (7 y 1) y
 `unused-member`, solo su mitad privada (32 y 15). Quedan 12 candidatas.
 
+### 13.14 Los tests cuentan como llamadores (0.17.0 y 0.17.1)
+
+Decisión de Fernando (2026-11-11): cerco no lee consumidores de afuera; su uso se escribe como tests del proyecto.
+Una regla oye los tests (`Inspection.hear`) solo para saber quién usa qué. 0.17.0 los dio a `survey` y a
+`unused-member` su mitad pública; 0.17.1 los da al motor (`Scope.tests`, `Runs.hear`, el congelado) para `audit` y el
+`check` de un proyecto de un módulo. `audit` de 0.17.1 sobre oozx: verde.
+

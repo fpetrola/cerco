@@ -45,9 +45,10 @@ Ni `~/.m2`, ni jars, ni otros repos. El uso que hacen los plugins se escribe com
 cerco cuenta esos tests como llamadores. Muerto quiere decir que nadie lo nombra en main ni en test.
 
 Desde 0.17.0 las reglas pueden oír los tests (`Inspection.hear`): se leen solo para saber quién llama a qué, ningún
-hallazgo sale de un archivo de test e `includeTests` sigue en false para el resto. Hoy los oye `survey`; el motor de
-`check`/`audit` todavía no, y hay que dárselo antes de adoptar una regla que los necesite (los tests tendrían que
-entrar también en lo que el motor recuerda como testigo de cada corrida).
+hallazgo sale de un archivo de test e `includeTests` sigue en false para el resto. Desde 0.17.1 los oyen también
+`audit`, el `check` de un proyecto de un módulo y el congelado; el digesto del proyecto los incluye, así que un test
+nuevo que hace vivo un método cuenta como cambio de código y no como regla aflojada. `quick` y el `check` de un
+módulo no corren reglas de todo el proyecto, así que no los necesitan.
 
 ## 6. La mitad pública (0.17.0)
 

@@ -38,7 +38,7 @@ class AutopsiesTest {
     write(root, "src/main/java/p/A.java", SWITCHY);
     write(root, "src/main/java/p/B.java", OTHER);
     Engine engine = new Engine(settings, root, "1.0", clock);
-    engine.freeze(scope(root).files());
+    engine.freeze(scope(root));
     write(root, "src/main/java/p/A.java", CLEAN);
     return engine;
   }
@@ -209,7 +209,7 @@ class AutopsiesTest {
     write(root, "src/main/java/p/A.java", SWITCHY);
     write(root, "src/main/java/p/B.java", SWITCHY.replace("class A", "class B"));
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root).files());
+    engine.freeze(scope(root));
     write(root, "src/main/java/p/A.java", CLEAN);
     engine.run(scope(root));
     write(root, "src/main/java/p/B.java", OTHER);

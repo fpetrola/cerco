@@ -39,11 +39,27 @@ class EngineTest {
   }
 
   @Test
+  void testsAreHeardButNeverJudged(@TempDir Path root) throws IOException {
+    write(root, "B.java", CLEAN);
+    Path test = root.resolve("src/test/java/p/ATest.java");
+    Files.createDirectories(test.getParent());
+    Files.writeString(test, SWITCHY.replace("class A", "class ATest"));
+    List<SourceFile> tests = new Sources(root, Settings.DEFAULTS.generatedGlobs())
+        .under(List.of(root.resolve("src/test/java")));
+    Scope heard = new Scope("test", scope(root, true).files(), true, tests);
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    assertEquals(0, engine.freeze(heard));
+    Outcome run = engine.run(heard);
+    assertTrue(run.green(), run.toString());
+    assertTrue(run.fresh().isEmpty());
+  }
+
+  @Test
   void freezesThenCatchesOnlyWhatIsNewAndShrinksWhatWasFixed(@TempDir Path root) throws IOException {
     write(root, "A.java", SWITCHY);
     Path b = write(root, "B.java", CLEAN);
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    assertEquals(1, engine.freeze(scope(root, true).files()));
+    assertEquals(1, engine.freeze(scope(root, true)));
     assertTrue(engine.store().exists());
 
     Outcome same = engine.run(scope(root, true));
@@ -70,7 +86,7 @@ class EngineTest {
   void aFindingGoneWhileItsCodeStayedTheSameIsALooseningOnlyAPersonAccepts(@TempDir Path root) throws IOException {
     Path a = write(root, "A.java", SWITCHY);
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     Multiset switches = engine.store().read("no-switch");
     switches.add("src/main/java/p/A.java|p.A.g(int)|switch(y)", 1);
     engine.store().write("no-switch", switches);
@@ -93,7 +109,7 @@ class EngineTest {
   void aRuleGoneFromCercoAndChangedDefaultsWaitForAPerson(@TempDir Path root) throws IOException {
     write(root, "A.java", SWITCHY);
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     engine.store().extendFrozen(List.of("no-goto"));
     engine.store().write("no-goto", Multiset.of(List.of("src/main/java/p/A.java|p.A|goto")));
     Path self = root.resolve(".cerco/baseline/self");
@@ -116,7 +132,7 @@ class EngineTest {
     Path a = write(root, "A.java", SWITCHY);
     write(root, "B.java", SWITCHY.replace("class A", "class B"));
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     Outcome partial = engine.run(new Scope("quick", List.of(new SourceFile(root, a)), false));
     assertTrue(partial.green());
     assertEquals(2, engine.store().read("no-switch").total());
@@ -126,7 +142,7 @@ class EngineTest {
   void exemptionsApplyOnlyWhenSigned(@TempDir Path root) throws IOException {
     write(root, "A.java", CLEAN.replace("class B", "class A"));
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     write(root, "A.java", SWITCHY);
     Path yaml = root.resolve(".cerco/exemptions.yaml");
     Files.writeString(yaml, """
@@ -157,7 +173,7 @@ class EngineTest {
     Settings loosened = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
         Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"), true, List.of());
     Engine engine = new Engine(loosened, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     Outcome outcome = engine.run(scope(root, true));
     assertFalse(outcome.green());
     assertTrue(outcome.problems().get(0).contains("configuration"));
@@ -168,7 +184,7 @@ class EngineTest {
       throws IOException {
     Path a = write(root, "A.java", "package p; class A { Object f(Object o) { return (String) o; } }");
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     Files.writeString(root.resolve(".cerco/baseline/frozen"), "2026-11-01\nno-switch\n");
     Files.deleteIfExists(root.resolve(".cerco/baseline/no-cast.txt"));
 
@@ -196,7 +212,7 @@ class EngineTest {
     Path a = write(root, "A.java", SWITCHY);
     Path b = write(root, "B.java", SWITCHY.replace("class A", "class B"));
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     assertEquals(2, engine.store().read("no-switch").total());
 
     Files.delete(b);
@@ -218,7 +234,7 @@ class EngineTest {
   void aSignedExemptionReleasesTheFrozenFindingsItCoversFromTheBaseline(@TempDir Path root) throws IOException {
     write(root, "A.java", SWITCHY);
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
-    engine.freeze(scope(root, true).files());
+    engine.freeze(scope(root, true));
     Path yaml = root.resolve(".cerco/exemptions.yaml");
     Files.writeString(yaml, """
         exemptions:
