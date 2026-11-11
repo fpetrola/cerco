@@ -206,6 +206,19 @@ class ReadingsTest {
     assertEquals(List.of("unread"), inspection.findings().stream().map(this::read).toList());
   }
 
+  private static final String RUN = "{ a(); b(); c(); d(); e(); f(); }";
+
+  @Test
+  void copiesAreReadByHowFarApartTheySit() {
+    List<Finding> found = found(new RepeatedStatements(),
+        "package p; interface Shape {} class Circle implements Shape { void draw() " + RUN + " void fill() " + RUN
+            + " } class Square implements Shape { void draw() " + RUN + " } class Clock { void tick() " + RUN + " }");
+    assertEquals(List.of("shape-repeated: both copies sit in `Circle`",
+        "shape-repeated: `Square` and `Circle` are both a `Shape`",
+        "concept-without-a-class: nothing of the project is above both `Clock` and `Circle`"),
+        found.stream().map(this::read).toList());
+  }
+
   private static final String KINDS = "package p; enum Kind { CHOICE, SWITCH, NUMBER }"
       + " class Knob { Kind kind; Kind kind() { return kind; } }";
 

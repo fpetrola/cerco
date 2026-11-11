@@ -3,6 +3,8 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.model.Reading;
+import com.fpetrola.cerco.project.Family;
 import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.stmt.BlockStmt;
@@ -20,8 +22,31 @@ import java.util.Map;
 public final class RepeatedStatements extends ProjectRule<RepeatedStatements.Seen> {
   private static final int WINDOW = 6;
 
-  /** Where a run was first seen; the file and member strings are shared across every window of the same block. */
-  public record Site(String file, String member, int line) {
+  private static final Hypothesis SAME_MEMBER = new Hypothesis(MissingModel.SHAPE_REPEATED,
+      "both copies sit in one member", "a method of that type the member calls twice, or a loop over what differs");
+  private static final Hypothesis SAME_TYPE = new Hypothesis(MissingModel.SHAPE_REPEATED,
+      "both copies sit in members of one type", "one method of that type both members call");
+  private static final Hypothesis SIBLINGS = new Hypothesis(MissingModel.SHAPE_REPEATED,
+      "they sit in types of one hierarchy", "pull it up into the common type, as a template method when a step varies");
+  private static final Hypothesis UNRELATED = new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
+      "they sit in unrelated types", "an object both are built from, which does this once");
+
+  /** Where a run was seen; the file, type and member strings are shared across every window of the same block. */
+  public record Site(String file, String type, String member, int line) {
+
+    /** Which model two copies point to by where they sit: the nearer they are, the smaller what is missing. */
+    Reading with(Site first, Project project) {
+      if (member.equals(first.member)) {
+        return SAME_MEMBER.because("both copies sit in `" + member + "`");
+      }
+      if (type.equals(first.type)) {
+        return SAME_TYPE.because("both copies sit in `" + type + "`");
+      }
+      Family family = project.family(type);
+      return family.holds(first.type)
+          ? SIBLINGS.because("`" + type + "` and `" + first.type + "` are both a `" + family.root() + "`")
+          : UNRELATED.because("nothing of the project is above both `" + type + "` and `" + first.type + "`");
+    }
 
     /** Where it is, as a finding points at it. */
     String where() {
@@ -29,8 +54,16 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
     }
   }
 
+  /** A run found again: what it reports, and the two places it sits in. */
+  public record Repeat(Finding finding, Site here, Site first) {
+
+    Finding read(Project project) {
+      return finding.read(here.with(first, project));
+    }
+  }
+
   /** Every run seen so far by its digest, and the repeats found. */
-  public record Seen(Map<Long, Site> runs, List<Finding> repeats) {
+  public record Seen(Map<Long, Site> runs, List<Repeat> repeats) {
   }
 
   @Override
@@ -58,18 +91,7 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
   @Override
   public Diagnosis diagnosis() {
     return new Diagnosis("a static helper or a utility class both call: the shape still has no owner",
-        new Hypothesis(MissingModel.SHAPE_REPEATED,
-            "the copies differ only in literals or names",
-            "one method, the difference a parameter"),
-        new Hypothesis(MissingModel.SHAPE_REPEATED,
-            "they differ in a call",
-            "a strategy, a lambda, or a template method in a common supertype"),
-        new Hypothesis(MissingModel.SHAPE_REPEATED,
-            "they sit in sibling types",
-            "pull it up into the supertype, or a default method"),
-        new Hypothesis(MissingModel.CONCEPT_WITHOUT_A_CLASS,
-            "they sit in unrelated types",
-            "an object both are built from"));
+        SAME_MEMBER, SAME_TYPE, SIBLINGS, UNRELATED);
   }
 
   @Override
@@ -79,13 +101,13 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
 
   @Override
   protected List<Finding> conclude(Seen seen, Project project) {
-    return List.copyOf(seen.repeats());
+    return seen.repeats().stream().map(repeat -> repeat.read(project)).toList();
   }
 
   @Override
   protected void gather(ParsedFile file, CompilationUnit unit, Seen state) {
     Map<Long, Site> seen = state.runs();
-    List<Finding> out = state.repeats();
+    List<Repeat> out = state.repeats();
     String name = file.name();
     for (BlockStmt block : unit.findAll(BlockStmt.class)) {
       List<Statement> statements = block.getStatements();
@@ -93,13 +115,15 @@ public final class RepeatedStatements extends ProjectRule<RepeatedStatements.See
         continue;
       }
       String member = enclosing.of(block);
+      String type = enclosing.typeOf(block).replaceAll(".*\\.", "");
       for (int i = 0; i + WINDOW <= statements.size(); i++) {
         long digest = digest(statements.subList(i, i + WINDOW));
         int line = statements.get(i).getBegin().map(position -> position.line).orElse(1);
-        Site first = seen.putIfAbsent(digest, new Site(name, member, line));
+        Site here = new Site(name, type, member, line);
+        Site first = seen.putIfAbsent(digest, here);
         if (first != null) {
-          out.add(new Finding(id(), name, line, name + "|" + member + "|" + Long.toHexString(digest),
-              WINDOW + " statements in " + member + " repeat " + first.where()));
+          out.add(new Repeat(new Finding(id(), name, line, name + "|" + member + "|" + Long.toHexString(digest),
+              WINDOW + " statements in " + member + " repeat " + first.where()), here, first));
         }
       }
     }
