@@ -3,11 +3,11 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Chain;
 import com.fpetrola.cerco.project.Declared;
 import com.fpetrola.cerco.project.Imports;
 import com.fpetrola.cerco.project.Names;
 import com.fpetrola.cerco.project.Project;
-import com.fpetrola.cerco.project.TypeName;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
@@ -32,7 +32,7 @@ public final class UnpackedAtTheCall extends PlacesRule<UnpackedAtTheCall.Site> 
    * One call: where, in which member, what is called, the object taken apart with the type it was declared as when
    * the file shows it, and the parts asked of it, by name and as written.
    */
-  public record Site(String file, int line, String member, String called, String owner, Optional<TypeName> type,
+  public record Site(String file, int line, String member, String called, String owner, Optional<Chain> type,
       List<String> parts, String written) implements Place {
   }
 
@@ -84,7 +84,7 @@ public final class UnpackedAtTheCall extends PlacesRule<UnpackedAtTheCall.Site> 
     byOwner.forEach((owner, asked) -> {
       if (asked.size() >= PARTS) {
         sites.add(new Site(file.name(), line(call), enclosing.of(call), called, owner,
-            asked.stream().findFirst().flatMap(this::whole).flatMap(names::typeOf),
+            asked.stream().findFirst().flatMap(this::whole).flatMap(names::chainOf),
             asked.stream().map(this::part).toList(),
             clipped(asked.stream().map(Expression::toString).reduce((a, b) -> a + ", " + b).orElse(""))));
       }
@@ -107,8 +107,7 @@ public final class UnpackedAtTheCall extends PlacesRule<UnpackedAtTheCall.Site> 
   /** An object of the project, asked for what it holds: its fields, or what a getter of its own answers. */
   @Override
   protected List<Finding> conclude(List<Site> sites, Project project) {
-    return sites.stream().filter(site -> site.type().filter(project::declares).map(TypeName::simple)
-            .flatMap(project::declared).filter(owner -> site.parts().stream().allMatch(part -> holds(owner, part)))
+    return sites.stream().filter(site -> site.type().flatMap(project::typeOf).flatMap(project::declared).filter(owner -> site.parts().stream().allMatch(part -> holds(owner, part)))
             .isPresent())
         .map(site -> new Finding(id(), site.file(), site.line(), site.file() + "|" + site.member() + "|"
             + site.called() + "|" + site.owner(), "`" + site.called() + "(...)` is handed " + site.parts().size()

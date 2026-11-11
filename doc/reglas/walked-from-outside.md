@@ -44,3 +44,10 @@ Cumple las condiciones. Para bajar los homónimos se puede exigir que el método
 Un `stream` sobre lo entregado lee como consulta que falta en el dueño; un bucle, como recorrido que el dueño debería
 hacer solo. En oozx `87e376742` (12 en `machine`): 5 consultas y 7 recorridos. Después del arreglo de
 `WhatIsPluggedIn` en la rama `cerco`, `equipment()` bajó de 7 miembros a 3.
+
+## 6. Dueño por tipo (0.15.0)
+
+Los recorridos se cuentan por dueño cuando el índice puede decir de quién es la colección (`Project.typeOf(Chain)`
+sigue `a.b()`, un campo heredado o `Tipo.estatico()` hasta el tipo donde termina). Los tres falsos de `all()` (tres
+dueños con el mismo nombre) desaparecieron. En oozx `87e376742`: 9 hallazgos en `machine`, los 9 de
+`WhatIsPluggedIn` (`tools()` desde 6 miembros, `equipment()` desde 3); 0 en `emulator`. 9 de 9.

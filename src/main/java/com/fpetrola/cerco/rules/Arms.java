@@ -1,13 +1,12 @@
 package com.fpetrola.cerco.rules;
 
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.YieldStmt;
-import com.github.javaparser.ast.visitor.GenericVisitorWithDefaults;
+import com.fpetrola.cerco.project.WhenKnown;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -37,12 +36,7 @@ final class Arms {
   }
 
   /** How one statement gives a value: by returning, yielding or assigning it; an expression alone when `valued`. */
-  private final class Gives extends GenericVisitorWithDefaults<Optional<String>, Boolean> {
-
-    @Override
-    public Optional<String> defaultAction(Node node, Boolean valued) {
-      return Optional.empty();
-    }
+  private final class Gives extends WhenKnown<String, Boolean> {
 
     @Override
     public Optional<String> visit(BlockStmt block, Boolean valued) {

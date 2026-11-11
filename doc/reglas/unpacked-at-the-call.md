@@ -41,3 +41,7 @@ No separa. Sin saber de quién es cada tipo daba 8 y 13, con 7 falsos: objetos d
 
 Precisa, pero no separa: `emulator` clona sus referencias pidiéndoles las partes. Si Fernando reconoce eso como deuda,
 cumple por la otra salida del plan.
+
+## 5. Con los tipos resueltos por el índice (0.15.0)
+
+6 en `emulator` y 8 en `machine` (uno más: el objeto era un campo heredado).

@@ -10,12 +10,12 @@ import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.ThisExpr;
 import com.github.javaparser.ast.expr.TypePatternExpr;
 import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.visitor.GenericVisitorWithDefaults;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +28,7 @@ import java.util.Optional;
  */
 public final class Names {
   private final Typed typed = new Typed();
+  private final Reached reached = new Reached();
   private final Imports imports;
 
   public Names(Imports imports) {
@@ -36,6 +37,15 @@ public final class Names {
 
   public Optional<TypeName> typeOf(Expression expression) {
     return expression.accept(typed, this);
+  }
+
+  /** How an expression reaches what it names, for the project to follow; nothing when it starts from the unknown. */
+  public Optional<Chain> chainOf(Expression expression) {
+    return expression.accept(reached, this);
+  }
+
+  private String around(Node use) {
+    return use.findAncestor(TypeDeclaration.class).map(TypeDeclaration::getNameAsString).orElse("");
   }
 
   /** Whether what an expression names is kept by an object, not by the member at work: a field, its own or not. */
@@ -91,12 +101,7 @@ public final class Names {
   }
 
   /** Each kind of expression says in its own way what type it has, when the file shows it. */
-  private final class Typed extends GenericVisitorWithDefaults<Optional<TypeName>, Names> {
-
-    @Override
-    public Optional<TypeName> defaultAction(Node node, Names names) {
-      return Optional.empty();
-    }
+  private final class Typed extends WhenKnown<TypeName, Names> {
 
     @Override
     public Optional<TypeName> visit(NameExpr name, Names names) {
@@ -131,6 +136,49 @@ public final class Names {
 
     private TypeName own(TypeDeclaration<?> type) {
       return imports.name(type);
+    }
+  }
+
+  /** Each kind of expression says how it reaches what it names: from a type the file shows, or through members. */
+  private final class Reached extends WhenKnown<Chain, Names> {
+
+    /** A name of known type starts there; a local made from an expression goes on from it; a field is asked. */
+    @Override
+    public Optional<Chain> visit(NameExpr name, Names names) {
+      String text = name.getNameAsString();
+      Optional<Chain> typed = typeOf(name).map(type -> new Chain(Optional.of(type), around(name), List.of()));
+      Optional<Chain> made = local(name, text).flatMap(Named::given).flatMap(Names.this::chainOf);
+      boolean aType = Character.isUpperCase(text.charAt(0));
+      Optional<Chain> inherited = Optional.of(aType ? new Chain(Optional.of(imports.named(text)), around(name),
+          List.of()) : new Chain(Optional.empty(), around(name), List.of(text)))
+          .filter(chain -> local(name, text).isEmpty());
+      return typed.or(() -> made).or(() -> inherited);
+    }
+
+    @Override
+    public Optional<Chain> visit(ThisExpr self, Names names) {
+      return typeOf(self).map(type -> new Chain(Optional.of(type), around(self), List.of()));
+    }
+
+    @Override
+    public Optional<Chain> visit(ObjectCreationExpr created, Names names) {
+      return typeOf(created).map(type -> new Chain(Optional.of(type), around(created), List.of()));
+    }
+
+    @Override
+    public Optional<Chain> visit(EnclosedExpr enclosed, Names names) {
+      return chainOf(enclosed.getInner());
+    }
+
+    @Override
+    public Optional<Chain> visit(FieldAccessExpr access, Names names) {
+      return chainOf(access.getScope()).map(chain -> chain.then(access.getNameAsString()));
+    }
+
+    @Override
+    public Optional<Chain> visit(MethodCallExpr call, Names names) {
+      Optional<Chain> own = Optional.of(new Chain(Optional.empty(), around(call), List.of()));
+      return call.getScope().map(Names.this::chainOf).orElse(own).map(chain -> chain.then(call.getNameAsString()));
     }
   }
 }

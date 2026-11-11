@@ -33,3 +33,9 @@ lista, `line.open(); line.start()` sobre una línea de audio de Java) y 3 que ya
 Un solo caso real: no cumple "3 o más casos". Lo que pierde son los receptores cuyo tipo no se ve en el archivo (un
 campo de otro objeto, el resultado de una llamada). Para que rinda hace falta resolver esos tipos con el índice, que
 es el paso siguiente de la infraestructura.
+
+## 5. Con los tipos resueltos por el índice (0.15.0)
+
+El tipo del receptor ya se resuelve a través del índice (`a.b()`, campos heredados). El resultado en oozx no cambió:
+el único caso sigue siendo el par del visitor en `emulator`. La regla no rinde en este proyecto por falta de casos,
+no por falta de tipos.

@@ -95,6 +95,35 @@ public final class Project {
     return Optional.ofNullable(names.get(type)).flatMap(named -> named.declared().stream().findFirst());
   }
 
+  /**
+   * The type a chain ends in, by simple name, following each member through the type that declares it or one above
+   * it; nothing when a step leaves what the project declares or cannot be told.
+   */
+  public Optional<String> typeOf(Chain chain) {
+    Optional<String> at = chain.start().filter(this::declares).map(TypeName::simple)
+        .or(() -> Optional.of(chain.within()).filter(within -> chain.start().isEmpty()));
+    for (String member : chain.hops()) {
+      at = at.flatMap(type -> answerOf(type, member));
+    }
+    return at;
+  }
+
+  /** What a member of a type is declared as, looked for in the type and then in the types above it. */
+  private Optional<String> answerOf(String type, String member) {
+    Set<String> seen = new TreeSet<>();
+    Deque<String> pending = new ArrayDeque<>(List.of(type));
+    while (!pending.isEmpty()) {
+      String current = pending.pop();
+      Optional<Declared> declared = declared(current).filter(one -> seen.add(current));
+      Optional<String> answer = declared.flatMap(one -> one.field(member).or(() -> one.answer(member)));
+      if (answer.isPresent()) {
+        return answer;
+      }
+      declared.ifPresent(one -> pending.addAll(one.supertypes()));
+    }
+    return Optional.empty();
+  }
+
   /** The project types that extend or implement a type directly. */
   public Set<String> directlyBelow(String type) {
     return Optional.ofNullable(names.get(type)).map(Named::below).orElse(Set.of());

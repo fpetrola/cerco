@@ -3,10 +3,10 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.project.Chain;
 import com.fpetrola.cerco.project.Imports;
 import com.fpetrola.cerco.project.Names;
 import com.fpetrola.cerco.project.Project;
-import com.fpetrola.cerco.project.TypeName;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -25,10 +25,10 @@ public final class SaidInTwoCalls extends RepeatedRule<SaidInTwoCalls.Site> {
   private static final int MEMBERS = 3;
 
   /**
-   * Two calls in a row on one receiver: where, in which member, on what, the type it was declared as when the file
-   * shows it, and the two calls with their arities.
+   * Two calls in a row on one receiver: where, in which member, on what, how it is reached, for the
+   * project to say its type, and the two calls with their arities.
    */
-  public record Site(String file, int line, String member, String receiver, Optional<TypeName> told, Said first,
+  public record Site(String file, int line, String member, String receiver, Optional<Chain> told, Said first,
       Said second) implements Place {
   }
 
@@ -80,7 +80,7 @@ public final class SaidInTwoCalls extends RepeatedRule<SaidInTwoCalls.Site> {
         Optional<MethodCallExpr> second = told(statements.get(at + 1));
         first.flatMap(one -> second.filter(other -> sameReceiver(one, other)).map(other -> new Site(file.name(),
             line(one), enclosing.of(one), one.getScope().map(Expression::toString).orElse(""),
-            one.getScope().flatMap(names::typeOf), said(one), said(other)))).ifPresent(sites::add);
+            one.getScope().flatMap(names::chainOf), said(one), said(other)))).ifPresent(sites::add);
       }
     }
   }
@@ -112,7 +112,7 @@ public final class SaidInTwoCalls extends RepeatedRule<SaidInTwoCalls.Site> {
   @Override
   protected boolean counts(Site place, Project project) {
     boolean setters = Stream.of(place.first(), place.second()).allMatch(said -> said.name().matches("set[A-Z].*"));
-    return !setters && place.told().filter(project::declares).isPresent();
+    return !setters && place.told().flatMap(project::typeOf).filter(project::declares).isPresent();
   }
 
   @Override

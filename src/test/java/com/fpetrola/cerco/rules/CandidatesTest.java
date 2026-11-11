@@ -128,4 +128,17 @@ class CandidatesTest {
     assertEquals(3, found.size());
     assertTrue(found.contains("p.Core keeps `cpu, display, memory`, as 2 other types do: Machine, Speccy"));
   }
+
+  @Test
+  void walksAreCountedPerOwnerWhenTheProjectKnowsIt() {
+    String owners = "package p; import java.util.*; class Tools { static Tools theOne() { return new Tools(); }"
+        + " List<String> all() { return List.of(); } } class Scalers { List<String> all() { return List.of(); } }"
+        + " class Holder { Tools tools; }";
+    List<String> found = details(new WalkedFromOutside(), owners,
+        "package p; class A extends Holder { void a(Tools t) { for (String s : t.all()) { } }"
+            + " void b() { Tools.theOne().all().forEach(s -> { }); } void c() { tools.all().stream().count(); }"
+            + " void d(Scalers s) { s.all().forEach(x -> { }); } void e(Scalers s) { for (String x : s.all()) { } } }");
+    assertEquals(3, found.size());
+    assertTrue(found.stream().allMatch(detail -> detail.startsWith("what all() of Tools hands out")));
+  }
 }

@@ -31,6 +31,11 @@ public final class Imports {
         written.or(() -> Optional.ofNullable(byName.get(type.getNameAsString()))), reach);
   }
 
+  /** A type this file names bare, as the receiver of a static call: `Registry` in `Registry.theOne()`. */
+  public TypeName named(String simple) {
+    return new TypeName(simple, Optional.ofNullable(byName.get(simple)), reach);
+  }
+
   /** A type this file declares, which needs no import to be itself. */
   public TypeName name(TypeDeclaration<?> type) {
     return new TypeName(type.getNameAsString(), type.getFullyQualifiedName(), reach);
