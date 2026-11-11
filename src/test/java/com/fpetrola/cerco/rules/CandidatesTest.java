@@ -282,4 +282,18 @@ class CandidatesTest {
         "nothing in main or in the tests calls p.Knob.a()" + outside),
         new UnusedMember().inspect(main, tests).stream().map(Finding::detail).toList());
   }
+
+  @Test
+  void accessorsASerializerReachesByReflectionAreNotDead() {
+    List<String> found = details(new UnusedMember(),
+        "package p; public class Config { @JsonProperty private java.util.List<Setup> setups;"
+            + " public void setFolders(String f) { } public void forget() { }"
+            + " public static class Entry { public void setTime(long t) { } } }",
+        "package p; public class Setup extends Stick { public int getDown() { return 0; } }",
+        "package p; public class Stick { public void setUp(int u) { } }",
+        "package p; public class Other { public void setAlone(int a) { } }");
+    String outside = "; if a consumer outside this project uses it, write a test that uses it the same way";
+    assertEquals(List.of("nothing in main or in the tests calls p.Config.forget()" + outside,
+        "nothing in main or in the tests calls p.Other.setAlone(int)" + outside), found);
+  }
 }

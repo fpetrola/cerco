@@ -6,6 +6,7 @@ import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
@@ -13,10 +14,15 @@ import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -29,15 +35,22 @@ public final class UnusedMember extends ProjectRule<UnusedMember.Seen> {
   private static final Set<String> CALLED_BY_THE_PLATFORM = Set.of("readObject", "writeObject", "readResolve",
       "writeReplace", "readObjectNoData", "serialVersionUID", "main");
 
-  /** A method that is not private, where it is declared. */
-  public record Site(String file, int line, String member, String called) implements Place {
+  /** A method that is not private, where it is declared, the type that declares it, and whether it is an accessor. */
+  public record Site(String file, int line, String member, String called, String type, boolean accessor)
+      implements Place {
   }
 
-  /** What is already known dead, the methods open to others, and every method name the project calls or hands over. */
-  public record Seen(List<Finding> dead, List<Site> open, Set<String> named) {
+  /**
+   * What is already known dead, the methods open to others, every method name the project calls or hands over, and
+   * the types a serializer reads by reflection because they or a field of theirs carry its annotations, and the
+   * type names each type writes in the types of its fields, type arguments included.
+   */
+  public record Seen(List<Finding> dead, List<Site> open, Set<String> named, Set<String> serialized,
+      Map<String, Set<String>> holds) {
 
-    Stream<Site> unnamed() {
-      return open.stream().filter(site -> !named.contains(site.called()));
+    Stream<Site> unnamed(Set<String> readByReflection) {
+      return open.stream().filter(site -> !named.contains(site.called())
+          && !(site.accessor() && readByReflection.contains(site.type())));
     }
   }
 
@@ -65,7 +78,7 @@ public final class UnusedMember extends ProjectRule<UnusedMember.Seen> {
 
   @Override
   protected Seen start() {
-    return new Seen(new ArrayList<>(), new ArrayList<>(), new HashSet<>());
+    return new Seen(new ArrayList<>(), new ArrayList<>(), new HashSet<>(), new HashSet<>(), new HashMap<>());
   }
 
   @Override
@@ -82,7 +95,15 @@ public final class UnusedMember extends ProjectRule<UnusedMember.Seen> {
             "nobody calls private method " + enclosing.signatureOf(method))));
     plain.stream().filter(method -> !method.isPrivate() && method.getBody().isPresent())
         .forEach(method -> seen.open().add(new Site(file.name(), line(method), enclosing.signatureOf(method),
-            method.getNameAsString())));
+            method.getNameAsString(), typeOf(method), method.getNameAsString().matches("(get|set|is)[A-Z].*"))));
+    unit.findAll(TypeDeclaration.class, type -> carriesTheSerializer(type)).forEach(type -> unit.findAll(
+        TypeDeclaration.class).stream().filter(inside -> inside == type || inside.isAncestorOf(type) == false
+            && type.isAncestorOf(inside)).forEach(inside -> seen.serialized().add(inside.getNameAsString())));
+    for (TypeDeclaration<?> type : unit.findAll(TypeDeclaration.class)) {
+      seen.holds().put(type.getNameAsString(), type.getFields().stream()
+          .flatMap(field -> Stream.of(field.getElementType().toString().split("[^A-Za-z0-9_]+")))
+          .collect(Collectors.toSet()));
+    }
     overhear(unit, seen);
   }
 
@@ -94,9 +115,38 @@ public final class UnusedMember extends ProjectRule<UnusedMember.Seen> {
 
   @Override
   protected List<Finding> conclude(Seen seen, Project project) {
-    return Stream.concat(seen.dead().stream(), seen.unnamed().map(site -> new Finding(id(), site.file(), site.line(),
+    return Stream.concat(seen.dead().stream(), seen.unnamed(readByReflection(seen, project)).map(site -> new Finding(id(), site.file(), site.line(),
         site.file() + "|" + site.member(), "nothing in main or in the tests calls " + site.member()
             + Place.FOR_OUTSIDERS))).toList();
+  }
+
+  /** The simple name of the type a method sits in. */
+  private String typeOf(MethodDeclaration method) {
+    return method.findAncestor(TypeDeclaration.class).map(TypeDeclaration::getNameAsString).orElse("");
+  }
+
+  /** A type that carries a serializer's annotation (`@JsonProperty`, `@JsonIgnore`...) on itself or a member. */
+  private boolean carriesTheSerializer(TypeDeclaration<?> type) {
+    return Stream.concat(type.getAnnotations().stream(), type.getMembers().stream()
+            .flatMap(member -> member.getAnnotations().stream()))
+        .anyMatch(annotation -> annotation.getNameAsString().matches("Json[A-Z].*"));
+  }
+
+  /**
+   * The types a serializer reaches from those that carry its annotations: the types of their fields, of those
+   * fields' fields, and the supertypes of each, whose accessors it calls too.
+   */
+  private Set<String> readByReflection(Seen seen, Project project) {
+    Set<String> reached = new HashSet<>();
+    Deque<String> pending = new ArrayDeque<>(seen.serialized());
+    while (!pending.isEmpty()) {
+      String type = pending.pop();
+      if (reached.add(type)) {
+        seen.holds().getOrDefault(type, Set.of()).forEach(pending::push);
+        project.declared(type).ifPresent(declared -> declared.supertypes().forEach(pending::push));
+      }
+    }
+    return reached;
   }
 
   /** A field set from a call may be there for what the call does (a registration it keeps open), not to be read. */

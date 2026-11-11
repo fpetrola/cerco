@@ -68,7 +68,18 @@ reflexión, que un test no arregla: los getters y setters de `OOZxConfiguration`
 `retro_*` de `LocalLibretroCore` que llama JNA. 237 de los 441 son `get`/`set`/`is`. Los métodos de los juegos
 generados se llaman por dirección, no por nombre.
 
-Para que rinda falta decidir qué hacer con lo que se usa por reflexión (propiedades de tipos que se serializan,
+Desde 0.17.2 no marca un `get`/`set`/`is` de un tipo que un serializador lee por reflexión. Sin symbol solver: un
+tipo que lleva anotaciones `Json…` (en sí o en un miembro), sus anidados, los tipos escritos en sus campos
+(argumentos genéricos incluidos), los de los campos de esos, y los supertipos de todos. Lo propuso la sesión que
+arregla `machine` después de ver `OOZxConfiguration.setGameFolders`, `Favorite.setGameId`,
+`SnapshotHistoryEntry.setLoadedTime` e `InputSetup.Keys.getDown` (este último sin anotaciones en su archivo: se llega
+por un campo). En oozx los hallazgos de `OOZxConfiguration` e `InputSetup` bajan de 78 a 12, ninguno accesor; la
+mitad pública fuera del código generado, de 441 a 374.
+
+Queda como falso positivo conocido lo que llama el lado nativo por nombre: `OOSpectrumConnector.sendData` y
+`GetTStatesHistory.setTstatesUpdates` en `machine/bridge` (libretro/JNA). Un test no los hace vivos.
+
+Para que rinda falta decidir qué hacer con lo que llama el código nativo (propiedades de tipos que se serializan,
 callbacks nativos) y con el código generado.
 
 ## 7. Decisión
