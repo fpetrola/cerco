@@ -1,6 +1,6 @@
 # Ficha: `handed-out-whole` (candidata)
 
-Estado: **candidata, propuesta para adoptar**. Pendiente la revisión de Fernando.
+Estado: **adoptada en 0.15.0** por decisión de Fernando (2026-11-10).
 
 ## 1. Definición
 

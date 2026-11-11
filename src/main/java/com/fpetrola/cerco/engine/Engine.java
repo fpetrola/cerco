@@ -107,7 +107,7 @@ public final class Engine {
           () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept, solved)));
     }
     Witness witness = witness();
-    List<String> problems = new ArrayList<>(signed.problems());
+    List<String> problems = signed.problemsSoFar();
     List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed, problems);
     Applied applied = exempt(signed, tally.fresh(), scope.full());
     problems.addAll(applied.problems());
@@ -255,11 +255,7 @@ public final class Engine {
   }
 
   private Applied exempt(Signed signed, List<Finding> fresh, boolean fullScope) {
-    if (!signed.valid()) {
-      return Applied.untouched(fresh);
-    }
-    Context context = new Context(LocalDate.now(clock), projectVersion, 0);
-    return new Exempting(signed.exemptions(), context).apply(fresh, fullScope);
+    return signed.applied(fresh, new Context(LocalDate.now(clock), projectVersion, 0), fullScope);
   }
 
   /**

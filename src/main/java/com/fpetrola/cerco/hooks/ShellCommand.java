@@ -17,10 +17,6 @@ public final class ShellCommand {
     this.simples = builder.finish();
   }
 
-  public List<SimpleCommand> simples() {
-    return simples;
-  }
-
   public boolean mentions(String path) {
     return simples.stream().anyMatch(simple -> simple.mentions(path));
   }

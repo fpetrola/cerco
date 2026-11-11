@@ -56,8 +56,8 @@ final class Runs {
     return recall.remind(project);
   }
 
-  Map<String, String> digests() {
-    return digests.byFile();
+  Digests digests() {
+    return digests;
   }
 
   List<Finding> findings(Rule rule) {

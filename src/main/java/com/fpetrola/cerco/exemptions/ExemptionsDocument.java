@@ -7,8 +7,9 @@ import java.util.List;
 public final class ExemptionsDocument {
   private List<ExemptionEntry> exemptions = new ArrayList<>();
 
-  public List<ExemptionEntry> getExemptions() {
-    return exemptions;
+  /** What the file listed, as read: nobody changes it from here on. */
+  public List<ExemptionEntry> entries() {
+    return List.copyOf(exemptions);
   }
 
   public void setExemptions(List<ExemptionEntry> exemptions) {

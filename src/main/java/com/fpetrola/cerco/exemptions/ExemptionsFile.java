@@ -83,7 +83,7 @@ public final class ExemptionsFile {
     try {
       Yaml yaml = new Yaml(new Constructor(ExemptionsDocument.class, new LoaderOptions()));
       ExemptionsDocument document = yaml.load(text);
-      return document == null ? List.of() : document.getExemptions();
+      return document == null ? List.of() : document.entries();
     } catch (YAMLException e) {
       problems.add("exemptions.yaml is not readable: " + e.getMessage());
       return List.of();

@@ -1,7 +1,10 @@
 package com.fpetrola.cerco.engine;
 
+import com.fpetrola.cerco.exemptions.Applied;
 import com.fpetrola.cerco.exemptions.Approval;
+import com.fpetrola.cerco.exemptions.Context;
 import com.fpetrola.cerco.exemptions.Exemption;
+import com.fpetrola.cerco.exemptions.Exempting;
 import com.fpetrola.cerco.exemptions.ExemptionsFile;
 import com.fpetrola.cerco.model.Finding;
 import java.nio.file.Path;
@@ -27,12 +30,14 @@ final class Signed {
     this.releasing = found.isEmpty() && fullScope;
   }
 
-  List<Exemption> exemptions() {
-    return exemptions;
+  /** The fresh findings with the exemptions spoken for them, when the signature holds; untouched when not. */
+  Applied applied(List<Finding> fresh, Context context, boolean fullScope) {
+    return valid() ? new Exempting(exemptions, context).apply(fresh, fullScope) : Applied.untouched(fresh);
   }
 
-  List<String> problems() {
-    return problems;
+  /** What is wrong with the exemptions or their signature, as a list the run goes on adding to. */
+  List<String> problemsSoFar() {
+    return new ArrayList<>(problems);
   }
 
   boolean valid() {

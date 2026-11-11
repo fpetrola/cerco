@@ -1,5 +1,6 @@
 package com.fpetrola.cerco.engine;
 
+import com.fpetrola.cerco.exemptions.Digest;
 import com.fpetrola.cerco.model.ParsedFile;
 import java.util.Map;
 import java.util.TreeMap;
@@ -12,7 +13,20 @@ final class Digests {
     byFile.put(file.name(), file.digest());
   }
 
-  Map<String, String> byFile() {
-    return byFile;
+  /** Whether a file reads now as it did when those digests were kept. */
+  boolean sameAsIn(Map<String, String> before, String file) {
+    return before.containsKey(file) && before.get(file).equals(byFile.get(file));
+  }
+
+  /** These digests over those kept before: the files read again replace their old ones. */
+  Map<String, String> over(Map<String, String> before) {
+    Map<String, String> files = new TreeMap<>(before);
+    files.putAll(byFile);
+    return files;
+  }
+
+  /** One digest of everything read. */
+  String ofAll() {
+    return Digest.of(byFile.toString()).hex();
   }
 }

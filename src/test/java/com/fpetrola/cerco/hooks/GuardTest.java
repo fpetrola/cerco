@@ -59,10 +59,10 @@ class GuardTest {
   @Test
   void theShellIsReadLikeAShell() {
     ShellCommand shell = new ShellCommand("cat a.txt 2>/dev/null | tee out.log; echo \"x > y\" >> log");
-    assertEquals(3, shell.simples().size());
-    assertEquals(List.of("/dev/null"), shell.simples().get(0).redirectTargets());
-    assertEquals(List.of("echo", "x > y"), shell.simples().get(2).words());
-    assertEquals(List.of("log"), shell.simples().get(2).redirectTargets());
+    assertTrue(shell.writesTo("log"));
+    assertTrue(shell.writesTo("out.log"));
+    assertFalse(shell.writesTo("y"));
+    assertTrue(shell.mentions("a.txt"));
     assertTrue(shell.writesAnything());
     assertFalse(new ShellCommand("ls -la && git status").writesAnything());
     assertFalse(new ShellCommand("mvn -q -o compile 2>&1 | tail -5").writesAnything());

@@ -42,14 +42,14 @@ public final class Witness {
    * The solved keys whose code changed. The others are recorded as loosened: a per-file finding whose file has the
    * digest it had, or a project-wide one when no file of the project changed since the last full run.
    */
-  List<Solved> fixedInCode(List<Solved> solved, Map<String, String> digests, boolean full) {
+  List<Solved> fixedInCode(List<Solved> solved, Digests digests, boolean full) {
     Map<String, String> before = read(DIGESTS);
-    boolean projectSame = full && digestOf(digests).equals(read(SELF).get(PROJECT));
+    boolean projectSame = full && digests.ofAll().equals(read(SELF).get(PROJECT));
     List<String> loosened = new ArrayList<>(store.lines(LOOSENED));
     List<Solved> fixed = new ArrayList<>();
     for (Solved one : solved) {
       Map<Boolean, List<String>> untouched = one.keys().stream().collect(Collectors.partitioningBy(key ->
-          projectWide.contains(one.ruleId()) ? projectSame : sameCode(new Key(key).file(), before, digests)));
+          projectWide.contains(one.ruleId()) ? projectSame : digests.sameAsIn(before, new Key(key).file())));
       untouched.get(true).forEach(key -> loosened.add(one.ruleId() + "\t" + key));
       fixed.add(new Solved(one.ruleId(), untouched.get(false)));
     }
@@ -58,21 +58,19 @@ public final class Witness {
   }
 
   /** Keeps the digests of the files a run over part of the project read, beside those already kept. */
-  void recordSome(Map<String, String> digests) {
-    Map<String, String> files = read(DIGESTS);
-    files.putAll(digests);
-    write(DIGESTS, files);
+  void recordSome(Digests digests) {
+    write(DIGESTS, digests.over(read(DIGESTS)));
     Map<String, String> self = read(SELF);
     self.putIfAbsent(DEFAULTS, defaults());
     write(SELF, self);
   }
 
   /** Keeps the digests of a run that read the whole project, in place of what was kept, and the project's own. */
-  void recordAll(Map<String, String> digests) {
-    write(DIGESTS, new TreeMap<>(digests));
+  void recordAll(Digests digests) {
+    write(DIGESTS, digests.over(Map.of()));
     Map<String, String> self = read(SELF);
     self.putIfAbsent(DEFAULTS, defaults());
-    self.put(PROJECT, digestOf(digests));
+    self.put(PROJECT, digests.ofAll());
     write(SELF, self);
   }
 
@@ -113,16 +111,8 @@ public final class Witness {
     return vanished;
   }
 
-  private boolean sameCode(String file, Map<String, String> before, Map<String, String> digests) {
-    return before.containsKey(file) && before.get(file).equals(digests.get(file));
-  }
-
   private String defaults() {
     return Digest.of(Settings.DEFAULTS.fingerprint()).hex();
-  }
-
-  private String digestOf(Map<String, String> digests) {
-    return Digest.of(new TreeMap<>(digests).toString()).hex();
   }
 
   private Map<String, String> read(String name) {
