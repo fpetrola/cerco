@@ -54,7 +54,8 @@ public final class Rules {
    * catalogue only after their record (doc/reglas) shows they find real cases beyond the one that gave them birth.
    */
   public List<Rule> candidates() {
-    return List.of(new HierarchyAskedFromOutside(), new SetFromOutside(),
+    return List.of(new ConstantArgument(), new StaticFilledByInstances(), new UnusedMember(),
+        new HierarchyAskedFromOutside(), new SetFromOutside(),
         new UnpackedAtTheCall(), new SaidInTwoCalls(), new OneAndMany(), new ToldOneByOne(),
         new OverriddenToNothing(), new MiddleMan(), new DispatchByKey());
   }

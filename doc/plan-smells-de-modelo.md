@@ -905,3 +905,10 @@ contra ellas. En oozx el `audit` sigue verde: sus hallazgos se congelan en la ba
 generados) y 4 más en oozx-plugins (44 de 61). Lo que queda sin leer son cadenas sin un sujeto común (rangos de
 valores, "el primero que no esté vacío"): ahí no hay evidencia de un modelo y se deja sin lectura.
 
+### 13.13 cerco 0.16.0: la autopsia no propone la regla que ya existe, y tres candidatas nacidas de arreglos
+
+Rama `autopsia-covered-by`. `rule:` con la regla autopsiada, o con otra adoptada, se rechaza; `covered-by: <id>` es
+la salida automática cuando la regla existente alcanzó (README, "Candidate rule"). Tres candidatas con ficha,
+medidas en oozx y oozx-plugins: `constant-argument` (13 y 15), `static-filled-by-instances` (7 y 1) y
+`unused-member`, solo su mitad privada (32 y 15). Quedan 12 candidatas.
+

@@ -216,4 +216,47 @@ class CandidatesTest {
     assertEquals(List.of("`commands` in p.Core maps a key to code: Map<String,Runnable>",
         "`byKind` in p.Core.f() maps a key to code: Map<Kind,Function<Integer,Integer>>"), found);
   }
+
+  @Test
+  void aParameterEveryCallPassesTheSameLiteralFor() {
+    List<String> found = details(new ConstantArgument(),
+        "package p; class Buffer { int read(int[] out, int count, boolean stereo) { return stereo ? 2 : 1; }"
+            + " void clear(boolean whole) { } void seek(int at) { } }",
+        "package p; class Player { void a(Buffer b, int[] o) { b.read(o, 10, true); b.clear(true); b.seek(0); }"
+            + " void b(Buffer b, int[] o, int n) { b.read(o, n, true); b.clear(false); b.seek(0);"
+            + " Runnable r = () -> b.seek(0); } }",
+        "package p; class Synth { Buffer b; int read(int[] out, int count, boolean stereo) {"
+            + " return b.read(out, count, stereo); } }",
+        "package p; class Other { void run(java.util.List<Integer> l, Buffer b) {"
+            + " l.forEach(this::wind); wind(1); wind(1); } void wind(int by) { } }");
+    assertEquals(List.of("all 2 calls of p.Buffer.read(int[], int, boolean) pass `true` as `stereo`",
+        "all 3 calls of p.Buffer.seek(int) pass `0` as `at`",
+        "all 2 calls of p.Synth.read(int[], int, boolean) pass `true` as `stereo`"), found);
+  }
+
+  @Test
+  void aStaticFieldThatInstancesChange() {
+    List<String> found = details(new StaticFilledByInstances(),
+        "package p; class Keys { static final java.util.Map<Integer, Integer> codes = new java.util.HashMap<>();"
+            + " static int made; static int[] table = new int[4]; int own;"
+            + " Keys() { codes.put(1, 2); made++; own = 3; } void end() { codes.clear(); Keys.table[0] = 1; }"
+            + " int look(int made) { made = 2; return codes.get(1); } static void reset() { codes.clear(); } }");
+    assertEquals(List.of(
+        "`made` is static and p.Keys.Keys() changes it: every instance writes into what all of them share",
+        "`codes` is static and p.Keys.Keys() changes it: every instance writes into what all of them share",
+        "`table` is static and p.Keys.end() changes it: every instance writes into what all of them share",
+        "`codes` is static and p.Keys.end() changes it: every instance writes into what all of them share"), found);
+  }
+
+  @Test
+  void aPrivateMemberNobodyUses() {
+    List<String> found = details(new UnusedMember(),
+        "package p; class Deck { private int speed; private int head; private int turns; public int open;"
+            + " @Deprecated private int kept;"
+            + " void play() { speed = 2; head = speed; this.turns = 1; turns += 1; wind(); java.util.List.of(1)"
+            + ".forEach(this::count); } private void wind() { } private void rewind() { rewind(); }"
+            + " private void count(int n) { } }");
+    assertEquals(List.of("nobody reads private field p.Deck.head", "nobody calls private method p.Deck.rewind()"),
+        found);
+  }
 }
