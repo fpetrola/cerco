@@ -800,3 +800,12 @@ El autochequeo no tiene línea de base, así que cerco tuvo que cumplirlas. Enco
 
 Después de esos arreglos, las 35 reglas anteriores siguen dando en oozx los mismos 10.619 hallazgos.
 
+### 13.6 Dos candidatas más
+
+| candidata | emulator | machine | muestra (juicio de Claude) | propuesta |
+|---|---|---|---|---|
+| `handed-out-whole` | 1 | 15 | 16 de 16 | adoptar |
+| `parallel-model` | 8 | 16 | no encontró el modelo paralelo; encontró las partes de la máquina guardadas sueltas en cinco clases | rehacerla como grupo de colaboradores que viaja junto |
+
+Quedan doce candidatas con ficha.
+

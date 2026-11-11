@@ -107,4 +107,25 @@ class CandidatesTest {
     assertTrue(found.contains("`w.isAttached() && w.machine() == null` in p.Desk.a(Frame); 3 members write this "
         + "same condition"));
   }
+
+  @Test
+  void aCollectionHandedOutAsItIsKept() {
+    List<String> found = details(new HandedOutWhole(),
+        "package p; import java.util.*; class Desk { private final List<String> windows = new ArrayList<>();"
+            + " int count; List<String> windows() { return windows; } int count() { return count; }"
+            + " List<String> copy() { return List.copyOf(windows); } private List<String> own() { return windows; } }");
+    assertEquals(List.of("p.Desk.windows() hands out `windows`, the List<String> its object keeps"), found);
+  }
+
+  @Test
+  void twoTypesThatHoldTheSameFields() {
+    List<String> found = details(new ParallelModel(),
+        "package p; class State { int a; int b; int c; int d; int e; }"
+            + " class Snapshot { int a; int b; int c; int d; String name; }"
+            + " class Other { int a; int b; long c; long d; }"
+            + " class Base { int a; int b; int c; int d; } class Sub extends Base { int a; int b; int c; int d; }");
+    assertTrue(found.contains("p.State and Snapshot hold the same 4 fields: a, b, c, d"));
+    assertTrue(found.stream().noneMatch(detail -> detail.startsWith("p.Sub and Base")));
+    assertTrue(found.stream().noneMatch(detail -> detail.contains("Other")));
+  }
 }
