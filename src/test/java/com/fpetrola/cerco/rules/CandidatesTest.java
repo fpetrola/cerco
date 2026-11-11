@@ -221,7 +221,7 @@ class CandidatesTest {
   void aParameterEveryCallPassesTheSameLiteralFor() {
     List<String> found = details(new ConstantArgument(),
         "package p; class Buffer { int read(int[] out, int count, boolean stereo) { return stereo ? 2 : 1; }"
-            + " void clear(boolean whole) { } void seek(int at) { } }",
+            + " void clear(boolean whole) { } public void seek(int at) { } }",
         "package p; class Player { void a(Buffer b, int[] o) { b.read(o, 10, true); b.clear(true); b.seek(0); }"
             + " void b(Buffer b, int[] o, int n) { b.read(o, n, true); b.clear(false); b.seek(0);"
             + " Runnable r = () -> b.seek(0); } }",
@@ -230,7 +230,7 @@ class CandidatesTest {
         "package p; class Other { void run(java.util.List<Integer> l, Buffer b) {"
             + " l.forEach(this::wind); wind(1); wind(1); } void wind(int by) { } }");
     assertEquals(List.of("all 2 calls of p.Buffer.read(int[], int, boolean) pass `true` as `stereo`",
-        "all 3 calls of p.Buffer.seek(int) pass `0` as `at`",
+        "all 3 calls of p.Buffer.seek(int) pass `0` as `at`; it is public, and callers outside this project are not seen",
         "all 2 calls of p.Synth.read(int[], int, boolean) pass `true` as `stereo`"), found);
   }
 
@@ -252,11 +252,13 @@ class CandidatesTest {
   void aPrivateMemberNobodyUses() {
     List<String> found = details(new UnusedMember(),
         "package p; class Deck { private int speed; private int head; private int turns; public int open;"
-            + " @Deprecated private int kept;"
+            + " @Deprecated private int kept; private final AutoCloseable open = Hub.managing().onChange(null);"
+            + " private final Object made = new Object();"
             + " void play() { speed = 2; head = speed; this.turns = 1; turns += 1; wind(); java.util.List.of(1)"
             + ".forEach(this::count); } private void wind() { } private void rewind() { rewind(); }"
             + " private void count(int n) { } }");
-    assertEquals(List.of("nobody reads private field p.Deck.head", "nobody calls private method p.Deck.rewind()"),
+    assertEquals(List.of("nobody reads private field p.Deck.head", "nobody reads private field p.Deck.made",
+        "nobody calls private method p.Deck.rewind()"),
         found);
   }
 }

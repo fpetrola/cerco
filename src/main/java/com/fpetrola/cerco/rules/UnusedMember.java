@@ -51,7 +51,7 @@ public final class UnusedMember extends FileRule {
   protected List<Finding> inspect(ParsedFile file, CompilationUnit unit) {
     List<Finding> findings = new ArrayList<>();
     unit.findAll(FieldDeclaration.class, field -> field.isPrivate() && field.getAnnotations().isEmpty()).stream()
-        .flatMap(field -> field.getVariables().stream()).filter(field -> !isRead(unit, field))
+        .flatMap(field -> field.getVariables().stream()).filter(field -> !isRead(unit, field) && !keepsAnEffect(field))
         .forEach(field -> findings.add(finding(file, field, enclosing.typeOf(field) + "." + field.getNameAsString(),
             "nobody reads private field " + enclosing.typeOf(field) + "." + field.getNameAsString())));
     unit.findAll(MethodDeclaration.class, method -> method.isPrivate() && method.getAnnotations().isEmpty()
@@ -59,6 +59,11 @@ public final class UnusedMember extends FileRule {
         .forEach(method -> findings.add(finding(file, method, enclosing.signatureOf(method),
             "nobody calls private method " + enclosing.signatureOf(method))));
     return findings;
+  }
+
+  /** A field set from a call may be there for what the call does (a registration it keeps open), not to be read. */
+  private boolean keepsAnEffect(VariableDeclarator field) {
+    return field.getInitializer().filter(Expression::isMethodCallExpr).isPresent();
   }
 
   private boolean isRead(CompilationUnit unit, VariableDeclarator field) {

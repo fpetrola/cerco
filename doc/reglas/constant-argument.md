@@ -40,7 +40,20 @@ y el remedio ahí es un método sin parámetro.
 - Dos métodos distintos con el mismo nombre y aridad comparten las llamadas: si uno no tiene llamadas propias, hereda
   las del otro.
 
-## 5. Decisión
+## 5. Falsos positivos al usarla (oozx, 2026-11-11)
 
-Pendiente de Fernando. Precisa en la muestra; en `emulator` los 5 son constantes de la tabla de opcodes y de los
-tiempos, que conviene mirar antes de adoptarla.
+`Knob.number(..., step)`: las cinco llamadas del reactor pasan `0.05`, pero el método es público y lo llaman también
+oozx-plugins (`TubeCurve`, `MouseInternalFrame`) y los jars publicados. `SpeccyEmulatorCore.setGeneralOption("turbo")`
+es API para plugins: mismo caso. Aciertos en `machine`: `Scalers.resize` (borrado en oozx `df45987c4`) y
+`MemoryState.setIF1RomPaged` (cierto; es código de snapshots y espera otra decisión).
+
+Es el mismo límite que la mitad pública de `unused-member`: cerco solo ve el reactor. Desde 0.16.1 el hallazgo de un
+método público o protegido lo dice ("it is public, and callers outside this project are not seen"), pero se sigue
+marcando: limitarla a métodos privados o de paquete dejaría afuera el caso que le dio origen
+(`BlipBuffer.readSamples` es público).
+
+## 6. Decisión
+
+Pendiente de Fernando, y atada a la misma pregunta que `unused-member`: o cerco lee a los consumidores de afuera del
+reactor, o esta regla se limita a lo que no es público y pierde `BlipBuffer`. Así como está no se puede adoptar en un
+proyecto que publica API. En `emulator` los 5 son constantes de la tabla de opcodes y de los tiempos.

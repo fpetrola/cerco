@@ -27,7 +27,13 @@ public final class ConstantArgument extends ProjectRule<ConstantArgument.Seen> {
   private static final String HANDED_ON = "*";
 
   /** A method with a body, by its name and how many arguments it takes, and what it calls each of them. */
-  public record Site(String file, int line, String member, String called, List<String> parameters) implements Place {
+  public record Site(String file, int line, String member, String called, List<String> parameters, boolean open)
+      implements Place {
+
+    /** What a finding adds about who may call it: of a public method only the callers of this project are seen. */
+    String reach() {
+      return open ? "; it is public, and callers outside this project are not seen" : "";
+    }
   }
 
   /**
@@ -92,7 +98,8 @@ public final class ConstantArgument extends ProjectRule<ConstantArgument.Seen> {
             && method.getParameters().stream().noneMatch(Parameter::isVarArgs))
         .forEach(method -> seen.declared().add(new Site(file.name(), line(method), enclosing.signatureOf(method),
             method.getNameAsString() + "/" + method.getParameters().size(),
-            method.getParameters().stream().map(Parameter::getNameAsString).toList())));
+            method.getParameters().stream().map(Parameter::getNameAsString).toList(),
+            method.isPublic() || method.isProtected())));
     unit.findAll(MethodCallExpr.class).forEach(call -> seen.call(
         call.getNameAsString() + "/" + call.getArguments().size(), passed(call)));
     unit.findAll(MethodReferenceExpr.class).forEach(reference -> seen.referred().add(reference.getIdentifier()));
@@ -109,7 +116,7 @@ public final class ConstantArgument extends ProjectRule<ConstantArgument.Seen> {
           findings.add(new Finding(id(), site.file(), site.line(),
               site.file() + "|" + site.member() + "|" + site.parameters().get(at),
               "all " + passed.size() + " calls of " + site.member() + " pass `" + passed.get(0) + "` as `"
-                  + site.parameters().get(at) + "`"));
+                  + site.parameters().get(at) + "`" + site.reach()));
         }
       });
     });

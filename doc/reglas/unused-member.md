@@ -7,7 +7,7 @@ Estado: **candidata; hecha solo la mitad que no sale del archivo**.
 Un campo privado que nadie lee (se escribe con `=` y nada más, o ni eso) o un método privado que nadie llama ni pasa
 como referencia. Lo privado solo se puede usar desde su archivo, así que el archivo alcanza para decirlo. No mira
 miembros con anotaciones (inyección, serialización) ni los ganchos de serialización (`readObject`,
-`serialVersionUID`, …). Un método que solo se llama a sí mismo cuenta como sin llamadores. Corre por archivo.
+`serialVersionUID`, …), ni un campo cuyo inicializador es una llamada a un método (desde 0.16.1, ver §3). Un método que solo se llama a sí mismo cuenta como sin llamadores. Corre por archivo.
 
 Sin modelo que falte: es una regla de honestidad, como `no-ignored-result`. Remedio: borrarlo junto con el código
 que solo lo alimentaba.
@@ -25,6 +25,12 @@ oozx `87e376742`: `emulator` 6, `machine` 9, `translation` 17 (1 en código gene
 y no se lee), `DefaultInstructionFactory.c`, `MemptrUpdater.memory`, `SpeccyScreen.screenBuffer`,
 `OOZxConfiguration.CONFIG_FILE` (constante sin uso), `VerifyRangeHandler.getOwnRange()`,
 `Virtual8BitsRegister.isComposed`. En plugins, `MiniZXKeyboard.joystickToSJS1/2` y dos constantes sin uso.
+
+Falso positivo encontrado al usarla (oozx, 2026-11-11): `ZXSpectrumDesktopApp.whileItChanges`,
+`private final AutoCloseable whileItChanges = Plugins.managing()…`. Nadie lo lee, pero lo que importa es el registro
+que hace el inicializador; el campo solo lo retiene. Desde 0.16.1 un campo inicializado con una llamada a un método
+no se marca (uno inicializado con `new` sí). Los otros ocho que marcó en `machine` eran ciertos y se borraron (oozx
+`41228a9b9`).
 
 ## 4. Lo que no hace, y por qué
 

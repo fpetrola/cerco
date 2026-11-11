@@ -28,6 +28,11 @@ método de instancia), `ScreenSettings.kept`, `OOSpectrumConnector.remoteData`, 
 `CachedTableAluOperation.TABLE_CACHE` es un caché compartido a propósito: cumple la definición y es el caso
 discutible.
 
+Al usarla en oozx (2026-11-11), la sesión que arregla `machine` leyó `ScreenSettings.kept` y
+`AttachedFrame.resettling` como estado compartido a propósito, no como bugs del tipo de `SwingKeyboard`. Con
+`TABLE_CACHE` son 3 de 8 los que cumplen la definición sin ser un error: la regla marca el olor (estado de todos
+escrito por cualquiera), no distingue el bug.
+
 ## 4. Decisión
 
 Pendiente de Fernando. La otra sesión propone que frene aunque haya deuda congelada, porque suele ser un bug y no
