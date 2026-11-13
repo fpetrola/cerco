@@ -196,7 +196,7 @@ class AutopsiesTest {
     assertTrue(rule.missing().get(0).contains(FORM_ID), rule.missing().toString());
 
     Settings declining = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
-        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), true, List.of("kind-without-type"));
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), true, List.of("kind-without-type"), java.util.Optional.empty());
     Engine declined = new Engine(declining, root, "1.0", clock);
     assertEquals(1, declined.run(scope(root)).owed().size(), "a decline nobody signed declines nothing");
     Approval.of(Optional.empty(), Optional.of(declined.configDigest()), "fernando", LocalDate.of(2026, 11, 10))
@@ -222,7 +222,7 @@ class AutopsiesTest {
   @Test
   void switchedOffNothingIsOwed(@TempDir Path root) throws IOException {
     Settings off = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
-        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), false, List.of());
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), false, List.of(), java.util.Optional.empty());
     Engine engine = fixedOnce(root, off);
     Outcome outcome = engine.run(scope(root));
     assertTrue(outcome.owed().isEmpty());

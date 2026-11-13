@@ -49,6 +49,14 @@ public interface Rule {
     return inspection.findings();
   }
 
+  /**
+   * Whether the findings this rule has when it arrives are frozen into the baseline, and its new ones may be
+   * exempted. A rule whose way out is a person's signature, not a baseline, says no.
+   */
+  default boolean baselined() {
+    return true;
+  }
+
   /** The rule as a budget rule when it measures sizes against ceilings; empty for a plain rule. */
   default Optional<BudgetRule> asBudget() {
     return Optional.empty();

@@ -8,6 +8,7 @@ import com.fpetrola.cerco.model.Settings;
 import com.fpetrola.cerco.model.SourceFile;
 import com.fpetrola.cerco.report.ConsoleReport;
 import com.fpetrola.cerco.report.JsonReport;
+import com.fpetrola.cerco.surface.Reach;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.List;
@@ -83,6 +84,13 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   @Parameter
   private List<String> declinedRules;
 
+  /**
+   * Seals the surface of every module at this reach (interfaces, public or all; default none): a member others can
+   * use and a person did not sign is a finding that only a signature or taking it back clears. Needs a signature.
+   */
+  @Parameter
+  private String sealedSurface;
+
   @Override
   public final void execute() throws MojoExecutionException, MojoFailureException {
     if (skip) {
@@ -106,7 +114,14 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
         Optional.ofNullable(includeTests).orElse(defaults.includeTests()),
         listOr(disabledRules, defaults.disabledRules()),
         Optional.ofNullable(autopsies).orElse(defaults.autopsies()),
-        listOr(declinedRules, defaults.declinedRules()));
+        listOr(declinedRules, defaults.declinedRules()),
+        Optional.ofNullable(sealedSurface).filter(word -> !word.isBlank()).map(String::strip).map(this::reach));
+  }
+
+  /** A reach the configuration names, which has to be one cerco knows: a typo must not switch the seal off. */
+  private String reach(String word) {
+    return Reach.from(word).map(Reach::word).orElseThrow(() -> new IllegalArgumentException("cerco: sealedSurface "
+        + "is '" + word + "'; it has to be interfaces, public or all"));
   }
 
   private List<String> listOr(List<String> configured, List<String> fallback) {

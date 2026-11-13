@@ -1,6 +1,9 @@
 package com.fpetrola.cerco.rules;
 
 import com.fpetrola.cerco.model.Settings;
+import com.fpetrola.cerco.surface.Reach;
+import com.fpetrola.cerco.surface.Seal;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -10,9 +13,23 @@ import java.util.stream.Stream;
 /** The catalogue: every rule the gate knows, in the order it reports them, minus the ones a project switched off. */
 public final class Rules {
   private final Settings settings;
+  private final List<Rule> signedSurface;
 
+  /** The catalogue with nothing sealed: what a survey or a test measures. */
   public Rules(Settings settings) {
     this.settings = settings;
+    this.signedSurface = List.of();
+  }
+
+  /** The catalogue of a project at this root, its sealed surface included when its configuration seals one. */
+  public Rules(Settings settings, Path root) {
+    this.settings = settings;
+    this.signedSurface = settings.sealedSurface().flatMap(Reach::from).stream()
+        .map(reach -> surface(root, reach)).toList();
+  }
+
+  private Rule surface(Path root, Reach reach) {
+    return new SealedSurface(new Seal(root.resolve(".cerco").resolve("surface")), reach);
   }
 
   public List<Rule> all() {
@@ -61,7 +78,7 @@ public final class Rules {
   }
 
   private List<Rule> every() {
-    return Stream.concat(first().stream(), fromThePlanOfModelSmells().stream()).toList();
+    return Stream.of(first(), fromThePlanOfModelSmells(), signedSurface).flatMap(List::stream).toList();
   }
 
   /** The rules cerco started with and those its autopsies asked for. */

@@ -52,7 +52,7 @@ public final class Engine {
 
   public Engine(Settings settings, Path root, String projectVersion, Clock clock) {
     this.settings = settings;
-    this.rules = new Rules(settings);
+    this.rules = new Rules(settings, root);
     this.store = new BaselineStore(root.resolve(".cerco").resolve("baseline"));
     this.exemptionsFile = new ExemptionsFile(root.resolve(".cerco").resolve("exemptions.yaml"), rules.ids(),
         settings.maxExemptions());
@@ -100,7 +100,9 @@ public final class Engine {
     Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();
     List<Solved> solved = new ArrayList<>();
-    for (Rule rule : active) {
+    List<Finding> unsigned = active.stream().filter(rule -> !rule.baselined())
+        .flatMap(rule -> runs.findings(rule).stream()).toList();
+    for (Rule rule : active.stream().filter(Rule::baselined).toList()) {
       Kept kept = new Kept(inScope, scope.full(), signed, rule.id());
       rule.asBudget().ifPresentOrElse(
           budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, kept, solved)),
@@ -110,6 +112,8 @@ public final class Engine {
     List<String> problems = signed.problemsSoFar();
     List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed, problems);
     Applied applied = exempt(signed, tally.fresh(), scope.full());
+    List<Finding> fresh = new ArrayList<>(applied.remaining());
+    fresh.addAll(unsigned);
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
     if (store.exists()) {
@@ -119,7 +123,7 @@ public final class Engine {
       notes.add("no baseline is frozen yet: every finding counts as new until `mvn verify` freezes the project");
     }
     long millis = (System.nanoTime() - start) / 1_000_000;
-    return new Outcome(scope.label(), parsed, applied.remaining(), applied.exempted(), tally.solved(),
+    return new Outcome(scope.label(), parsed, fresh, applied.exempted(), tally.solved(),
         tally.frozen(), owed, notes, problems, millis);
   }
 
@@ -150,7 +154,7 @@ public final class Engine {
 
   /** Freezes the project as it stands: every current finding and every oversize measure become the baseline. */
   public int freeze(Scope scope) {
-    List<Rule> active = rules.all();
+    List<Rule> active = rules.all().stream().filter(Rule::baselined).toList();
     Runs runs = new Runs(active);
     feed.each(scope.files(), runs::visit);
     feed.each(scope.tests(), runs::hear);
@@ -170,14 +174,14 @@ public final class Engine {
    */
   private List<Rule> adopt(List<Rule> active, boolean fullScope, List<String> notes) {
     Set<String> frozen = store.frozenRules();
-    List<Rule> arrived = active.stream().filter(rule -> !frozen.contains(rule.id())).toList();
+    List<Rule> arrived = active.stream().filter(rule -> rule.baselined() && !frozen.contains(rule.id())).toList();
     if (arrived.isEmpty()) {
       return active;
     }
     if (!fullScope) {
       notes.add("rules without a baseline yet, skipped until a full run (mvn cerco:audit) freezes them: "
           + arrived.stream().map(Rule::id).collect(Collectors.joining(", ")));
-      return active.stream().filter(rule -> frozen.contains(rule.id())).toList();
+      return active.stream().filter(rule -> !rule.baselined() || frozen.contains(rule.id())).toList();
     }
     arrived.forEach(rule -> notes.add("rule " + rule.id() + " is new to this project: its current findings were "
         + "frozen into the baseline now, and only shrink from here"));

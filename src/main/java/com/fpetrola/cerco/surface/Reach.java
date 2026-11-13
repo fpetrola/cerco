@@ -18,6 +18,11 @@ public enum Reach {
     this.onlyPromises = onlyPromises;
   }
 
+  /** The reach a project names in its configuration, by its word; none for a word that is not one. */
+  public static java.util.Optional<Reach> from(String word) {
+    return java.util.stream.Stream.of(values()).filter(reach -> reach.word.equals(word)).findFirst();
+  }
+
   public String word() {
     return word;
   }

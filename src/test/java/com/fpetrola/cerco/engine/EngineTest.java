@@ -185,7 +185,7 @@ class EngineTest {
   void aNonDefaultConfigurationNeedsASignatureToo(@TempDir Path root) throws IOException {
     write(root, "A.java", CLEAN.replace("class B", "class A"));
     Settings loosened = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
-        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"), true, List.of());
+        Settings.DEFAULTS.generatedGlobs(), 10, false, List.of("no-switch"), true, List.of(), java.util.Optional.empty());
     Engine engine = new Engine(loosened, root, "1.0", clock);
     engine.freeze(scope(root, true));
     Outcome outcome = engine.run(scope(root, true));

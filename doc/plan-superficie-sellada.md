@@ -11,7 +11,7 @@ Diseñar cada capa primero como interfaces, sellarla en cerco, y que sólo crezc
 > **Sobre qué cerco.** Desde el 2026-11-13 hay un solo checkout de cerco, en `main`; `tests-como-llamadores` ya
 > está ahí. C0 salió en 0.18.0. cerco-demo y zx-lift siguen en 0.2.0.
 >
-> **Avance.** P0 y P1 hechos (§12). Sigue P2: C1, C2 y C3.
+> **Avance.** P0 y P1 hechos (§12). P2 en curso: C1 hecho en 0.19.0 (§5.1, §12); siguen C2 (la propuesta) y la firma del sello.
 
 ---
 
@@ -222,6 +222,36 @@ Cuatro condiciones más:
   paquete». Primero se mide con `survey` si hace falta.
 
 ---
+
+### 5.1 El diseño acordado de C1 (2026-11-13)
+
+Presupuesto: dos tipos nuevos, nueve miembros públicos, tres cambios en tipos existentes. Lo que haga falta más se
+propone antes de escribirlo.
+
+```java
+/** What a person signed of each module's surface: .cerco/surface/<module>.txt, one signature per line, sorted. */
+public final class Seal {
+  public Seal(Path directory);
+  public boolean covers(String module);
+  public List<Member> unsigned(String module, List<Member> offered);
+  public void adopt(String module, List<Member> offered);
+  public List<String> shrink(String module, List<Member> offered);
+}
+
+/** Every member a module offers that its seal lacks. id "sealed-surface", per file. */
+public final class SealedSurface implements Rule {
+  public SealedSurface(Seal seal, Reach reach);
+}
+```
+
+- `Rule.baselined()`, por defecto `true`. `SealedSurface` responde `false`: sus hallazgos no se congelan ni se
+  exceptúan.
+- `Settings.sealedSurface()`: `<sealedSurface>interfaces|public|all</sealedSurface>` en el pom. Si falta, la regla
+  no existe; si está, es configuración distinta del default y vale sólo con firma. No hay alcance por defecto
+  hasta que E1 lo decida.
+- La adopción vale sólo para el proyecto que nunca tuvo sello: su primera corrida completa sella todos los módulos
+  como están. Después, un módulo nuevo empieza vacío; si no, crear un módulo esquivaría el gate.
+- `Seal` y `SealedSurface` son clases finales: en cerco hay una sola implementación de cada cosa.
 
 ## 6. Los experimentos
 
@@ -450,3 +480,17 @@ sellar. 37 de las 93 firmas públicas dicen `String`.
 | **total** | **18** | **7,53** | |
 
 Es el piso de Q1 para el control: lo que las reglas llegadas después de 0.2.0 le marcan a `vista`.
+
+**2026-11-13, P2: C1 en cerco 0.19.0.** Implementado el diseño de §5.1 sin superficie pública fuera de él, salvo
+un constructor `Rules(Settings, Path)` que no estaba en la tabla: el catálogo necesita la raíz para encontrar el
+sello. `SealedSurfaceTest` cubre los criterios de §5 (adopción, rojo en la edición, renombre, quitar sin deber
+autopsia, módulo nuevo vacío, sin la opción no hay sello); 171 tests verdes, `SelfCheckTest` incluido.
+
+Probado sobre una copia descartable de cerco-demo con `<sealedSurface>interfaces</sealedSurface>`: el primer
+`audit` sella los seis módulos (`vista-view` queda en nueve líneas legibles); agregar `edit(Runnable)` a `Textual`
+da `[sealed-surface] 1 new` con el principio y las tres salidas, y la configuración sin firmar es un problema de
+persona. Visto de paso: esa copia, con línea de base de 0.2.0, da 13 hallazgos nuevos de reglas posteriores en el
+`audit`; revisarlo al preparar E1.
+
+Falta para cerrar P2: C2 (la propuesta en `surface/pending/` y que `approve` la firme y agrande el sello). Hasta
+entonces la única salida del rojo es quitar el miembro o editar el sello a mano, que el guard le niega al agente.
