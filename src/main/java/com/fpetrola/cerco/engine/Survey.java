@@ -6,6 +6,8 @@ import com.fpetrola.cerco.model.SourceFile;
 import com.fpetrola.cerco.project.Project;
 import com.fpetrola.cerco.rules.Inspection;
 import com.fpetrola.cerco.rules.Rule;
+import com.fpetrola.cerco.surface.Surface;
+import com.fpetrola.cerco.surface.Surfaces;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,7 +17,8 @@ import java.util.Map;
 /**
  * Rules run over the reactor with no baseline and no verdict, only to see what they find, split by module: how a
  * candidate rule is measured before it gates anything. One pass over every file, so a project-wide rule sees the
- * whole project as it does in an audit. Budget rules are judged against their default ceilings.
+ * whole project as it does in an audit. Budget rules are judged against their default ceilings. The same pass
+ * measures what each module offers to others, its surface.
  */
 public final class Survey {
   private final Feed feed = new Feed(new Parser(), new Generated());
@@ -37,23 +40,28 @@ public final class Survey {
     Map<String, Inspection> inspections = new LinkedHashMap<>();
     rules.forEach(rule -> inspections.put(rule.id(), rule.inspection(project)));
     Map<String, Integer> lines = new HashMap<>();
+    Surfaces surfaces = new Surfaces();
     feed.each(all, file -> {
       project.learn(file);
+      surfaces.visit(moduleOf.get(file.name()), file);
       lines.merge(moduleOf.get(file.name()), file.lines(), Integer::sum);
       inspections.values().forEach(inspection -> inspection.visit(file));
     });
     project.markWhole();
-    feed.each(tests, test -> inspections.values().forEach(inspection -> inspection.hear(test)));
+    feed.each(tests, test -> {
+      surfaces.hear(test);
+      inspections.values().forEach(inspection -> inspection.hear(test));
+    });
     Map<String, Map<String, List<Finding>>> found = new HashMap<>();
     inspections.forEach((id, inspection) -> inspection.findings().forEach(finding ->
         found.computeIfAbsent(moduleOf.getOrDefault(finding.file(), ""), k -> new HashMap<>())
             .computeIfAbsent(id, k -> new ArrayList<>()).add(finding)));
     return modules.keySet().stream().map(module -> new Surveyed(module, lines.getOrDefault(module, 0),
-        found.getOrDefault(module, Map.of()))).toList();
+        found.getOrDefault(module, Map.of()), surfaces.of(module))).toList();
   }
 
-  /** What the rules found in one module, and how long the module is. */
-  public record Surveyed(String module, int lines, Map<String, List<Finding>> findings) {
+  /** What the rules found in one module, how long the module is, and what it offers to others. */
+  public record Surveyed(String module, int lines, Map<String, List<Finding>> findings, Surface surface) {
 
     public List<Finding> of(String ruleId) {
       return findings.getOrDefault(ruleId, List.of());

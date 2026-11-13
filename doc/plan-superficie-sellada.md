@@ -8,8 +8,10 @@ Diseñar cada capa primero como interfaces, sellarla en cerco, y que sólo crezc
 > **Dónde vive y por qué.** En el repo de cerco, junto a `plan-smells-de-modelo.md`, y no en cerco-demo: el agente
 > que corre los experimentos no tiene que leerlo (§6.4).
 >
-> **Sobre qué cerco.** El más nuevo es 0.17.3, en el worktree `cerco-lectura` (rama `tests-como-llamadores`).
-> cerco-demo y zx-lift siguen en 0.2.0.
+> **Sobre qué cerco.** Desde el 2026-11-13 hay un solo checkout de cerco, en `main`; `tests-como-llamadores` ya
+> está ahí. C0 salió en 0.18.0. cerco-demo y zx-lift siguen en 0.2.0.
+>
+> **Avance.** P0 y P1 hechos (§12). Sigue P2: C1, C2 y C3.
 
 ---
 
@@ -385,9 +387,10 @@ a P5. El que cierra un paso lo anota en §12.
 | D5 | El presupuesto de las capas de E2. | Lo fijás en la conversación; la referencia es el núcleo del control, 20 tipos y unos 50 miembros. |
 | D6 | Los umbrales de §8. | Los de §8, hasta tener una corrida que los corrija. |
 | D7 | Si las autopsias quedan prendidas durante los experimentos. | Sí: es el ambiente en el que se trabajaría de verdad. Se cuentan aparte. |
-| **D8** | Sobre qué rama y versión se construye. | Rama nueva desde `tests-como-llamadores`, versión 0.18.0, en un worktree propio. |
+| **D8** | Sobre qué rama y versión se construye. | En `main`, el único checkout de cerco. C0 es 0.18.0; C1 a C3, 0.19.0. |
 
-En negrita, las que bloquean P1.
+En negrita, las que bloquean P1. **Tomadas el 2026-11-13 con la recomendación** (Fernando dijo «dale empezá» sin
+elegir otra): D1 a D8 como están en la tabla. D8 cambió porque ya no hay worktrees de cerco.
 
 ---
 
@@ -397,3 +400,53 @@ En negrita, las que bloquean P1.
 cerco-demo. Verificado ese día: `vista` no tiene camino de la vista hacia el dato (ningún archivo de `src/main` con
 `DocumentListener`, `<input` ni `Editable`), así que la tarea B es nueva; cerco-demo está en 0.2.0 con la línea de
 base vacía, las excepciones firmadas y el árbol limpio; cerco 0.17.3 está en `cerco-lectura`, también limpio.
+
+**2026-11-13, P1: C0 en cerco 0.18.0.** `survey` imprime, además de lo que ya imprimía, una tabla de superficie por
+módulo: tipos y miembros en cada alcance, S2 (`promised`, la parte de los miembros públicos que declara una
+interfaz), S3 (cuántas firmas públicas dicen `String`, `Object`, un `boolean` como parámetro o una función) y S4
+(`unnamed`, miembros públicos cuyo nombre simple no aparece en ninguna llamada, referencia, creación ni nombre del
+proyecto, tests incluidos). Paquete `com.fpetrola.cerco.surface`; `SurfacesTest` y `SelfCheckTest` verdes.
+
+Decisiones de medida tomadas al construirlo, a revisar en C1:
+
+- Un método con `@Override` no es superficie de su tipo: la ofrece el supertipo. Tampoco el accesor explícito de un
+  componente de record, los constructores de enum ni lo que está en clases locales o anónimas.
+- Alcance `interfaces`: interfaces efectivamente públicas y sus miembros. Una interfaz de paquete no cuenta, porque
+  no la ve otro módulo; por eso `vista-binding` da 0 donde §1.3 contaba 1, y `vista-swing` 1 donde contaba 3.
+- La apertura es la efectiva: un método público de una clase de paquete es de paquete.
+- Los constructores implícitos no cuentan. Las firmas usan los tipos como están escritos, sin resolver.
+- S4 se calcula en el mismo paso y no con `unused-member`, que no mira métodos abstractos.
+
+**E0, superficie de `vista`** (tipos/miembros; corrido sin tocar cerco-demo, con
+`mvn com.fpetrola:cerco-maven-plugin:0.18.0:survey -Dcerco.rules=all`):
+
+| módulo | interfaces | public | all | promised | String | Object | boolean | función | unnamed |
+|---|---|---|---|---|---|---|---|---|---|
+| vista-data | 4/8 | 10/26 | 10/26 | 31% | 9 | 0 | 0 | 4 | 0 |
+| vista-view | 4/5 | 6/19 | 6/19 | 26% | 8 | 0 | 0 | 1 | 0 |
+| vista-binding | 0/0 | 4/9 | 8/13 | 0% | 3 | 0 | 0 | 0 | 0 |
+| vista-swing | 1/1 | 6/9 | 28/57 | 11% | 3 | 0 | 0 | 0 | 0 |
+| vista-html | 1/1 | 4/9 | 19/51 | 11% | 7 | 0 | 0 | 1 | 0 |
+| vista-demo | 0/0 | 7/21 | 8/22 | 0% | 7 | 0 | 0 | 0 | 2 |
+| **total** | **10/15** | **37/93** | **79/188** | **16%** | **37** | **0** | **0** | **6** | **2** |
+
+Lectura: los 37 tipos públicos coinciden con §1.3. En el núcleo (`data`, `view`, `binding`) la parte diseñada como
+interfaz es entre 0% y 31%; en `swing` y `html` la superficie `all` es seis veces la pública, que es lo que E1b va a
+sellar. 37 de las 93 firmas públicas dicen `String`.
+
+**E0, reglas de hoy sobre `vista`** (2.390 líneas, 53 reglas y candidatas; 44 sin hallazgos):
+
+| regla | hallazgos | por mil líneas | dónde |
+|---|---|---|---|
+| no-cast | 5 | 2,09 | swing |
+| no-suppressed-warning | 4 | 1,67 | swing |
+| no-type-keyed-map | 3 | 1,26 | swing |
+| no-type-code | 1 | 0,42 | swing |
+| flag-argument | 1 | 0,42 | html |
+| overridden-to-nothing | 1 | 0,42 | html |
+| dispatch-by-key | 1 | 0,42 | html |
+| constant-argument | 1 | 0,42 | data |
+| handed-out-whole | 1 | 0,42 | demo |
+| **total** | **18** | **7,53** | |
+
+Es el piso de Q1 para el control: lo que las reglas llegadas después de 0.2.0 le marcan a `vista`.

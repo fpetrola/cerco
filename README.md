@@ -260,7 +260,7 @@ acepta `approve`:
 | `install-hooks` | una vez por proyecto | escribe los hooks y las reglas `deny` en `.claude/settings.json` |
 | `explain` | a mano | las reglas, con su principio, su remedio y lo congelado |
 | `autopsies` | a mano | las reglas que proponen las autopsias archivadas, las más pedidas primero |
-| `survey` | a mano | mide reglas por módulo sin tocar la línea de base: las candidatas, las de `-Dcerco.rules=a,b`, o todas con `-Dcerco.rules=all`; imprime también cuántos hallazgos de cada módulo leen como cada modelo que falta; cuántos hallazgos, cuántos por mil líneas y una muestra para juzgar a mano (`-Dcerco.sample=N`, 10 por defecto) |
+| `survey` | a mano | mide reglas por módulo sin tocar la línea de base: las candidatas, las de `-Dcerco.rules=a,b`, o todas con `-Dcerco.rules=all`; imprime también cuántos hallazgos de cada módulo leen como cada modelo que falta, y la superficie de cada módulo (tipos y miembros en los alcances `interfaces`, `public` y `all`, qué parte declara una interfaz, cuántas firmas dicen `String`, `Object`, `boolean` o una función, y cuántos miembros nadie nombra); cuántos hallazgos, cuántos por mil líneas y una muestra para juzgar a mano (`-Dcerco.sample=N`, 10 por defecto) |
 
 Los reportes también quedan en `target/cerco/<alcance>.json`.
 
