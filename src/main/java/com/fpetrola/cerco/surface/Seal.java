@@ -19,6 +19,7 @@ import java.util.stream.Stream;
  */
 public final class Seal {
   private static final String ROOT_MODULE = "_root";
+  private static final String DROPPED = "dropped.txt";
   private final Path directory;
   private boolean adopting;
 
@@ -65,8 +66,34 @@ public final class Seal {
     if (!dropped.isEmpty()) {
       signed.removeAll(dropped);
       write(module, signed);
+      Set<String> log = lines(directory.resolve(DROPPED));
+      dropped.forEach(signature -> log.add(module + ": " + signature));
+      write(directory.resolve(DROPPED), log);
     }
     return dropped;
+  }
+
+  /** Grows the module's seal by these signatures: what a person signed. It closes the list of what was dropped. */
+  public void grow(String module, List<String> signatures) {
+    Set<String> signed = read(module);
+    signed.addAll(signatures);
+    write(module, signed);
+    try {
+      Files.deleteIfExists(directory.resolve(DROPPED));
+    } catch (IOException e) {
+      throw new UncheckedIOException("could not clear " + directory.resolve(DROPPED), e);
+    }
+  }
+
+  /** What left the seal since the last signature, `module: signature`, for the next one to list. */
+  public List<String> dropped() {
+    return List.copyOf(lines(directory.resolve(DROPPED)));
+  }
+
+  /** Whether some signature of the seal, of any module, says this: `Type#member`, or part of a signature. */
+  boolean says(String fragment) {
+    return sealedFiles().stream()
+        .flatMap(file -> lines(file).stream()).anyMatch(signature -> signature.contains(fragment));
   }
 
   private Set<String> signatures(List<Member> offered) {
@@ -78,23 +105,31 @@ public final class Seal {
   }
 
   private Set<String> read(String module) {
-    if (!covers(module)) {
-      return new TreeSet<>();
-    }
-    try {
-      return Files.readAllLines(fileOf(module), StandardCharsets.UTF_8).stream().filter(line -> !line.isBlank())
-          .collect(Collectors.toCollection(TreeSet::new));
-    } catch (IOException e) {
-      throw new UncheckedIOException("could not read the seal " + fileOf(module), e);
-    }
+    return lines(fileOf(module));
   }
 
   private void write(String module, Set<String> signatures) {
+    write(fileOf(module), signatures);
+  }
+
+  private Set<String> lines(Path file) {
+    if (!Files.isRegularFile(file)) {
+      return new TreeSet<>();
+    }
+    try {
+      return Files.readAllLines(file, StandardCharsets.UTF_8).stream().filter(line -> !line.isBlank())
+          .collect(Collectors.toCollection(TreeSet::new));
+    } catch (IOException e) {
+      throw new UncheckedIOException("could not read the seal " + file, e);
+    }
+  }
+
+  private void write(Path file, Set<String> lines) {
     try {
       Files.createDirectories(directory);
-      Files.write(fileOf(module), new ArrayList<>(signatures), StandardCharsets.UTF_8);
+      Files.write(file, new ArrayList<>(lines), StandardCharsets.UTF_8);
     } catch (IOException e) {
-      throw new UncheckedIOException("could not write the seal " + fileOf(module), e);
+      throw new UncheckedIOException("could not write the seal " + file, e);
     }
   }
 
@@ -103,7 +138,8 @@ public final class Seal {
       return List.of();
     }
     try (Stream<Path> files = Files.list(directory)) {
-      return files.filter(file -> file.getFileName().toString().endsWith(".txt")).toList();
+      return files.filter(file -> file.getFileName().toString().endsWith(".txt")
+          && !file.getFileName().toString().equals(DROPPED)).toList();
     } catch (IOException e) {
       throw new UncheckedIOException("could not list the seal " + directory, e);
     }

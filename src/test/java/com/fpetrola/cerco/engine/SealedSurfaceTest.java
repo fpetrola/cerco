@@ -6,6 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.Settings;
+import com.fpetrola.cerco.surface.Proposal;
+import com.fpetrola.cerco.surface.Seal;
+import java.time.LocalDate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -110,5 +113,76 @@ class SealedSurfaceTest {
     engine.freeze(whole(root));
     engine.run(whole(root));
     assertFalse(Files.exists(root.resolve(".cerco/surface")));
+  }
+
+  private Path grown(Path root) throws IOException {
+    return write(root, "src/main/java/p/Shown.java",
+        "package p; public interface Shown { void show(String text); void hide(); }");
+  }
+
+  private void complete(Path root) throws IOException {
+    write(root, "src/test/java/p/ShownContract.java", "package p; abstract class ShownContract { }");
+    Path proposal = root.resolve("surface/pending/proposal.md");
+    String text = Files.readString(proposal);
+    Files.writeString(proposal, text
+        .replaceFirst("(## Need\\n\\n)<!--.*?-->", "$1" + "A view has to take its text away again when the data it "
+            + "shows is gone, and nothing sealed can do that: show only puts text in, so the empty view would keep the "
+            + "last value it was given.")
+        .replaceFirst("(## Considered\\n\\n)<!--.*?-->", "$1p.Shown#show with an empty text: it reads as data.")
+        .replaceFirst("(## Removes\\n\\n)<!--.*?-->", "$1none")
+        .replaceFirst("(## Contract\\n\\n)<!--.*?-->", "$1src/test/java/p/ShownContract.java"));
+  }
+
+  @Test
+  void anIncompleteProposalIsTheAgentsRed(@TempDir Path root) throws IOException {
+    Engine engine = adopted(root);
+    grown(root);
+    Outcome run = engine.run(whole(root));
+    assertEquals(1, unsigned(run).size());
+    assertTrue(Files.readString(root.resolve("surface/pending/proposal.md")).contains("`p.Shown#hide(): void`"));
+    assertTrue(run.notes().stream().anyMatch(note -> note.contains("Need")), run.notes().toString());
+    assertTrue(run.awaitingSignature().isEmpty());
+  }
+
+  @Test
+  void aCompleteProposalWaitsForAPersonAndTheirSignatureGrowsTheSeal(@TempDir Path root) throws IOException {
+    Engine engine = adopted(root);
+    grown(root);
+    engine.run(whole(root));
+    complete(root);
+    Outcome run = engine.run(whole(root));
+    assertEquals(List.of(), unsigned(run));
+    assertEquals(1, run.awaitingSignature().size());
+    assertTrue(run.problems().stream().anyMatch(problem -> problem.contains("is complete")), run.problems().toString());
+    Seal seal = new Seal(root.resolve(".cerco/surface"));
+    new Proposal(root, seal).sign(run.awaitingSignature(), "a person", LocalDate.of(2026, 11, 13));
+    assertTrue(seal(root, "_root").contains("p.Shown#hide(): void"));
+    assertFalse(Files.exists(root.resolve("surface/pending/proposal.md")));
+    assertTrue(Files.readString(root.resolve("surface/0001.md")).contains("signed by a person on 2026-11-13"));
+    Outcome after = engine.run(whole(root));
+    assertEquals(List.of(), unsigned(after));
+    assertTrue(after.awaitingSignature().isEmpty());
+  }
+
+  @Test
+  void whatLeftTheSealIsListedUntilTheNextSignature(@TempDir Path root) throws IOException {
+    Engine engine = adopted(root);
+    write(root, "src/main/java/p/Shown.java", "package p; public interface Shown { }");
+    engine.run(whole(root));
+    Seal seal = new Seal(root.resolve(".cerco/surface"));
+    assertEquals(List.of(": p.Shown#show(String): void"), seal.dropped());
+    seal.grow("", List.of());
+    assertEquals(List.of(), seal.dropped());
+  }
+
+  @Test
+  void aConsideredMemberThatIsNotSealedDoesNotCount(@TempDir Path root) throws IOException {
+    Engine engine = adopted(root);
+    grown(root);
+    engine.run(whole(root));
+    complete(root);
+    Path proposal = root.resolve("surface/pending/proposal.md");
+    Files.writeString(proposal, Files.readString(proposal).replace("p.Shown#show", "p.Shown#paint"));
+    assertTrue(engine.run(whole(root)).notes().stream().anyMatch(note -> note.contains("Considered")));
   }
 }

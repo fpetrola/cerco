@@ -22,6 +22,8 @@ import com.fpetrola.cerco.project.Recall;
 import com.fpetrola.cerco.rules.BudgetRule;
 import com.fpetrola.cerco.rules.Rule;
 import com.fpetrola.cerco.rules.Rules;
+import com.fpetrola.cerco.surface.Proposal;
+import com.fpetrola.cerco.surface.Seal;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -46,6 +48,7 @@ public final class Engine {
   private final Clock clock;
   private final Autopsies autopsies;
   private final Recall recall;
+  private final Proposal proposal;
   private final Feed feed = new Feed(new Parser(), new Generated());
   private final Reconciler reconciler = new Reconciler();
   private final CeilingReconciler ceilings = new CeilingReconciler();
@@ -60,6 +63,7 @@ public final class Engine {
     this.projectVersion = projectVersion;
     this.clock = clock;
     this.autopsies = new Autopsies(root, rules.ids(), store);
+    this.proposal = new Proposal(root, new Seal(root.resolve(".cerco").resolve("surface")));
     this.recall = new Recall(root.resolve("target").resolve("cerco").resolve("project.json"));
   }
 
@@ -113,7 +117,8 @@ public final class Engine {
     List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed, problems);
     Applied applied = exempt(signed, tally.fresh(), scope.full());
     List<Finding> fresh = new ArrayList<>(applied.remaining());
-    fresh.addAll(unsigned);
+    List<Finding> awaiting = proposed(unsigned, scope.full(), notes, problems);
+    unsigned.stream().filter(finding -> !awaiting.contains(finding)).forEach(fresh::add);
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
     if (store.exists()) {
@@ -124,7 +129,7 @@ public final class Engine {
     }
     long millis = (System.nanoTime() - start) / 1_000_000;
     return new Outcome(scope.label(), parsed, fresh, applied.exempted(), tally.solved(),
-        tally.frozen(), owed, notes, problems, millis);
+        tally.frozen(), owed, notes, problems, millis, awaiting);
   }
 
   /**
@@ -150,6 +155,28 @@ public final class Engine {
     } else {
       witness.recordSome(runs.digests());
     }
+  }
+
+  /**
+   * The surface the seal lacks goes into the one proposal, rewritten on a whole run. While the proposal lacks
+   * something, the findings are the agent's; once it is complete they await a person's signature, and the agent may
+   * stop.
+   */
+  private List<Finding> proposed(List<Finding> unsigned, boolean full, List<String> notes, List<String> problems) {
+    if (full) {
+      proposal.settle(unsigned);
+    }
+    if (unsigned.isEmpty()) {
+      return List.of();
+    }
+    List<String> missing = proposal.missing();
+    if (!missing.isEmpty()) {
+      notes.addAll(missing);
+      return List.of();
+    }
+    problems.add("surface/pending/proposal.md is complete: a person reads it and signs with `mvn cerco:approve`, "
+        + "or says no and the new members are taken back. Not yours; tell them and stop.");
+    return unsigned;
   }
 
   /** Freezes the project as it stands: every current finding and every oversize measure become the baseline. */

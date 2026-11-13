@@ -4,7 +4,12 @@ import com.fpetrola.cerco.engine.Engine;
 import com.fpetrola.cerco.exemptions.Approval;
 import com.fpetrola.cerco.exemptions.Loaded;
 import com.fpetrola.cerco.hooks.Terminal;
+import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.surface.Proposal;
+import com.fpetrola.cerco.surface.Seal;
 import java.io.Console;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +18,8 @@ import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * A person signs the exemptions and the configuration as they stand, and accepts what only a person can about cerco
- * itself (a rule gone, defaults changed, findings a changed rule stopped seeing). It insists on a terminal: an
+ * itself (a rule gone, defaults changed, findings a changed rule stopped seeing), and the surface a complete
+ * proposal asks for, as the code offers it now. It insists on a terminal: an
  * agent's shell has none, which is the point.
  */
 @Mojo(name = "approve", aggregator = true)
@@ -42,6 +48,8 @@ public final class ApproveMojo extends AbstractCercoMojo {
     engine.witness().problems().forEach(problem -> console.printf("  and accept: %s%n", problem));
     List<String> awaiting = engine.autopsies().settle().awaiting();
     awaiting.forEach(id -> console.printf("  and file, as no rule could catch it: autopsies/pending/%s.md%n", id));
+    Seal seal = new Seal(root().resolve(".cerco").resolve("surface"));
+    List<Finding> unsigned = surfaceToSign(engine, console, seal);
     String answer = Optional.ofNullable(console.readLine("Type 'yes' to approve: ")).orElse("");
     if (!answer.strip().equalsIgnoreCase("yes")) {
       throw new MojoFailureException("cerco: not approved, nothing was written to " + engine.approvalFile()
@@ -52,7 +60,29 @@ public final class ApproveMojo extends AbstractCercoMojo {
         .write(engine.approvalFile());
     engine.witness().accept();
     engine.autopsies().accept(awaiting);
+    if (!unsigned.isEmpty()) {
+      new Proposal(root(), seal).sign(unsigned, approver(), LocalDate.now());
+    }
     console.printf("cerco: approved and recorded in %s; commit it%n", engine.approvalFile());
+  }
+
+  /** The surface a complete proposal asks for, shown with the proposal and with what left the seal since. */
+  private List<Finding> surfaceToSign(Engine engine, Console console, Seal seal) throws MojoFailureException {
+    List<Finding> unsigned = engine.run(reactor()).awaitingSignature();
+    if (!unsigned.isEmpty()) {
+      console.printf("  and grow the sealed surface, as surface/pending/proposal.md asks:%n%s%n",
+          proposalText().replaceAll("(?s)<!--.*?-->", ""));
+    }
+    seal.dropped().forEach(gone -> console.printf("  noting what left the seal since the last signature: %s%n", gone));
+    return unsigned;
+  }
+
+  private String proposalText() throws MojoFailureException {
+    try {
+      return Files.readString(root().resolve("surface").resolve("pending").resolve("proposal.md"));
+    } catch (IOException e) {
+      throw new MojoFailureException("cerco: could not read surface/pending/proposal.md", e);
+    }
   }
 
   private String approver() {

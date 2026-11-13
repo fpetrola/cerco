@@ -6,10 +6,11 @@ import java.util.List;
 
 /**
  * Everything one run has to say. Green means nothing new, no autopsy owed for what was fixed, and nothing wrong with
- * the exemptions or the approval.
+ * the exemptions or the approval. What awaits signature is the surface a complete proposal asks for: not the
+ * agent's to fix, so not fresh, but a problem until a person signs it.
  */
 public record Outcome(String label, int parsed, List<Finding> fresh, List<Finding> exempted, int solved, int frozen,
-    List<Owed> owed, List<String> notes, List<String> problems, long millis) {
+    List<Owed> owed, List<String> notes, List<String> problems, long millis, List<Finding> awaitingSignature) {
 
   public boolean green() {
     return fresh.isEmpty() && owed.isEmpty() && problems.isEmpty();

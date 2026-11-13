@@ -11,7 +11,8 @@ Diseñar cada capa primero como interfaces, sellarla en cerco, y que sólo crezc
 > **Sobre qué cerco.** Desde el 2026-11-13 hay un solo checkout de cerco, en `main`; `tests-como-llamadores` ya
 > está ahí. C0 salió en 0.18.0. cerco-demo y zx-lift siguen en 0.2.0.
 >
-> **Avance.** P0 y P1 hechos (§12). P2 en curso: C1 hecho en 0.19.0 (§5.1, §12); siguen C2 (la propuesta) y la firma del sello.
+> **Avance.** P0 y P1 hechos (§12). P2: C1 en 0.19.0, C2 en 0.20.0, C3 entró con C1 (§12). Falta que Fernando pruebe `approve` en una terminal
+> y la autoaplicación de cerco bajo su propio sello.
 
 ---
 
@@ -494,3 +495,22 @@ persona. Visto de paso: esa copia, con línea de base de 0.2.0, da 13 hallazgos 
 
 Falta para cerrar P2: C2 (la propuesta en `surface/pending/` y que `approve` la firme y agrande el sello). Hasta
 entonces la única salida del rojo es quitar el miembro o editar el sello a mano, que el guard le niega al agente.
+
+**2026-11-13, P2: C2 en cerco 0.20.0.** La propuesta, con las tres recomendaciones aceptadas: `approve` no agranda el
+sello sin una propuesta completa; las firmadas se archivan en `surface/NNNN.md`, fuera de `.cerco/`; hay una sola
+propuesta para todos los módulos. Superficie nueva, la acordada: `Proposal` (constructor, `settle`, `missing`,
+`sign`), `Seal.grow`, `Seal.dropped` y `Outcome.awaitingSignature`.
+
+- Una corrida completa reescribe `surface/pending/proposal.md`: cerco escribe la sección Grows y conserva Need,
+  Considered, Removes y Contract. Si ya nada crece, la borra.
+- Mientras le falte algo, los hallazgos son del agente y lo que falta sale como nota. Cuando está completa dejan de
+  ser frescos: pasan a `awaitingSignature` y queda un problema para una persona, así que el hook deja terminar.
+- `approve` corre el reactor entero, muestra la propuesta y lo que salió del sello desde la última firma, y con
+  `yes` firma lo que el código ofrece en ese momento, no lo que dice el archivo.
+- La autoaplicación obligó a dos cambios: `Proposal` lee las secciones por su cuenta, porque usar `Form` de las
+  autopsias armaba un ciclo de paquetes, y `approve` sacó la parte de la superficie a un método aparte por largo.
+
+`SealedSurfaceTest` suma propuesta incompleta, propuesta completa y firma, lista de lo que salió y miembro
+considerado que no está sellado; 175 tests verdes. Probado en la copia de cerco-demo: el `audit` escribe la
+propuesta con `Textual#edit(Runnable)` en Grows y cuatro notas de lo que falta. La firma con `approve` no se puede
+probar sin una terminal; queda para Fernando.

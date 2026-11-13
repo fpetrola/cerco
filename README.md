@@ -269,7 +269,7 @@ Los reportes también quedan en `target/cerco/<alcance>.json`.
 No hace falta. Si un proyecto necesita apartarse de los valores por defecto, va en el `<configuration>` del plugin y
 requiere firma (`approve`): `fileCeiling` (400), `methodCeiling` (40), `utilitySuffixes`, `factoryPrefixes`,
 `generated` (globs de código generado), `maxExemptions` (10), `includeTests` (false), `disabledRules`,
-`autopsies` (true), `declinedRules` (reglas propuestas por autopsias que una persona decidió no construir), `sealedSurface` (ninguno: `interfaces`, `public` o `all` sella la superficie de cada módulo en `.cerco/surface/`; todo miembro que otros pueden usar y una persona no firmó es un hallazgo que no se congela ni se exceptúa).
+`autopsies` (true), `declinedRules` (reglas propuestas por autopsias que una persona decidió no construir), `sealedSurface` (ninguno: `interfaces`, `public` o `all` sella la superficie de cada módulo en `.cerco/surface/`; todo miembro que otros pueden usar y una persona no firmó es un hallazgo que no se congela ni se exceptúa; la salida es quitarlo o completar `surface/pending/proposal.md`, que cerco escribe con lo que crece y que `approve` firma, agrandando el sello y archivándola en `surface/NNNN.md`).
 
 ## Medido sobre zx-lift (38 módulos, 1577 archivos analizados, 52 MB de fuentes en el repo)
 
