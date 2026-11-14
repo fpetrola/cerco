@@ -73,6 +73,10 @@ public final class ApproveMojo extends AbstractCercoMojo {
       console.printf("  and grow the sealed surface, as surface/pending/proposal.md asks:%n%s%n",
           proposalText().replaceAll("(?s)<!--.*?-->", ""));
     }
+    if (unsigned.isEmpty() && Files.isRegularFile(root().resolve("surface").resolve("pending").resolve("proposal.md"))) {
+      console.printf("  but not surface/pending/proposal.md, which is not complete; the seal stays as it is:%n");
+      new Proposal(root(), seal).missing().forEach(item -> console.printf("    - %s%n", item));
+    }
     seal.dropped().forEach(gone -> console.printf("  noting what left the seal since the last signature: %s%n", gone));
     return unsigned;
   }

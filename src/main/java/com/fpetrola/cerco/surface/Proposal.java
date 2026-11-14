@@ -29,6 +29,7 @@ public final class Proposal {
   static final String REMOVES = "Removes";
   static final String CONTRACT = "Contract";
   static final int NEED_LENGTH = 150;
+  static final int NONE_LENGTH = 40;
   private static final Pattern MEMBER = Pattern.compile("[\\w.$]+#[\\w<>$]+");
   private static final Pattern PATH = Pattern.compile("[\\w./-]+\\.java");
   private final Path root;
@@ -59,15 +60,17 @@ public final class Proposal {
   /** What the form still lacks to be read by a person; empty when it is complete. */
   public List<String> missing() {
     if (!Files.isRegularFile(file)) {
-      return List.of("surface/pending/proposal.md does not exist yet: a whole run (mvn verify) writes it");
+      return List.of("surface/pending/proposal.md does not exist yet: a whole run (mvn cerco:audit) writes it");
     }
     Map<String, String> form = sections(read());
     List<String> missing = new ArrayList<>();
     if (form.getOrDefault(NEED, "").length() < NEED_LENGTH) {
       missing.add(NEED + ": what the sealed surface cannot do, in " + NEED_LENGTH + " characters or more");
     }
-    if (MEMBER.matcher(form.getOrDefault(CONSIDERED, "")).results().map(MatchResult::group).noneMatch(seal::says)) {
-      missing.add(CONSIDERED + ": a sealed member, written Type#member as the seal has it, and why it falls short");
+    if (!considered(form.getOrDefault(CONSIDERED, ""), growing(form.getOrDefault(GROWS, "")))) {
+      missing.add(CONSIDERED + ": a sealed member, written Type#member as the seal has it, and why it falls short; "
+          + "`none:` and why, in " + NONE_LENGTH + " characters or more, only when nothing is sealed yet in the "
+          + "modules that grow");
     }
     if (form.getOrDefault(REMOVES, "").isBlank()) {
       missing.add(REMOVES + ": the sealed members this proposal takes away, or `none`");
@@ -77,6 +80,23 @@ public final class Proposal {
       missing.add(CONTRACT + ": the path of an existing test under src/test that says what the new members promise");
     }
     return missing.stream().map(item -> "surface/pending/proposal.md, " + item).toList();
+  }
+
+  /**
+   * Whether the proposal says what sealed member it weighed. A module's first design has nothing sealed to weigh: when
+   * every module that grows is empty in the seal, `none:` with a reason says so.
+   */
+  private boolean considered(String said, List<String> modules) {
+    if (MEMBER.matcher(said).results().map(MatchResult::group).anyMatch(seal::says)) {
+      return true;
+    }
+    return said.startsWith("none") && said.length() >= NONE_LENGTH && modules.stream().allMatch(seal::holdsNothing);
+  }
+
+  /** The modules the Grows section names, as cerco wrote them: `- module` lines, the project as the empty name. */
+  private List<String> growing(String grows) {
+    return grows.lines().filter(line -> line.startsWith("- ")).map(line -> line.substring(2).strip())
+        .map(module -> module.equals("the project") ? "" : module).toList();
   }
 
   /** Grows the seal by what is unsigned now and files the proposal, signed, as surface/<NNNN>.md. */
@@ -104,7 +124,8 @@ public final class Proposal {
         + "## " + GROWS + "\n\n" + grows + "\n"
         + section(written, NEED, "What the sealed surface cannot do that the task needs, in "
             + NEED_LENGTH + " characters or more.")
-        + section(written, CONSIDERED, "At least one sealed member, written Type#member, and why it falls short.")
+        + section(written, CONSIDERED, "At least one sealed member, written Type#member, and why it falls short. "
+            + "When nothing is sealed yet in the modules that grow: `none:` and why.")
         + section(written, REMOVES, "The sealed members this proposal takes away, or `none`.")
         + section(written, CONTRACT, "The path of an existing test under src/test that says what the new members "
             + "promise.");

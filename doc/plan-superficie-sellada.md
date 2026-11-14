@@ -529,3 +529,12 @@ En cerco-demo, `main` queda intacto y hay tres ramas:
 
 Los dos sellos coinciden con E0 (10/15 y 79/188). Falta que Fernando lea cada sello, anote cuánto tardó y firme
 con `approve` en cada worktree; después, un worktree por corrida, que sale de esas ramas.
+
+**2026-11-14, cerco 0.20.1: la primera propuesta sobre un sello vacío.** Lo reportó la sesión de cerco-demo-2: 72
+interfaces en cuatro módulos, 351 hallazgos, y la propuesta no se podía completar porque Considered exigía un miembro
+sellado que no existía. `approve` firmó la configuración y dejó la propuesta sin decir por qué, y el hook de Stop
+retuvo al agente sin que le quedara nada por hacer. Arreglo: Considered acepta `none:` con un motivo de 40
+caracteres o más cuando ningún módulo que crece tiene algo sellado; `approve` dice qué le falta a una propuesta
+pendiente que no toma; la nota de propuesta inexistente nombra `mvn cerco:audit`, que es la corrida que la escribe.
+Lección para el método: el formulario se diseñó pensando en enmiendas, y el diseño inicial (regla 4 de §3) es la
+primera propuesta.

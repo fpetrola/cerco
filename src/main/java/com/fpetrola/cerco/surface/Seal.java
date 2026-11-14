@@ -90,6 +90,11 @@ public final class Seal {
     return List.copyOf(lines(directory.resolve(DROPPED)));
   }
 
+  /** Whether the module's seal has no signature: never sealed, or sealed empty. */
+  boolean holdsNothing(String module) {
+    return read(module).isEmpty();
+  }
+
   /** Whether some signature of the seal, of any module, says this: `Type#member`, or part of a signature. */
   boolean says(String fragment) {
     return sealedFiles().stream()

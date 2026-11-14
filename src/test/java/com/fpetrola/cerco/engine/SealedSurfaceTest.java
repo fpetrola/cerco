@@ -185,4 +185,25 @@ class SealedSurfaceTest {
     Files.writeString(proposal, Files.readString(proposal).replace("p.Shown#show", "p.Shown#paint"));
     assertTrue(engine.run(whole(root)).notes().stream().anyMatch(note -> note.contains("Considered")));
   }
+
+  @Test
+  void aFirstDesignHasNothingSealedToConsider(@TempDir Path root) throws IOException {
+    write(root, ".cerco/surface/_root.txt", "");
+    Engine engine = new Engine(sealing, root, "1.0", clock);
+    write(root, "m2/src/main/java/q/Other.java", "package q; public interface Other { void go(); }");
+    engine.freeze(whole(root));
+    engine.run(whole(root));
+    write(root, "src/test/java/p/OtherContract.java", "package p; abstract class OtherContract { }");
+    Path proposal = root.resolve("surface/pending/proposal.md");
+    String filled = Files.readString(proposal)
+        .replaceFirst("(## Need\\n\\n)<!--.*?-->", "$1" + "x".repeat(160))
+        .replaceFirst("(## Removes\\n\\n)<!--.*?-->", "$1none")
+        .replaceFirst("(## Contract\\n\\n)<!--.*?-->", "$1src/test/java/p/OtherContract.java");
+    Files.writeString(proposal, filled.replaceFirst("(## Considered\\n\\n)<!--.*?-->", "$1none"));
+    assertTrue(engine.run(whole(root)).notes().stream().anyMatch(note -> note.contains("Considered")));
+    Files.writeString(proposal, filled.replaceFirst("(## Considered\\n\\n)<!--.*?-->",
+        "$1none: m2 is new, its first design has nothing sealed to weigh"));
+    Outcome run = engine.run(whole(root));
+    assertEquals(2, run.awaitingSignature().size(), run.notes().toString());
+  }
 }
