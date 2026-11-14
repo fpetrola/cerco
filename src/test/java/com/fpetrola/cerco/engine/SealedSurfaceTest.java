@@ -51,7 +51,8 @@ class SealedSurfaceTest {
   }
 
   private List<String> seal(Path root, String module) throws IOException {
-    return Files.readAllLines(root.resolve(".cerco/surface").resolve(module + ".txt"));
+    assertTrue(Files.isRegularFile(root.resolve(".cerco/surface").resolve(module + ".yaml")));
+    return new Seal(root.resolve(".cerco/surface")).signed(module);
   }
 
   private Engine adopted(Path root) throws IOException {

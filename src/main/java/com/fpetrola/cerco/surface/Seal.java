@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * What a person signed of each module's surface: .cerco/surface/<module>.txt, one signature per line, sorted, so a
+ * What a person signed of each module's surface: .cerco/surface/<module>.yaml, grouped by type and sorted, so a
  * diff of it reads as a change of design. A project that was never sealed adopts the seal as its modules stand; once
  * it has one, a module without its file starts empty, so a new module is new surface like any other.
  */
@@ -28,7 +28,7 @@ public final class Seal {
   }
 
   public boolean covers(String module) {
-    return Files.isRegularFile(fileOf(module));
+    return Files.isRegularFile(fileOf(module)) || Files.isRegularFile(legacyOf(module));
   }
 
   /**
@@ -63,6 +63,9 @@ public final class Seal {
     Set<String> signed = read(module);
     Set<String> kept = signatures(offered);
     List<String> dropped = signed.stream().filter(signature -> !kept.contains(signature)).toList();
+    if (dropped.isEmpty() && Files.isRegularFile(legacyOf(module))) {
+      write(module, signed);
+    }
     if (!dropped.isEmpty()) {
       signed.removeAll(dropped);
       write(module, signed);
@@ -90,6 +93,11 @@ public final class Seal {
     return List.copyOf(lines(directory.resolve(DROPPED)));
   }
 
+  /** What the module's seal holds, sorted. */
+  public List<String> signed(String module) {
+    return List.copyOf(read(module));
+  }
+
   /** Whether the module's seal has no signature: never sealed, or sealed empty. */
   boolean holdsNothing(String module) {
     return read(module).isEmpty();
@@ -98,12 +106,12 @@ public final class Seal {
   /** Whether some signature of the seal, of any module, says this: `Type#member`, or part of a signature. */
   boolean says(String fragment) {
     return sealedFiles().stream()
-        .flatMap(file -> lines(file).stream()).anyMatch(signature -> signature.contains(fragment));
+        .flatMap(file -> new SealFile(file).signatures().stream()).anyMatch(signature -> signature.contains(fragment));
   }
 
   /** Whether this exact signature was signed before: in the seal of some module, or dropped since the last signature. */
   boolean had(String signature) {
-    return sealedFiles().stream().anyMatch(file -> lines(file).contains(signature))
+    return sealedFiles().stream().anyMatch(file -> new SealFile(file).signatures().contains(signature))
         || dropped().stream().anyMatch(gone -> gone.endsWith(": " + signature));
   }
 
@@ -112,15 +120,29 @@ public final class Seal {
   }
 
   private Path fileOf(String module) {
-    return directory.resolve((module.isEmpty() ? ROOT_MODULE : module.replace('/', '.')) + ".txt");
+    return directory.resolve(named(module) + ".yaml");
+  }
+
+  /** Where versions before 0.23 kept the module's seal: read until the next write turns it into YAML. */
+  private Path legacyOf(String module) {
+    return directory.resolve(named(module) + ".txt");
+  }
+
+  private String named(String module) {
+    return module.isEmpty() ? ROOT_MODULE : module.replace('/', '.');
   }
 
   private Set<String> read(String module) {
-    return lines(fileOf(module));
+    return new SealFile(Files.isRegularFile(fileOf(module)) ? fileOf(module) : legacyOf(module)).signatures();
   }
 
   private void write(String module, Set<String> signatures) {
-    write(fileOf(module), signatures);
+    new SealFile(fileOf(module)).write(module, signatures);
+    try {
+      Files.deleteIfExists(legacyOf(module));
+    } catch (IOException e) {
+      throw new UncheckedIOException("could not remove " + legacyOf(module), e);
+    }
   }
 
   private Set<String> lines(Path file) {
@@ -149,7 +171,7 @@ public final class Seal {
       return List.of();
     }
     try (Stream<Path> files = Files.list(directory)) {
-      return files.filter(file -> file.getFileName().toString().endsWith(".txt")
+      return files.filter(file -> file.getFileName().toString().matches(".*\\.(txt|yaml)")
           && !file.getFileName().toString().equals(DROPPED)).toList();
     } catch (IOException e) {
       throw new UncheckedIOException("could not list the seal " + directory, e);

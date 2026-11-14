@@ -597,3 +597,8 @@ dropped.txt, es un traslado; Contract no tiene que nombrarla. Sigue siendo una p
 un Contract existente) y la firma una persona. El archivo de sello de un módulo que desaparece queda; borrarlo es
 achicar el sello y es libre.
 
+**2026-11-14, cerco 0.23.0: el sello en YAML.** Pedido de Fernando desde cerco-tdd: `.cerco/surface/<módulo>.yaml`,
+con `module` y `types`, cada tipo con su `kind` (si el tipo está sellado) y sus `members` sin el prefijo del tipo.
+Los `.txt` anteriores se leen igual y cada corrida completa reescribe en YAML los módulos que ve (y borra el `.txt`);
+un módulo que ya no está en el reactor queda en `.txt` hasta que se lo borre.
+
