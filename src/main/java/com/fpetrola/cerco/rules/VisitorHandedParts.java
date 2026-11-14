@@ -3,16 +3,12 @@ package com.fpetrola.cerco.rules;
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.MissingModel;
 import com.fpetrola.cerco.model.ParsedFile;
-import com.fpetrola.cerco.model.Reading;
-import com.fpetrola.cerco.project.Project;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * A visitor handed the object in parts: a method that takes a visitor calls it with `this` and, beside it, values of
@@ -20,7 +16,7 @@ import java.util.function.Function;
  * changes the visitor's signature and every visitor, the visited type's interface stays empty, and the application
  * ends up with getters too, two ways to the same datum.
  */
-public final class VisitorHandedParts extends SiteRule<Finding> {
+public final class VisitorHandedParts extends FoundInPlaceRule {
 
   @Override
   public String id() {
@@ -66,16 +62,6 @@ public final class VisitorHandedParts extends SiteRule<Finding> {
       }
     }
     return found;
-  }
-
-  @Override
-  protected Finding found(Finding site) {
-    return site;
-  }
-
-  @Override
-  protected Function<Finding, Optional<Reading>> reader(List<Finding> sites, Project project) {
-    return site -> Optional.empty();
   }
 
   private boolean handsParts(MethodCallExpr call, String visitor) {

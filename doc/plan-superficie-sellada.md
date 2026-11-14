@@ -612,3 +612,10 @@ agente.
 objeto en vez de visitarlo. Es regla de archivo y entra a la línea de base como las demás. No marca las visitas
 anidadas que entregan un valor sin `this` (`item(String)`, `checked()`).
 
+**2026-11-14, cerco 0.26.0: el recorrido del visitor, dentro del elemento.** Pedido de Fernando desde cerco-tdd, en
+dos reglas. `one-accept`, activa y de archivo: un tipo con más de un método accept* que recibe un *Visitor (acceptViews,
+acceptRows...) abre partes de su estructura a quien quiera recorrerlas. `walked-by-the-visitor`, candidata (sólo en
+`survey`): dentro de un método visit* o de un *Visitor, una llamada `x.accept*(...)` sobre un parámetro; el visitor
+elige qué recorrer. Queda como candidata porque los visitors jerárquicos hechos a propósito hacen lo mismo y hay que
+medirla antes de que frene algo.
+

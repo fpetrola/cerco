@@ -131,7 +131,7 @@ class RulesTest {
         List.of("no-switch"), true, List.of(), java.util.Optional.empty());
     assertTrue(new Rules(settings).ids().contains("no-instanceof"));
     assertTrue(!new Rules(settings).ids().contains("no-switch"));
-    assertEquals(42, new Rules(Settings.DEFAULTS).all().size());
+    assertEquals(43, new Rules(Settings.DEFAULTS).all().size());
   }
 
   @Test

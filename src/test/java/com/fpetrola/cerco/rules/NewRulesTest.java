@@ -326,4 +326,24 @@ class NewRulesTest {
     assertEquals(1, found.size());
     assertTrue(found.get(0).contains("hands the visitor this and 3 part(s)"), found.toString());
   }
+
+  @Test
+  void aTypeWithSeveralAcceptsIsWalkedFromOutside() {
+    List<String> found = details(new AcceptedManyWays(),
+        "package p; class Window { public void accept(ViewVisitor v) { for (Placement p : all) p.accept(v); }"
+            + " public void acceptChildren(ChildVisitor v) { } void acceptNothing(String s) { } }"
+            + " class Label { public void accept(ViewVisitor v) { v.label(this); } }");
+    assertEquals(1, found.size());
+    assertTrue(found.get(0).contains("Window has 2 accepts [accept, acceptChildren]"), found.toString());
+  }
+
+  @Test
+  void aVisitorThatDrivesTheWalkIsACandidate() {
+    List<String> found = details(new WalkedByTheVisitor(),
+        "package p; class AtFocus implements ViewVisitor { public void window(Window window) {"
+            + " window.acceptViews(this); } public void label(Label label) { label.text(); } }"
+            + " class Window { public void accept(ViewVisitor v) { v.window(this); } }");
+    assertEquals(1, found.size());
+    assertTrue(found.get(0).contains("`window.acceptViews(this)` in window"), found.toString());
+  }
 }
