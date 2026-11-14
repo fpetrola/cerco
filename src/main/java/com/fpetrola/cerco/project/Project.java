@@ -77,6 +77,14 @@ public final class Project {
     return whole;
   }
 
+  /**
+   * Whether this run itself fed every file: whole, and not by recalling an earlier run. Only such a run may take what
+   * it did not see as gone.
+   */
+  public boolean sawEveryFile() {
+    return whole && !recalled;
+  }
+
   private Named named(String name) {
     return names.computeIfAbsent(name, k -> new Named());
   }

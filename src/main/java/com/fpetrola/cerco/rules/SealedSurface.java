@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Every member a module offers that its seal lacks: the design grew without a person's signature. A run over the
- * whole project also seals a project that never was, and drops from the seal what the code no longer offers.
+ * Every member a module offers that its seal lacks: the design grew without a person's signature. A run that fed
+ * every file of the project, and only such a run, also seals a project that never was, and drops from the seal what the code no longer offers.
  * Its findings are never frozen nor exempted: the way out is to take the member back or to have it signed.
  */
 public final class SealedSurface implements Rule {
@@ -66,7 +66,7 @@ public final class SealedSurface implements Rule {
 
       @Override
       public List<Finding> findings() {
-        if (project.isWhole()) {
+        if (project.sawEveryFile()) {
           offered.forEach((module, members) -> {
             seal.adopt(module, members);
             seal.shrink(module, members);

@@ -538,3 +538,12 @@ caracteres o más cuando ningún módulo que crece tiene algo sellado; `approve`
 pendiente que no toma; la nota de propuesta inexistente nombra `mvn cerco:audit`, que es la corrida que la escribe.
 Lección para el método: el formulario se diseñó pensando en enmiendas, y el diseño inicial (regla 4 de §3) es la
 primera propuesta.
+
+**2026-11-14, cerco 0.20.2: una corrida parcial achicaba el sello.** Lo reportó la sesión de cerco-demo-2: después
+de editar dos archivos, `tui-terminal.txt` pasó de 117 líneas a 10, y las 107 restantes, sin cambios en el código,
+fueron a `dropped.txt` y volvieron como crecimiento sin firmar. Causa: la regla achicaba cuando el proyecto «era
+entero», y una corrida parcial (el `quick` del hook, el `check` de un módulo) lo es cuando recuerda la última
+corrida completa (`Project.recall`). Arreglo: `Project.sawEveryFile()`, entero y no por recuerdo; sólo esa corrida
+adopta o achica. `SealedSurfaceTest.aRunOverAFewFilesNeverShrinksTheSeal` falla con la lógica vieja. Lección: «el
+proyecto entero» tenía dos sentidos en cerco, el de las lecturas (alcanza con recordar) y el de los veredictos que
+borran (hay que haber visto todo), y el sello es el primero de los segundos.

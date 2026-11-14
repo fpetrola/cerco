@@ -69,6 +69,17 @@ class SealedSurfaceTest {
   }
 
   @Test
+  void aRunOverAFewFilesNeverShrinksTheSeal(@TempDir Path root) throws IOException {
+    Engine engine = adopted(root);
+    Path other = write(root, "src/main/java/p/Other.java", "package p; public interface Other { void go(); }");
+    engine.run(whole(root));
+    engine.run(only(root, other));
+    assertTrue(seal(root, "_root").contains("p.Shown#show(String): void"));
+    assertTrue(Files.readString(root.resolve("surface/pending/proposal.md")).contains("p.Other#go(): void"));
+    assertEquals(List.of(), new Seal(root.resolve(".cerco/surface")).dropped());
+  }
+
+  @Test
   void aNewPublicMethodIsRedOnTheEditItself(@TempDir Path root) throws IOException {
     Engine engine = adopted(root);
     Path shown = write(root, "src/main/java/p/Shown.java",
