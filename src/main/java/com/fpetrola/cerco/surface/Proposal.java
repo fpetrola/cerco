@@ -82,7 +82,7 @@ public final class Proposal {
     }
     String said = tests.stream().map(this::read).collect(Collectors.joining("\n"));
     signatures(form.getOrDefault(GROWS, "")).stream().filter(signature -> !tests.isEmpty())
-        .filter(signature -> !new Named(signature).in(said)).forEach(signature -> missing.add(CONTRACT
+        .filter(signature -> !seal.had(signature)).filter(signature -> !new Named(signature).in(said)).forEach(signature -> missing.add(CONTRACT
             + ": no test it lists names `" + signature + "`; a member no test asks for is speculation: take it "
             + "back, or write the test that needs it"));
     return missing.stream().map(item -> "surface/pending/proposal.md, " + item).toList();
@@ -104,6 +104,8 @@ public final class Proposal {
     return grows.lines().filter(line -> line.startsWith("- ")).map(line -> line.substring(2).strip())
         .map(module -> module.equals("the project") ? "" : module).toList();
   }
+
+  // A signature already signed, in another module or dropped since, moves: its contract was read when it was signed.
 
   /** The signatures the Grows section lists, as cerco wrote them: `  - `signature`` lines. */
   private List<String> signatures(String grows) {

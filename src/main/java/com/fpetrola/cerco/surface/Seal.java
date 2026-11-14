@@ -101,6 +101,12 @@ public final class Seal {
         .flatMap(file -> lines(file).stream()).anyMatch(signature -> signature.contains(fragment));
   }
 
+  /** Whether this exact signature was signed before: in the seal of some module, or dropped since the last signature. */
+  boolean had(String signature) {
+    return sealedFiles().stream().anyMatch(file -> lines(file).contains(signature))
+        || dropped().stream().anyMatch(gone -> gone.endsWith(": " + signature));
+  }
+
   private Set<String> signatures(List<Member> offered) {
     return offered.stream().map(Member::signature).collect(Collectors.toCollection(TreeSet::new));
   }

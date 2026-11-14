@@ -591,3 +591,9 @@ cerco-tdd: un `public static void main` era hallazgo de `unpromised-member` (ent
 sellaba, así que no había propuesta que firmar ni forma de esconderlo. Ahora toda entrada (constructor o estático)
 pública de una clase pública es superficie a ese alcance, entra en Grows y Contract tiene que nombrarla.
 
+**2026-11-14, cerco 0.22.3: un miembro firmado que cambia de módulo no pide contrato nuevo.** Desde cerco-tdd (partir
+`tui` en `tui-api` y `tui-text`): una firma de Grows idéntica a una ya firmada, en el sello de otro módulo o en
+dropped.txt, es un traslado; Contract no tiene que nombrarla. Sigue siendo una propuesta (Need, Considered, Removes,
+un Contract existente) y la firma una persona. El archivo de sello de un módulo que desaparece queda; borrarlo es
+achicar el sello y es libre.
+

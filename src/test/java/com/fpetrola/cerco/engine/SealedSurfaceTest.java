@@ -227,4 +227,16 @@ class SealedSurfaceTest {
     grown(root);
     assertEquals(3, unsigned(engine.run(whole(root))).size());
   }
+
+  @Test
+  void aSignedMemberThatMovesToAnotherModuleNeedsNoNewContract(@TempDir Path root) throws IOException {
+    Engine engine = adopted(root);
+    Files.delete(root.resolve("src/main/java/p/Shown.java"));
+    write(root, "m2/src/main/java/p/Shown.java", SHOWN);
+    engine.run(whole(root));
+    complete(root);
+    write(root, "src/test/java/p/ShownContract.java", "package p; abstract class ShownContract { }");
+    Outcome run = engine.run(whole(root));
+    assertEquals(2, run.awaitingSignature().size(), run.notes().toString());
+  }
 }
