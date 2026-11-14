@@ -581,3 +581,8 @@ propuesta queda incompleta y lo dice miembro por miembro. Alcance nuevo `promise
 sin clases ni constructores. Bug: un proyecto sin código no escribía `_root.txt` y su primer módulo se habría
 adoptado sin propuesta; ahora la primera corrida completa lo sella vacío. Queda sin hacer: reconocer renombres.
 
+**2026-11-14, cerco 0.22.1: `promises` sella los constructores públicos de clases públicas.** Pedido desde
+cerco-tdd: el test de aceptación entra por `new Tipo()`, y una clase pública nueva con constructor público es una
+entrada nueva al módulo que tiene que pasar por propuesta (y que Contract nombre). Clases package-private y
+constructores no públicos siguen afuera.
+

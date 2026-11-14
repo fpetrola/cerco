@@ -45,6 +45,7 @@ class SurfacesTest {
         + " void tidy() {} private void hidden() {} public static final int MAX = 3; }",
         "package p; class Helper { public void help() {} }");
     assertEquals(List.of(), signatures(surface, Reach.INTERFACES));
+    assertEquals(List.of("p.Box#<init>(int)"), signatures(surface, Reach.PROMISES));
     assertEquals(List.of("<T> p.Box#held(java.util.function.Supplier<T>): T", "p.Box class", "p.Box#<init>(int)",
         "p.Box#MAX: int"), signatures(surface, Reach.PUBLIC));
     assertEquals(List.of("<T> p.Box#held(java.util.function.Supplier<T>): T", "p.Box class", "p.Box#<init>(int)",

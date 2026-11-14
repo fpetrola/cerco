@@ -11,7 +11,7 @@ public record Member(String signature, String name, boolean isType, boolean prom
 
   /** Whether this member is surface at that reach: an interface or a method of one, or open enough. */
   public boolean within(Reach reach) {
-    return reach.takes(openness, promised);
+    return reach.takes(openness, promised, signature.contains("#<init>("));
   }
 
   public boolean says(Hint hint) {
