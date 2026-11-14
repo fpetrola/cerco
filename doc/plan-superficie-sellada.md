@@ -555,3 +555,21 @@ agente, con razón, no quiso, y el hook lo bloqueó unas diez veces con el mismo
 vuelve de un bloqueo (`stop_hook_active`) con exactamente el mismo rojo, sin contar los tiempos, la sesión termina
 y la persona ve el reporte como `systemMessage`. El costo: un agente que no hace nada después de un bloqueo puede
 irse. Queda a la vista de la persona, y para P4 cuenta como una trabada.
+
+**2026-11-14, cerco 0.21.0: `unpromised-member`.** Lo pidió Fernando desde cerco-demo-2: con `all`, el agente
+igual metía API propia en clases (métodos de clases auxiliares que no implementan ninguna interfaz), la proponía y
+el único freno era que Fernando la rechazara. En `tui-ansi` quedaron así firmados `Grid#put`, `Decoder#next` y
+otros. Es el rodeo 3 de §7, y E1 lo habría medido. La regla, que corre siempre que el sello está prendido y no se
+congela ni se exceptúa, marca:
+
+- un método no privado de una clase, record o enum que no lleva `@Override` y que no declara, con el mismo nombre
+  y la misma cantidad de parámetros, ninguna interfaz del proyecto entre sus supertipos;
+- un componente de record que ninguna interfaz pide;
+- un campo no privado;
+- un constructor público, o un método estático no privado, que el sello no tiene: la puerta de entrada del módulo
+  pasa por una propuesta.
+
+Sin resolución de tipos, `@Override` alcanza: el compilador garantiza que sobrescribe algo, y si sobrescribe un
+método inventado en una superclase del proyecto, el hallazgo queda en el original. Lo de que la interfaz «esté
+sellada» lo cubre `sealed-surface`. Sobre una copia de cerco-demo-2 da 13 hallazgos, todos en `tui-ansi`, los que
+la sesión había listado. Sus hallazgos no van a la propuesta: no se firman en el sello, se arreglan.

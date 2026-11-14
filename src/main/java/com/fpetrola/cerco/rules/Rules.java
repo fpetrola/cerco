@@ -25,11 +25,13 @@ public final class Rules {
   public Rules(Settings settings, Path root) {
     this.settings = settings;
     this.signedSurface = settings.sealedSurface().flatMap(Reach::from).stream()
-        .map(reach -> surface(root, reach)).toList();
+        .flatMap(reach -> surface(root, reach).stream()).toList();
   }
 
-  private Rule surface(Path root, Reach reach) {
-    return new SealedSurface(new Seal(root.resolve(".cerco").resolve("surface")), reach);
+  /** With the surface sealed, what a module offers is signed, and what a class offers is promised by interfaces. */
+  private List<Rule> surface(Path root, Reach reach) {
+    Seal seal = new Seal(root.resolve(".cerco").resolve("surface"));
+    return List.of(new SealedSurface(seal, reach), new UnpromisedMember(seal));
   }
 
   public List<Rule> all() {

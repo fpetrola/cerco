@@ -19,6 +19,8 @@ import java.util.Map;
  * Its findings are never frozen nor exempted: the way out is to take the member back or to have it signed.
  */
 public final class SealedSurface implements Rule {
+  /** Its id: only its findings are surface a person can sign into the seal. */
+  public static final String ID = "sealed-surface";
   private final Seal seal;
   private final Reach reach;
 
@@ -29,7 +31,7 @@ public final class SealedSurface implements Rule {
 
   @Override
   public String id() {
-    return "sealed-surface";
+    return ID;
   }
 
   @Override

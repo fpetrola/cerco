@@ -22,6 +22,7 @@ import com.fpetrola.cerco.project.Recall;
 import com.fpetrola.cerco.rules.BudgetRule;
 import com.fpetrola.cerco.rules.Rule;
 import com.fpetrola.cerco.rules.Rules;
+import com.fpetrola.cerco.rules.SealedSurface;
 import com.fpetrola.cerco.surface.Proposal;
 import com.fpetrola.cerco.surface.Seal;
 import java.nio.file.Path;
@@ -104,8 +105,7 @@ public final class Engine {
     Signed signed = new Signed(exemptionsFile, approvalFile, configDigest(), settings.isDefault(), scope.full());
     Tally tally = new Tally();
     List<Solved> solved = new ArrayList<>();
-    List<Finding> unsigned = active.stream().filter(rule -> !rule.baselined())
-        .flatMap(rule -> runs.findings(rule).stream()).toList();
+    List<Finding> unbaselined = unbaselined(active, runs);
     for (Rule rule : active.stream().filter(Rule::baselined).toList()) {
       Kept kept = new Kept(inScope, scope.full(), signed, rule.id());
       rule.asBudget().ifPresentOrElse(
@@ -117,8 +117,9 @@ public final class Engine {
     List<Owed> owed = owed(witness.fixedInCode(solved, runs.digests(), scope.full()), signed, problems);
     Applied applied = exempt(signed, tally.fresh(), scope.full());
     List<Finding> fresh = new ArrayList<>(applied.remaining());
-    List<Finding> awaiting = proposed(unsigned, scope.full(), notes, problems);
-    unsigned.stream().filter(finding -> !awaiting.contains(finding)).forEach(fresh::add);
+    List<Finding> awaiting = proposed(unbaselined.stream()
+        .filter(finding -> finding.rule().equals(SealedSurface.ID)).toList(), scope.full(), notes, problems);
+    unbaselined.stream().filter(finding -> !awaiting.contains(finding)).forEach(fresh::add);
     problems.addAll(applied.problems());
     notes.addAll(applied.notes());
     if (store.exists()) {
@@ -155,6 +156,11 @@ public final class Engine {
     } else {
       witness.recordSome(runs.digests());
     }
+  }
+
+  /** What the rules whose way out is a signature found: never frozen, never exempted. */
+  private List<Finding> unbaselined(List<Rule> active, Runs runs) {
+    return active.stream().filter(rule -> !rule.baselined()).flatMap(rule -> runs.findings(rule).stream()).toList();
   }
 
   /**
