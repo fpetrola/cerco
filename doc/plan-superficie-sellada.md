@@ -607,3 +607,8 @@ un módulo que ya no está en el reactor queda en `.txt` hasta que se lo borre.
 en `surface/`, sin cambiar la numeración. La pendiente sigue en `surface/pending/proposal.md`, porque la llena el
 agente.
 
+**2026-11-14, cerco 0.25.0: `visitor-handed-parts`.** Pedido de Fernando desde cerco-tdd: un método que recibe un
+`*Visitor` y lo llama pasándole `this` junto con otros argumentos (campos, valores derivados, method refs) desarma el
+objeto en vez de visitarlo. Es regla de archivo y entra a la línea de base como las demás. No marca las visitas
+anidadas que entregan un valor sin `this` (`item(String)`, `checked()`).
+

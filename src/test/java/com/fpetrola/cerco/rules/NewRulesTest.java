@@ -315,4 +315,15 @@ class NewRulesTest {
     assertEquals(List.of("src/main/java/p/Rows.java|p.Rows.f(Knob)|Kind|CHOICE,NUMBER",
         "src/main/java/p/Settings.java|p.Settings.g(Knob)|Kind|SWITCH"), found.stream().map(Finding::key).sorted().toList());
   }
+
+  @Test
+  void aVisitorHandedTheObjectInPartsIsNotVisited() {
+    List<String> found = details(new VisitorHandedParts(),
+        "package p; class Line implements View { StringBuilder text; int width;"
+            + " public void accept(ViewVisitor visitor) { visitor.inputLine(this, text.toString(), width, text::append); }"
+            + " void walk(ViewVisitor visitor) { visitor.line(this); }"
+            + " void rows(RowVisitor<String> rows) { rows.item(text.toString()); } }");
+    assertEquals(1, found.size());
+    assertTrue(found.get(0).contains("hands the visitor this and 3 part(s)"), found.toString());
+  }
 }
