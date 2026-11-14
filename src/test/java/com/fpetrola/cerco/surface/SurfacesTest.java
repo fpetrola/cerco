@@ -40,16 +40,16 @@ class SurfacesTest {
 
   @Test
   void aClassIsSurfaceByHowOpenItIs() {
-    Surface surface = surface("package p; public class Box implements Shown { public Box(int size) {}"
+    Surface surface = surface("package p; public class Box implements Shown { public Box(int size) {} public static Box of() { return null; }"
         + " @Override public void show(String text) {} public <T> T held(java.util.function.Supplier<T> s) { return null; }"
         + " void tidy() {} private void hidden() {} public static final int MAX = 3; }",
         "package p; class Helper { public void help() {} }");
     assertEquals(List.of(), signatures(surface, Reach.INTERFACES));
-    assertEquals(List.of("p.Box#<init>(int)"), signatures(surface, Reach.PROMISES));
+    assertEquals(List.of("p.Box#<init>(int)", "p.Box#of(): Box"), signatures(surface, Reach.PROMISES));
     assertEquals(List.of("<T> p.Box#held(java.util.function.Supplier<T>): T", "p.Box class", "p.Box#<init>(int)",
-        "p.Box#MAX: int"), signatures(surface, Reach.PUBLIC));
+        "p.Box#MAX: int", "p.Box#of(): Box"), signatures(surface, Reach.PUBLIC));
     assertEquals(List.of("<T> p.Box#held(java.util.function.Supplier<T>): T", "p.Box class", "p.Box#<init>(int)",
-        "p.Box#MAX: int", "p.Box#tidy(): void", "p.Helper class", "p.Helper#help(): void"),
+        "p.Box#MAX: int", "p.Box#of(): Box", "p.Box#tidy(): void", "p.Helper class", "p.Helper#help(): void"),
         signatures(surface, Reach.ALL));
     assertEquals(1, surface.saying(Hint.FUNCTION));
   }

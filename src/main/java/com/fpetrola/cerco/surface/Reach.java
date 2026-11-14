@@ -2,7 +2,7 @@ package com.fpetrola.cerco.surface;
 
 /**
  * How far the surface of a module reaches: only its public interfaces and their methods, its interfaces of any
- * openness and the public constructors of public classes (promises), everything public, or everything that is not private. Which one a project seals is a design decision; a survey measures the three.
+ * openness and the public constructors and static methods of public classes (promises), everything public, or everything that is not private. Which one a project seals is a design decision; a survey measures the three.
  */
 public enum Reach {
   INTERFACES("interfaces", Openness.PUBLIC, true, false), PROMISES("promises", Openness.PACKAGE, true, true),
@@ -34,9 +34,10 @@ public enum Reach {
     return takes(openness, promised, false);
   }
 
-  /** The same, for a constructor too: at promises, a public one of a public class is the module's entrance. */
-  boolean takes(Openness openness, boolean promised, boolean constructor) {
-    if (entrances && constructor && openness == Openness.PUBLIC) {
+  /** The same, for an entrance too (a constructor, a static method): at promises, a public one of a public class is
+   * surface, a way into the module. */
+  boolean takes(Openness openness, boolean promised, boolean entrance) {
+    if (entrances && entrance && openness == Openness.PUBLIC) {
       return true;
     }
     return openness.compareTo(least) >= 0 && (promised || !onlyPromises);

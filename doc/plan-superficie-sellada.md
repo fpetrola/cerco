@@ -586,3 +586,8 @@ cerco-tdd: el test de aceptación entra por `new Tipo()`, y una clase pública n
 entrada nueva al módulo que tiene que pasar por propuesta (y que Contract nombre). Clases package-private y
 constructores no públicos siguen afuera.
 
+**2026-11-14, cerco 0.22.2: `promises` sella también los métodos estáticos públicos de clases públicas.** Desde
+cerco-tdd: un `public static void main` era hallazgo de `unpromised-member` (entrada no sellada) pero `promises` no lo
+sellaba, así que no había propuesta que firmar ni forma de esconderlo. Ahora toda entrada (constructor o estático)
+pública de una clase pública es superficie a ese alcance, entra en Grows y Contract tiene que nombrarla.
+

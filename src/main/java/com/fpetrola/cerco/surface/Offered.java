@@ -47,8 +47,8 @@ public final class Offered {
     boolean promises = type.isClassOrInterfaceDeclaration() && type.asClassOrInterfaceDeclaration().isInterface();
     boolean onlyPromises = promises || type.isAnnotationDeclaration();
     String named = type.getFullyQualifiedName().orElse(type.getNameAsString());
-    members.add(new Member(named + " " + kindOf(type), type.getNameAsString(), true, promises, open, Set.of(),
-        file.name(), line(type)));
+    members.add(new Member(named + " " + kindOf(type), type.getNameAsString(), true, promises, false, open,
+        Set.of(), file.name(), line(type)));
     type.getMembers().forEach(member -> offer(named, member, open, onlyPromises, promises));
     type.toRecordDeclaration().ifPresent(record -> components(named, record, open));
     type.toEnumDeclaration().ifPresent(enumeration -> constants(named, enumeration, open));
@@ -73,24 +73,29 @@ public final class Offered {
         .map(Node::toString).collect(Collectors.joining(", ")) + "> ";
     Set<Hint> hints = hints(callable.getParameters(), returns);
     members.add(new Member(generics + named + "(" + parameters + ")" + answer, callable.getNameAsString(), false,
-        promises, openness(callable, onlyPromises).within(open), hints, file.name(), line(callable)));
+        promises, entrance(callable), openness(callable, onlyPromises).within(open), hints, file.name(), line(callable)));
+  }
+
+  /** A way into the module that needs no instance: a constructor, or a static method. */
+  private boolean entrance(CallableDeclaration<?> callable) {
+    return callable.isConstructorDeclaration() || callable.isStatic();
   }
 
   private void components(String type, RecordDeclaration record, Openness open) {
     record.getParameters().forEach(component -> members.add(new Member(type + "#" + component.getNameAsString()
-        + ": " + component.getType().asString(), component.getNameAsString(), false, false, open,
+        + ": " + component.getType().asString(), component.getNameAsString(), false, false, false, open,
         hints(new NodeList<>(), component.getType()), file.name(), line(component))));
   }
 
   private void constants(String type, EnumDeclaration enumeration, Openness open) {
     enumeration.getEntries().forEach(constant -> members.add(new Member(type + "#" + constant.getNameAsString(),
-        constant.getNameAsString(), false, false, open, Set.of(), file.name(), line(constant))));
+        constant.getNameAsString(), false, false, false, open, Set.of(), file.name(), line(constant))));
   }
 
   private void fields(String type, FieldDeclaration field, Openness open, boolean onlyPromises) {
     Openness own = openness(field, onlyPromises).within(open);
     field.getVariables().forEach(variable -> members.add(new Member(type + "#" + variable.getNameAsString() + ": "
-        + variable.getType().asString(), variable.getNameAsString(), false, false, own,
+        + variable.getType().asString(), variable.getNameAsString(), false, false, false, own,
         hints(new NodeList<>(), variable.getType()), file.name(), line(variable))));
   }
 
