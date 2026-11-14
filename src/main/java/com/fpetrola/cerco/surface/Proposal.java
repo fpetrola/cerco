@@ -113,12 +113,20 @@ public final class Proposal {
         .map(line -> line.substring(3, line.length() - 1)).toList();
   }
 
-  /** Grows the seal by what is unsigned now and files the proposal, signed, as surface/<NNNN>.md. */
+  /**
+   * Grows the seal by what is unsigned now and files the proposal, signed, as .cerco/surface/signed/<NNNN>.md, where
+   * an agent cannot edit it; the ones versions before 0.24 filed in surface/ move there too.
+   */
   public void sign(List<Finding> unsigned, String signer, LocalDate day) {
     Map<String, String> written = sections(read());
     byModule(unsigned).forEach(seal::grow);
     try {
-      Path signed = root.resolve("surface").resolve(String.format("%04d.md", filed() + 1));
+      Path archive = root.resolve(".cerco").resolve("surface").resolve("signed");
+      Files.createDirectories(archive);
+      for (Path old : filed(file.getParent().getParent())) {
+        Files.move(old, archive.resolve(old.getFileName()));
+      }
+      Path signed = archive.resolve(String.format("%04d.md", filed(archive).size() + 1));
       Files.writeString(signed, text("# Surface proposal, signed by " + signer + " on " + day, unsigned, written),
           StandardCharsets.UTF_8);
       Files.deleteIfExists(file);
@@ -168,9 +176,10 @@ public final class Proposal {
             Collectors.toList())));
   }
 
-  private long filed() throws IOException {
-    try (Stream<Path> files = Files.list(file.getParent().getParent())) {
-      return files.filter(one -> one.getFileName().toString().matches("\\d{4}\\.md")).count();
+  /** The signed proposals filed in this directory, NNNN.md. */
+  private List<Path> filed(Path directory) throws IOException {
+    try (Stream<Path> files = Files.list(directory)) {
+      return files.filter(one -> one.getFileName().toString().matches("\\d{4}\\.md")).toList();
     }
   }
 

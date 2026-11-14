@@ -497,7 +497,7 @@ Falta para cerrar P2: C2 (la propuesta en `surface/pending/` y que `approve` la 
 entonces la única salida del rojo es quitar el miembro o editar el sello a mano, que el guard le niega al agente.
 
 **2026-11-13, P2: C2 en cerco 0.20.0.** La propuesta, con las tres recomendaciones aceptadas: `approve` no agranda el
-sello sin una propuesta completa; las firmadas se archivan en `surface/NNNN.md`, fuera de `.cerco/`; hay una sola
+sello sin una propuesta completa; las firmadas se archivan en `.cerco/surface/signed/NNNN.md` (desde 0.24.0; antes en `surface/NNNN.md`); hay una sola
 propuesta para todos los módulos. Superficie nueva, la acordada: `Proposal` (constructor, `settle`, `missing`,
 `sign`), `Seal.grow`, `Seal.dropped` y `Outcome.awaitingSignature`.
 
@@ -601,4 +601,9 @@ achicar el sello y es libre.
 con `module` y `types`, cada tipo con su `kind` (si el tipo está sellado) y sus `members` sin el prefijo del tipo.
 Los `.txt` anteriores se leen igual y cada corrida completa reescribe en YAML los módulos que ve (y borra el `.txt`);
 un módulo que ya no está en el reactor queda en `.txt` hasta que se lo borre.
+
+**2026-11-14, cerco 0.24.0: las propuestas firmadas, dentro de `.cerco`.** Lo pidió Fernando: `approve` archiva en
+`.cerco/surface/signed/NNNN.md`, donde el agente no puede editarlas, y mueve ahí las que versiones anteriores dejaron
+en `surface/`, sin cambiar la numeración. La pendiente sigue en `surface/pending/proposal.md`, porque la llena el
+agente.
 

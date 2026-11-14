@@ -167,10 +167,13 @@ class SealedSurfaceTest {
     assertEquals(1, run.awaitingSignature().size());
     assertTrue(run.problems().stream().anyMatch(problem -> problem.contains("is complete")), run.problems().toString());
     Seal seal = new Seal(root.resolve(".cerco/surface"));
+    write(root, "surface/0001.md", "# Surface proposal, signed before 0.24");
     new Proposal(root, seal).sign(run.awaitingSignature(), "a person", LocalDate.of(2026, 11, 13));
     assertTrue(seal(root, "_root").contains("p.Shown#hide(): void"));
     assertFalse(Files.exists(root.resolve("surface/pending/proposal.md")));
-    assertTrue(Files.readString(root.resolve("surface/0001.md")).contains("signed by a person on 2026-11-13"));
+    assertTrue(Files.readString(root.resolve(".cerco/surface/signed/0001.md")).contains("signed before 0.24"));
+    assertTrue(Files.readString(root.resolve(".cerco/surface/signed/0002.md")).contains("signed by a person on 2026-11-13"));
+    assertFalse(Files.exists(root.resolve("surface/0001.md")));
     Outcome after = engine.run(whole(root));
     assertEquals(List.of(), unsigned(after));
     assertTrue(after.awaitingSignature().isEmpty());
