@@ -547,3 +547,11 @@ corrida completa (`Project.recall`). Arreglo: `Project.sawEveryFile()`, entero y
 adopta o achica. `SealedSurfaceTest.aRunOverAFewFilesNeverShrinksTheSeal` falla con la lógica vieja. Lección: «el
 proyecto entero» tenía dos sentidos en cerco, el de las lecturas (alcanza con recordar) y el de los veredictos que
 borran (hay que haber visto todo), y el sello es el primero de los segundos.
+
+**2026-11-14, cerco 0.20.3: el hook de Stop deja de dar vueltas.** En cerco-demo-2, con el sello vaciado por el bug
+de 0.20.2, el rojo pedía completar una propuesta que habría vuelto a firmar como nuevos 107 miembros ya firmados. El
+agente, con razón, no quiso, y el hook lo bloqueó unas diez veces con el mismo reporte. Es el resultado 3 de §2
+(«el agente se traba»), aunque esta vez por un bug. Arreglo: el hook bloquea mientras el rojo cambia. Si el agente
+vuelve de un bloqueo (`stop_hook_active`) con exactamente el mismo rojo, sin contar los tiempos, la sesión termina
+y la persona ve el reporte como `systemMessage`. El costo: un agente que no hace nada después de un bloqueo puede
+irse. Queda a la vista de la persona, y para P4 cuenta como una trabada.

@@ -9,6 +9,9 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.Test;
 
 class HookMainTest {
@@ -55,5 +58,27 @@ class HookMainTest {
   @Test
   void unknownGoalIsAnError() {
     assertEquals(1, run("dance", "").code());
+  }
+
+  private Run stop(Path root, String red, boolean active) throws Exception {
+    Path mvn = root.resolve("mvn");
+    Files.writeString(mvn, "#!/bin/sh\ncat > /dev/null\necho '" + red + "'\nexit 1\n");
+    mvn.toFile().setExecutable(true);
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+    int code = new HookMain(List.of("audit", "--mvn", mvn.toString()), new ByteArrayInputStream(
+        ("{\"hook_event_name\":\"Stop\",\"stop_hook_active\":" + active + "}").getBytes(StandardCharsets.UTF_8)),
+        new PrintStream(out), new PrintStream(err), Map.of("CLAUDE_PROJECT_DIR", root.toString())).run();
+    return new Run(code, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
+  }
+
+  @Test
+  void theStopHookBlocksWhileTheRedChangesAndNotForTheSameRedAgain(@TempDir Path root) throws Exception {
+    assertEquals(2, stop(root, "[ERROR] cerco RED: 1 new finding(s) (12 ms)", false).code());
+    assertEquals(2, stop(root, "[ERROR] cerco RED: 2 new finding(s) (15 ms)", true).code());
+    Run same = stop(root, "[ERROR] cerco RED: 2 new finding(s) (40 ms)", true);
+    assertEquals(0, same.code());
+    assertTrue(same.out().contains("systemMessage"), same.out());
+    assertEquals(2, stop(root, "[ERROR] cerco RED: 2 new finding(s) (9 ms)", false).code());
   }
 }
