@@ -21,6 +21,11 @@ import java.util.stream.Stream;
  * to be read in a diff: a count, a tab, the key. The store only ever loses entries.
  */
 public final class BaselineStore {
+  /**
+   * What cerco records of its own runs (the digest of each file, of the project and of itself): a git conflict in them
+   * has nothing for a person to decide, and is resolved to the committed side.
+   */
+  private static final java.util.Set<String> RECORDS = java.util.Set.of("digests", "self");
   private final Path dir;
 
   public BaselineStore(Path dir) {
@@ -128,7 +133,13 @@ public final class BaselineStore {
   private String read(Path file) {
     try {
       String text = Files.readString(file, StandardCharsets.UTF_8);
-      if (text.lines().anyMatch(line -> line.startsWith("<<<<<<<") || line.startsWith(">>>>>>>"))) {
+      boolean conflicted = text.lines().anyMatch(line -> line.startsWith("<<<<<<<") || line.startsWith(">>>>>>>"));
+      if (conflicted && RECORDS.contains(file.getFileName().toString())) {
+        String committed = committedSide(text);
+        Files.writeString(file, committed, StandardCharsets.UTF_8);
+        return committed;
+      }
+      if (conflicted) {
         throw new IllegalStateException("cerco: " + file + " has git conflict markers (<<<<<<< / >>>>>>>), left by a "
             + "merge or a stash pop. A person resolves it: `git checkout -- " + file + "` takes the committed one back");
       }
@@ -136,6 +147,14 @@ public final class BaselineStore {
     } catch (IOException e) {
       throw new UncheckedIOException("could not read the baseline file " + file, e);
     }
+  }
+
+  /**
+   * A conflicted file keeps the side of the commit it was merged into: what comes before `=======` in each block (the
+   * HEAD side of a merge or a stash pop). Only for what cerco records of its own runs, never for what a person signed.
+   */
+  private String committedSide(String text) {
+    return text.replaceAll("(?ms)^(\\|{7}|={7}).*?^>{7}[^\\n]*(\\n|\\z)", "").replaceAll("(?m)^<{7}[^\\n]*\\n", "");
   }
 
   private void writeOrRemove(Path file, String content, boolean empty) {
