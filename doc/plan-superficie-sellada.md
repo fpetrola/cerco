@@ -619,3 +619,10 @@ acceptRows...) abre partes de su estructura a quien quiera recorrerlas. `walked-
 elige qué recorrer. Queda como candidata porque los visitors jerárquicos hechos a propósito hacen lo mismo y hay que
 medirla antes de que frene algo.
 
+**2026-11-14, cerco 0.27.0: una interfaz de función de la JDK no promete.** Pedido de Fernando desde cerco-tdd: el
+agente hizo que Frame, Shadow y RaisedFrame implementaran `Consumer<Screen>` para que `accept` quedara "prometido" sin
+propuesta. Ahora, en un tipo que implementa `Runnable`, `Callable` o un tipo de `java.util.function`, también sus
+`@Override` tienen que estar declarados por una interfaz del proyecto. `Comparable`, `AutoCloseable`, `Iterable` y las
+demás siguen valiendo. Las lambdas y method refs usadas como valores no cuentan. Queda un hueco: una interfaz del
+proyecto que extiende `Consumer` sin declarar nada propio.
+

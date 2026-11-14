@@ -32,6 +32,8 @@ import java.util.stream.Stream;
  */
 public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
   private static final Set<String> OBJECT = Set.of("equals/1", "hashCode/0", "toString/0");
+  private static final Set<String> BORROWED = Set.of("Runnable", "Callable");
+  private static final String FUNCTIONS = "java.util.function.";
   private final Seal seal;
 
   /** What the files showed: the findings already sure, and the operations an interface has to declare. */
@@ -122,6 +124,7 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
     String module = new Location(file.name()).module();
     for (TypeDeclaration<?> type : unit.findAll(TypeDeclaration.class, this::judged)) {
       String name = type.getNameAsString();
+      boolean borrows = borrows(unit, type);
       for (BodyDeclaration<?> member : type.getMembers()) {
         member.toFieldDeclaration().filter(field -> !field.isPrivate()).ifPresent(field -> found.add(
             field(file, name, field)));
@@ -129,7 +132,7 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
             && !signed(offered, module, constructor)).ifPresent(constructor -> found.add(entrance(file, name,
             constructor)));
         member.toMethodDeclaration().filter(method -> !method.isPrivate()).ifPresent(method -> method(file, name,
-            method, offered, module, found, owed));
+            method, offered, module, found, borrows ? owed : new ArrayList<>(), owed));
       }
       type.toRecordDeclaration().ifPresent(record -> record.getParameters().stream()
           .filter(part -> record.getMethodsBySignature(part.getNameAsString()).isEmpty())
@@ -137,17 +140,37 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
     }
   }
 
+  /**
+   * The owed of an @Override is kept only by a type that borrows a promise from the JDK's function types: then its
+   * overrides have to be promised by an interface of the project too.
+   */
   private void method(ParsedFile file, String type, MethodDeclaration method, List<Member> offered, String module,
-      List<Finding> found, List<Owed> owed) {
+      List<Finding> found, List<Owed> overriding, List<Owed> owed) {
     if (method.isStatic()) {
       if (!method.isPublic() || !signed(offered, module, method)) {
         found.add(entrance(file, type, method));
       }
       return;
     }
-    if (!method.isAnnotationPresent("Override")) {
-      owed.add(new Owed(file.name(), line(method), type, method.getNameAsString(), method.getParameters().size()));
+    (method.isAnnotationPresent("Override") ? overriding : owed).add(new Owed(file.name(), line(method), type, method.getNameAsString(), method.getParameters().size()));
+  }
+
+  /**
+   * Whether the type implements Runnable, Callable or a type of java.util.function: a promise nobody designed or
+   * signed, so it keeps none. Lambdas and method references of those types are values, and are left alone.
+   */
+  private boolean borrows(CompilationUnit unit, TypeDeclaration<?> type) {
+    if (!type.isClassOrInterfaceDeclaration()) {
+      return false;
     }
+    boolean wholePackage = unit.getImports().stream().anyMatch(i -> i.isAsterisk() && !i.isStatic()
+        && (i.getNameAsString() + ".").equals(FUNCTIONS));
+    return type.asClassOrInterfaceDeclaration().getImplementedTypes().stream().anyMatch(implemented -> {
+      String written = implemented.getNameWithScope();
+      String simple = implemented.getNameAsString();
+      boolean imported = unit.getImports().stream().anyMatch(i -> i.getNameAsString().equals(FUNCTIONS + simple));
+      return BORROWED.contains(simple) || written.startsWith(FUNCTIONS) || imported || wholePackage;
+    });
   }
 
   /** A class, record or enum others can reach: not an interface, not local, and with nothing private around it. */

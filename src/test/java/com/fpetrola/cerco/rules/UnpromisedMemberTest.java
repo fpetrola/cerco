@@ -51,4 +51,17 @@ class UnpromisedMemberTest {
     assertEquals(List.of("Stroke.ctrl (0 parameters) is promised by no interface Stroke implements",
         "Stroke.key (0 parameters) is promised by no interface Stroke implements"), found);
   }
+
+  @Test
+  void aFunctionTypeOfTheJdkPromisesNothing(@TempDir Path seal) {
+    List<String> found = found(seal,
+        "package p; import java.util.function.Consumer; public interface Drawing { void draw(String s); }",
+        "package p; import java.util.function.Consumer; class Frame implements Consumer<String> {"
+            + " @Override public void accept(String s) { } }",
+        "package p; class Task implements Runnable { @Override public void run() { } }",
+        "package p; class Shadow implements Drawing { @Override public void draw(String s) { Runnable r = () -> { }; } }",
+        "package p; class Sorted implements Comparable<Sorted> { @Override public int compareTo(Sorted o) { return 0; } }");
+    assertEquals(List.of("Frame.accept (1 parameters) is promised by no interface Frame implements",
+        "Task.run (0 parameters) is promised by no interface Task implements"), found);
+  }
 }
