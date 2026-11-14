@@ -514,3 +514,18 @@ propuesta para todos los módulos. Superficie nueva, la acordada: `Proposal` (co
 considerado que no está sellado; 175 tests verdes. Probado en la copia de cerco-demo: el `audit` escribe la
 propuesta con `Textual#edit(Runnable)` en Grows y cuatro notas de lo que falta. La firma con `approve` no se puede
 probar sin una terminal; queda para Fernando.
+
+**2026-11-14, P3: preparación de E1.** Los 13 hallazgos de la copia no eran un bug. Sin `sealedSurface`, 0.20.0 da
+verde sobre cerco-demo con 13 exceptuados; con la opción, la configuración cambia, la firma del 2026-11-09 deja de
+valer y con ella las excepciones. Prender el sello pide `approve`, como toda configuración.
+
+En cerco-demo, `main` queda intacto y hay tres ramas:
+
+- `e1-base`: plugin 0.20.0, hooks reinstalados contra ese jar, reglas nuevas adoptadas (`flag-argument` y
+  `handed-out-whole` congelan un hallazgo cada una). `audit` verde.
+- `e1-interfaces` (worktree `cerco-demo-e1-interfaces`): la base más `<sealedSurface>interfaces</sealedSurface>`;
+  sello adoptado, 25 líneas (`binding` y `demo` vacíos). Para la tarea A y E1a.
+- `e1-all` (worktree `cerco-demo-e1-all`): lo mismo con `all`; 267 líneas. Para E1b.
+
+Los dos sellos coinciden con E0 (10/15 y 79/188). Falta que Fernando lea cada sello, anote cuánto tardó y firme
+con `approve` en cada worktree; después, un worktree por corrida, que sale de esas ramas.
