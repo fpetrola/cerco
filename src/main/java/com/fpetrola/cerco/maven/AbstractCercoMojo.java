@@ -85,7 +85,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   private List<String> declinedRules;
 
   /**
-   * Seals the surface of every module at this reach (interfaces, public or all; default none): a member others can
+   * Seals the surface of every module at this reach (interfaces, promises, public or all; default none): a member others can
    * use and a person did not sign is a finding that only a signature or taking it back clears. Needs a signature.
    */
   @Parameter
@@ -121,7 +121,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   /** A reach the configuration names, which has to be one cerco knows: a typo must not switch the seal off. */
   private String reach(String word) {
     return Reach.from(word).map(Reach::word).orElseThrow(() -> new IllegalArgumentException("cerco: sealedSurface "
-        + "is '" + word + "'; it has to be interfaces, public or all"));
+        + "is '" + word + "'; it has to be interfaces, promises, public or all"));
   }
 
   private List<String> listOr(List<String> configured, List<String> fallback) {

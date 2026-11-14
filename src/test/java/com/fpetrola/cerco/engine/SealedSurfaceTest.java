@@ -132,7 +132,7 @@ class SealedSurfaceTest {
   }
 
   private void complete(Path root) throws IOException {
-    write(root, "src/test/java/p/ShownContract.java", "package p; abstract class ShownContract { }");
+    write(root, "src/test/java/p/ShownContract.java", "package p; abstract class ShownContract { void hidden(Shown shown) { shown.hide(); } }");
     Path proposal = root.resolve("surface/pending/proposal.md");
     String text = Files.readString(proposal);
     Files.writeString(proposal, text
@@ -204,7 +204,7 @@ class SealedSurfaceTest {
     write(root, "m2/src/main/java/q/Other.java", "package q; public interface Other { void go(); }");
     engine.freeze(whole(root));
     engine.run(whole(root));
-    write(root, "src/test/java/p/OtherContract.java", "package p; abstract class OtherContract { }");
+    write(root, "src/test/java/p/OtherContract.java", "package p; abstract class OtherContract { void went(q.Other other) { other.go(); } }");
     Path proposal = root.resolve("surface/pending/proposal.md");
     String filled = Files.readString(proposal)
         .replaceFirst("(## Need\\n\\n)<!--.*?-->", "$1" + "x".repeat(160))
@@ -216,5 +216,15 @@ class SealedSurfaceTest {
         "$1none: m2 is new, its first design has nothing sealed to weigh"));
     Outcome run = engine.run(whole(root));
     assertEquals(2, run.awaitingSignature().size(), run.notes().toString());
+  }
+
+  @Test
+  void aProjectWithoutCodeIsSealedEmptySoItsFirstDesignIsProposed(@TempDir Path root) throws IOException {
+    Engine engine = new Engine(sealing, root, "1.0", clock);
+    engine.freeze(whole(root));
+    engine.run(whole(root));
+    assertEquals(List.of(), seal(root, "_root"));
+    grown(root);
+    assertEquals(3, unsigned(engine.run(whole(root))).size());
   }
 }

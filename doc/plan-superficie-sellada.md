@@ -573,3 +573,11 @@ Sin resolución de tipos, `@Override` alcanza: el compilador garantiza que sobre
 método inventado en una superclase del proyecto, el hallazgo queda en el original. Lo de que la interfaz «esté
 sellada» lo cubre `sealed-surface`. Sobre una copia de cerco-demo-2 da 13 hallazgos, todos en `tui-ansi`, los que
 la sesión había listado. Sus hallazgos no van a la propuesta: no se firman en el sello, se arreglan.
+
+**2026-11-14, cerco 0.22.0: el contrato nombra lo que crece.** Pedido de Fernando para cerco-tdd (TDD de afuera
+hacia adentro): cada firma de Grows tiene que estar nombrada por alguno de los tests de Contract (el tipo por su
+nombre simple, un constructor por `new Tipo` o `Tipo::new`, otro miembro por su nombre; lectura léxica). Si no, la
+propuesta queda incompleta y lo dice miembro por miembro. Alcance nuevo `promises`: interfaces de cualquier apertura,
+sin clases ni constructores. Bug: un proyecto sin código no escribía `_root.txt` y su primer módulo se habría
+adoptado sin propuesta; ahora la primera corrida completa lo sella vacío. Queda sin hacer: reconocer renombres.
+

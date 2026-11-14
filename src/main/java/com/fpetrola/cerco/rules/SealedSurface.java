@@ -69,6 +69,9 @@ public final class SealedSurface implements Rule {
       @Override
       public List<Finding> findings() {
         if (project.sawEveryFile()) {
+          if (offered.isEmpty()) {
+            seal.adopt("", List.of());
+          }
           offered.forEach((module, members) -> {
             seal.adopt(module, members);
             seal.shrink(module, members);

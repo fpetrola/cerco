@@ -75,10 +75,16 @@ public final class Proposal {
     if (form.getOrDefault(REMOVES, "").isBlank()) {
       missing.add(REMOVES + ": the sealed members this proposal takes away, or `none`");
     }
-    if (PATH.matcher(form.getOrDefault(CONTRACT, "")).results().map(MatchResult::group)
-        .noneMatch(path -> path.contains("src/test/") && Files.isRegularFile(root.resolve(path)))) {
+    List<Path> tests = PATH.matcher(form.getOrDefault(CONTRACT, "")).results().map(MatchResult::group)
+        .filter(path -> path.contains("src/test/")).map(root::resolve).filter(Files::isRegularFile).toList();
+    if (tests.isEmpty()) {
       missing.add(CONTRACT + ": the path of an existing test under src/test that says what the new members promise");
     }
+    String said = tests.stream().map(this::read).collect(Collectors.joining("\n"));
+    signatures(form.getOrDefault(GROWS, "")).stream().filter(signature -> !tests.isEmpty())
+        .filter(signature -> !new Named(signature).in(said)).forEach(signature -> missing.add(CONTRACT
+            + ": no test it lists names `" + signature + "`; a member no test asks for is speculation: take it "
+            + "back, or write the test that needs it"));
     return missing.stream().map(item -> "surface/pending/proposal.md, " + item).toList();
   }
 
@@ -97,6 +103,12 @@ public final class Proposal {
   private List<String> growing(String grows) {
     return grows.lines().filter(line -> line.startsWith("- ")).map(line -> line.substring(2).strip())
         .map(module -> module.equals("the project") ? "" : module).toList();
+  }
+
+  /** The signatures the Grows section lists, as cerco wrote them: `  - `signature`` lines. */
+  private List<String> signatures(String grows) {
+    return grows.lines().map(String::strip).filter(line -> line.startsWith("- `") && line.endsWith("`"))
+        .map(line -> line.substring(3, line.length() - 1)).toList();
   }
 
   /** Grows the seal by what is unsigned now and files the proposal, signed, as surface/<NNNN>.md. */
@@ -161,10 +173,14 @@ public final class Proposal {
   }
 
   private String read() {
+    return read(file);
+  }
+
+  private String read(Path path) {
     try {
-      return Files.readString(file);
+      return Files.readString(path);
     } catch (IOException e) {
-      throw new UncheckedIOException("could not read " + file, e);
+      throw new UncheckedIOException("could not read " + path, e);
     }
   }
 }
