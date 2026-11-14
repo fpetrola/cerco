@@ -31,4 +31,13 @@ class BaselineStoreTest {
     assertFalse(Files.exists(dir.resolve("baseline/rule.txt")));
     assertEquals(0, store.read("rule").total());
   }
+
+  @Test
+  void aFileWithConflictMarkersIsNamed(@TempDir Path dir) throws java.io.IOException {
+    BaselineStore store = new BaselineStore(dir);
+    Files.writeString(dir.resolve("self"), "<<<<<<< Updated upstream\na\tb\n=======\nc\td\n>>>>>>> Stashed changes\n");
+    IllegalStateException failure = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class,
+        () -> store.lines("self"));
+    assertTrue(failure.getMessage().contains("self has git conflict markers"), failure.getMessage());
+  }
 }

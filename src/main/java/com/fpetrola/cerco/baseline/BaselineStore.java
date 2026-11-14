@@ -127,7 +127,12 @@ public final class BaselineStore {
 
   private String read(Path file) {
     try {
-      return Files.readString(file, StandardCharsets.UTF_8);
+      String text = Files.readString(file, StandardCharsets.UTF_8);
+      if (text.lines().anyMatch(line -> line.startsWith("<<<<<<<") || line.startsWith(">>>>>>>"))) {
+        throw new IllegalStateException("cerco: " + file + " has git conflict markers (<<<<<<< / >>>>>>>), left by a "
+            + "merge or a stash pop. A person resolves it: `git checkout -- " + file + "` takes the committed one back");
+      }
+      return text;
     } catch (IOException e) {
       throw new UncheckedIOException("could not read the baseline file " + file, e);
     }

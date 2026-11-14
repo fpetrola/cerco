@@ -125,7 +125,12 @@ final class SealFile {
 
   private List<String> read() {
     try {
-      return Files.readAllLines(file, StandardCharsets.UTF_8);
+      List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+      if (lines.stream().anyMatch(line -> line.startsWith("<<<<<<<") || line.startsWith(">>>>>>>"))) {
+        throw new IllegalStateException("cerco: the seal " + file + " has git conflict markers (<<<<<<< / >>>>>>>), "
+            + "left by a merge or a stash pop. A person resolves it: `git checkout -- " + file + "`");
+      }
+      return lines;
     } catch (IOException e) {
       throw new UncheckedIOException("could not read the seal " + file, e);
     }
