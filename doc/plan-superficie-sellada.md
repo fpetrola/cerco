@@ -626,3 +626,11 @@ propuesta. Ahora, en un tipo que implementa `Runnable`, `Callable` o un tipo de 
 demás siguen valiendo. Las lambdas y method refs usadas como valores no cuentan. Queda un hueco: una interfaz del
 proyecto que extiende `Consumer` sin declarar nada propio.
 
+**2026-11-14, cerco 0.28.0: `plural-name`.** Pedido de Fernando desde cerco-tdd (MenuTitles, Windows, Keys, Lines):
+un tipo con nombre en plural cuya última palabra termina en -s (no -ss/-us/-is, con una lista de excepciones) y que
+además es un enum, guarda una colección, la entrega en un método propio o tiene métodos que reciben un int. El mensaje
+pide el concepto en singular y cómo rediseñar. Renombrar sin rediseñar queda en el diagnóstico como "no es arreglo",
+pero cerco no lo detecta todavía. En cerco mismo marcó 12 tipos (Rules, Sources, Digests, Surfaces...), congelados
+en SelfCheckTest como deuda; dos son nombres de reglas (ClonedMethods, StaticFilledByInstances), falsos positivos
+de frase.
+

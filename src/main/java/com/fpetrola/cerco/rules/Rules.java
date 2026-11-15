@@ -122,6 +122,7 @@ public final class Rules {
     return List.of(new FlagArgument(), new MapsKeyedAlike(), new NamedByText(), new HandedOutWhole(),
         new AbsenceAsState(), new ReachedThrough(), new WalkedFromOutside(), new EnumDecidedAcross(),
         new KeptTogether(), new DataWithoutBehaviour(), new StateAskedAcrossMethods(),
-        new ConditionRepeated(), new VisitorHandedParts(), new AcceptedManyWays());
+        new ConditionRepeated(), new VisitorHandedParts(), new AcceptedManyWays(),
+        new PluralName());
   }
 }

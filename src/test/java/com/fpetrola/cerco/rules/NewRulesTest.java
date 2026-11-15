@@ -346,4 +346,17 @@ class NewRulesTest {
     assertEquals(1, found.size());
     assertTrue(found.get(0).contains("`window.acceptViews(this)` in window"), found.toString());
   }
+
+  @Test
+  void aTypeNamedInPluralThatKeepsManyMissesItsElement() {
+    List<String> found = details(new PluralName(),
+        "package p; import java.util.List; class MenuTitles { List<String> titles; int start(int menu) { return 0; } }"
+            + " enum Lines { SINGLE, DOUBLE }"
+            + " class Status { List<String> notes; } class Address { int n; void at(int i) { } }"
+            + " class SaysHello { void greet() { } }");
+    assertEquals(2, found.size(), found.toString());
+    assertTrue(found.get(0).startsWith("MenuTitles is named in plural and keeps a collection, 1 method(s) take an int"),
+        found.toString());
+    assertTrue(found.get(1).startsWith("Lines is named in plural and is an enum"), found.toString());
+  }
 }
