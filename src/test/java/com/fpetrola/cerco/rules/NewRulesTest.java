@@ -375,4 +375,17 @@ class NewRulesTest {
     assertTrue(found.get(0).startsWith("MenuBar works by position: start(int), titleAt(int)."), found.toString());
     assertTrue(found.get(1).startsWith("Grid works by position: put(int, char)"), found.toString());
   }
+
+  @Test
+  void aFrozenPluralNameThatLostItsSignalsStaysOwed(@org.junit.jupiter.api.io.TempDir java.nio.file.Path baseline)
+      throws java.io.IOException {
+    java.nio.file.Files.writeString(baseline.resolve("plural-name.txt"),
+        "# cerco baseline v1 plural-name: count, key\n1\tsrc/main/java/p/A.java|RadioButtons\n");
+    String code = "package p; interface RadioButtons { void next(); } interface Windows { void next(); }";
+    assertEquals(List.of(), details(new PluralName(), code));
+    List<String> found = details(new PluralName(java.util.Optional.of(baseline)), code);
+    assertEquals(1, found.size(), found.toString());
+    assertTrue(found.get(0).startsWith("RadioButtons is named in plural and was frozen so"), found.toString());
+    assertTrue(new Rules(com.fpetrola.cerco.model.Settings.DEFAULTS).known().contains("frozen-name-kept"));
+  }
 }

@@ -21,6 +21,26 @@ import java.util.regex.Pattern;
  */
 public final class PluralName extends FoundInPlaceRule {
   private final IntType intType = new IntType();
+  private final java.util.Optional<java.nio.file.Path> frozen;
+
+  /** The rule with what the baseline in this directory (.cerco/baseline) froze of it, if a project has one. */
+  public PluralName(java.util.Optional<java.nio.file.Path> baseline) {
+    this.frozen = baseline.map(directory -> directory.resolve("plural-name.txt"));
+  }
+
+  /** The rule with nothing frozen: what a survey or a test measures. */
+  public PluralName() {
+    this(java.util.Optional.empty());
+  }
+
+  /**
+   * A frozen plural name is settled by its name, not by its signals: one that lost them (an int, a collection) while
+   * keeping the plural stays owed. That is what an autopsy asked for as frozen-name-kept.
+   */
+  @Override
+  public java.util.Set<String> alsoAnswers() {
+    return java.util.Set.of("frozen-name-kept");
+  }
   private static final Pattern LAST_WORD = Pattern.compile("[A-Z][a-z0-9]*$");
   private static final Pattern MANY = Pattern.compile(
       "(.*\\[\\]|(java\\.util\\.)?(List|Set|Map|Collection|Iterable|Stream|Deque|Queue|SortedMap|SortedSet|"
@@ -69,6 +89,9 @@ public final class PluralName extends FoundInPlaceRule {
       String name = type.getNameAsString();
       if (plural(name)) {
         List<String> signals = signals(type);
+        if (signals.isEmpty() && frozenKeys().contains(file.name() + "|" + name)) {
+          signals.add("was frozen so: it left no baseline while the name stays");
+        }
         if (!signals.isEmpty()) {
           found.add(finding(file, type, name, name + " is named in plural and " + String.join(", ", signals)
               + ": which one, in singular, is missing as an object? Redesign it (an object per element, walked by "
@@ -79,7 +102,20 @@ public final class PluralName extends FoundInPlaceRule {
     return found;
   }
 
-  private boolean plural(String name) {
+  /** The keys of this rule the baseline froze: lines `count<TAB>key`. */
+  private Set<String> frozenKeys() {
+    return frozen.filter(java.nio.file.Files::isRegularFile).map(file -> {
+      try {
+        return java.nio.file.Files.readAllLines(file).stream().filter(line -> line.contains("\t"))
+            .map(line -> line.substring(line.indexOf('\t') + 1)).collect(java.util.stream.Collectors.toSet());
+      } catch (java.io.IOException e) {
+        throw new java.io.UncheckedIOException("could not read " + file, e);
+      }
+    }).orElse(Set.of());
+  }
+
+  /** Whether the last word of the name is in plural. */
+  boolean plural(String name) {
     java.util.regex.Matcher last = LAST_WORD.matcher(name);
     if (!last.find()) {
       return false;

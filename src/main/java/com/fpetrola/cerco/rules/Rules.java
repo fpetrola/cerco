@@ -14,11 +14,13 @@ import java.util.stream.Stream;
 public final class Rules {
   private final Settings settings;
   private final List<Rule> signedSurface;
+  private final java.util.Optional<Path> baseline;
 
   /** The catalogue with nothing sealed: what a survey or a test measures. */
   public Rules(Settings settings) {
     this.settings = settings;
     this.signedSurface = List.of();
+    this.baseline = java.util.Optional.empty();
   }
 
   /** The catalogue of a project at this root, its sealed surface included when its configuration seals one. */
@@ -26,6 +28,7 @@ public final class Rules {
     this.settings = settings;
     this.signedSurface = settings.sealedSurface().flatMap(Reach::from).stream()
         .flatMap(reach -> surface(root, reach).stream()).toList();
+    this.baseline = java.util.Optional.of(root.resolve(".cerco").resolve("baseline"));
   }
 
   /** With the surface sealed, what a module offers is signed, and what a class offers is promised by interfaces. */
@@ -65,7 +68,8 @@ public final class Rules {
 
   /** Every rule this cerco has, switched off or not, candidates included: a rule an autopsy asked for is owed no more. */
   public Set<String> known() {
-    return Stream.concat(every().stream(), candidates().stream()).map(Rule::id).collect(Collectors.toSet());
+    return Stream.concat(every().stream(), candidates().stream())
+        .flatMap(rule -> Stream.concat(Stream.of(rule.id()), rule.alsoAnswers().stream())).collect(Collectors.toSet());
   }
 
   /**
@@ -123,6 +127,6 @@ public final class Rules {
         new AbsenceAsState(), new ReachedThrough(), new WalkedFromOutside(), new EnumDecidedAcross(),
         new KeptTogether(), new DataWithoutBehaviour(), new StateAskedAcrossMethods(),
         new ConditionRepeated(), new VisitorHandedParts(), new AcceptedManyWays(),
-        new PluralName(), new KeptByIndex());
+        new PluralName(baseline), new KeptByIndex());
   }
 }

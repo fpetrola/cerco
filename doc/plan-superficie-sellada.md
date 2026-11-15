@@ -640,3 +640,10 @@ un método no privado que recibe un int y con él indexa una colección del tipo
 plural-name no ve. En cerco-tdd 7697f58 marca exactamente TextListBox#selectShown y TextRadioButtons#choose, y deja
 pasar Keys#function(int).
 
+**2026-11-14, cerco 0.30.0: un plural congelado se salda con el nombre.** La autopsia 2026-11-14-plural-name-2 de
+cerco-tdd pidió `frozen-name-kept`: RadioButtons perdió su única señal (choose(int)) y salió de la línea de base con
+el nombre en plural. Una regla aparte no alcanza, porque en la misma corrida la clave sale de la línea de base y en
+la siguiente ya no hay nada que recordar. Por eso va dentro de `plural-name`: una clave congelada cuyo tipo sigue en
+plural se sigue reportando aunque no tenga señales. `Rule.alsoAnswers()` deja que `plural-name` responda por el id
+`frozen-name-kept`, y así la autopsia se cierra.
+

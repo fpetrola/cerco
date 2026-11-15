@@ -22,6 +22,14 @@ public interface Rule {
     return new Diagnosis("");
   }
 
+  /**
+   * Other rule ids an autopsy asked for that this rule answers: a need that turned out to be part of it, so the
+   * autopsy's debt is paid by this rule.
+   */
+  default java.util.Set<String> alsoAnswers() {
+    return java.util.Set.of();
+  }
+
   /** True when a change to one file can only move findings in that file, so the rule can run on a single edit. */
   default boolean perFile() {
     return true;
