@@ -34,7 +34,7 @@ public final class Rules {
   /** With the surface sealed, what a module offers is signed, and what a class offers is promised by interfaces. */
   private List<Rule> surface(Path root, Reach reach) {
     Seal seal = new Seal(root.resolve(".cerco").resolve("surface"));
-    return List.of(new SealedSurface(seal, reach), new UnpromisedMember(seal));
+    return List.of(new SealedSurface(seal, reach), new UnpromisedMember(seal, reach));
   }
 
   public List<Rule> all() {

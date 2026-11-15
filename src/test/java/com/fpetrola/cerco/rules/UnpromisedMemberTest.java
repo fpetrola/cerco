@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.fpetrola.cerco.model.Finding;
 import com.fpetrola.cerco.model.ParsedFile;
+import com.fpetrola.cerco.surface.Reach;
 import com.fpetrola.cerco.surface.Seal;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ class UnpromisedMemberTest {
     for (String source : sources) {
       files.add(snippets.parse("src/main/java/p/F" + files.size() + ".java", source));
     }
-    return new UnpromisedMember(new Seal(seal)).inspect(files).stream().map(Finding::detail).toList();
+    return new UnpromisedMember(new Seal(seal), Reach.ALL).inspect(files).stream().map(Finding::detail).toList();
   }
 
   @Test

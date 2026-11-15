@@ -7,6 +7,7 @@ import com.fpetrola.cerco.project.Location;
 import com.fpetrola.cerco.project.Project;
 import com.fpetrola.cerco.surface.Member;
 import com.fpetrola.cerco.surface.Offered;
+import com.fpetrola.cerco.surface.Reach;
 import com.fpetrola.cerco.surface.Seal;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -35,6 +36,7 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
   private static final Set<String> BORROWED = Set.of("Runnable", "Callable");
   private static final String FUNCTIONS = "java.util.function.";
   private final Seal seal;
+  private final Reach reach;
 
   /** What the files showed: the findings already sure, and the operations an interface has to declare. */
   public record Seen(List<Finding> found, List<Owed> owed) {
@@ -71,8 +73,9 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
     }
   }
 
-  public UnpromisedMember(Seal seal) {
+  public UnpromisedMember(Seal seal, Reach reach) {
     this.seal = seal;
+    this.reach = reach;
   }
 
   @Override
@@ -184,7 +187,7 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
   /** Whether the seal has this entrance, as the surface writes it at the same line. */
   private boolean signed(List<Member> offered, String module, CallableDeclaration<?> callable) {
     List<Member> same = offered.stream().filter(member -> member.line() == line(callable)
-        && member.name().equals(callable.getNameAsString())).toList();
+        && member.name().equals(callable.getNameAsString()) && member.within(reach)).toList();
     return !same.isEmpty() && seal.unsigned(module, same).isEmpty();
   }
 

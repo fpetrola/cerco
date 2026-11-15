@@ -94,6 +94,19 @@ class SealedSurfaceTest {
   }
 
   @Test
+  void anEntranceTheReachNeverSealsIsFrozenWhenTheSealArrives(@TempDir Path root) throws IOException {
+    write(root, "src/main/java/p/Shown.java", SHOWN);
+    write(root, "src/main/java/p/Box.java", "package p; public class Box implements Shown { public Box() { }"
+        + " @Override public void show(String text) { } }");
+    Engine engine = new Engine(new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(),
+        Settings.DEFAULTS.factoryPrefixes(), Settings.DEFAULTS.generatedGlobs(), 10, false, List.of(), true, List.of(),
+        Optional.of("interfaces")), root, "1.0", clock);
+    engine.freeze(whole(root));
+    engine.run(whole(root));
+    assertEquals(List.of(), engine.run(whole(root)).fresh());
+  }
+
+  @Test
   void aNewPublicMethodIsRedOnTheEditItself(@TempDir Path root) throws IOException {
     Engine engine = adopted(root);
     Path shown = write(root, "src/main/java/p/Shown.java",
