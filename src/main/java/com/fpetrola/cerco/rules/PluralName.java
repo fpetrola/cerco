@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
  * hand them out, take a position (an int), or be an enum, whose every value is one thing.
  */
 public final class PluralName extends FoundInPlaceRule {
+  private final IntType intType = new IntType();
   private static final Pattern LAST_WORD = Pattern.compile("[A-Z][a-z0-9]*$");
   private static final Pattern MANY = Pattern.compile(
       "(.*\\[\\]|(java\\.util\\.)?(List|Set|Map|Collection|Iterable|Stream|Deque|Queue|SortedMap|SortedSet|"
@@ -104,7 +105,7 @@ public final class PluralName extends FoundInPlaceRule {
       signals.add("hands one out");
     }
     long positions = open.stream().filter(method -> method.getParameters().stream()
-        .anyMatch(parameter -> parameter.getType().asString().equals("int"))).count();
+        .anyMatch(parameter -> intType.writes(parameter.getType()))).count();
     if (positions > 0) {
       signals.add(positions + " method(s) take an int");
     }

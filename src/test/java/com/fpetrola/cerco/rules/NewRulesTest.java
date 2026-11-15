@@ -359,4 +359,20 @@ class NewRulesTest {
         found.toString());
     assertTrue(found.get(1).startsWith("Lines is named in plural and is an enum"), found.toString());
   }
+
+  @Test
+  void aTypeThatWorksByPositionMissesItsElement() {
+    List<String> found = details(new KeptByIndex(),
+        "package p; import java.util.List; import java.util.OptionalInt; class MenuBar { List<Integer> starts;"
+            + " int start(int menu) { return starts.get(menu); } OptionalInt titleAt(int column) { return null; }"
+            + " int count() { return starts.size(); } }"
+            + " class Key { int[] codes; static Key function(int number) { return new Key(); } }"
+            + " class Grid { char[] cells; void put(int column, char c) { this.cells[column] = c; } }"
+            + " class Group { List<String> options; int chosen; void choose(int option) {"
+            + " if (option >= 0 && option < options.size()) { chosen = option; } } }");
+    assertEquals(3, found.size(), found.toString());
+    assertTrue(found.get(2).startsWith("Group works by position: choose(int)"), found.toString());
+    assertTrue(found.get(0).startsWith("MenuBar works by position: start(int), titleAt(int)."), found.toString());
+    assertTrue(found.get(1).startsWith("Grid works by position: put(int, char)"), found.toString());
+  }
 }

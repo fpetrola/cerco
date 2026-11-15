@@ -634,3 +634,9 @@ pero cerco no lo detecta todavía. En cerco mismo marcó 12 tipos (Rules, Source
 en SelfCheckTest como deuda; dos son nombres de reglas (ClonedMethods, StaticFilledByInstances), falsos positivos
 de frase.
 
+**2026-11-14, cerco 0.29.0: `kept-by-index`.** La pidió una autopsia de cerco-tdd (2026-11-14-plural-name):
+un método no privado que recibe un int y con él indexa una colección del tipo (`get`, `[]`), o lo compara con su
+`size()`/`length` para guardarlo, o que devuelve una posición (`OptionalInt`, un `indexOf`). Agarra el rename que
+plural-name no ve. En cerco-tdd 7697f58 marca exactamente TextListBox#selectShown y TextRadioButtons#choose, y deja
+pasar Keys#function(int).
+

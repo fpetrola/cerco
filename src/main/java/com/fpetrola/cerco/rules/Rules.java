@@ -123,6 +123,6 @@ public final class Rules {
         new AbsenceAsState(), new ReachedThrough(), new WalkedFromOutside(), new EnumDecidedAcross(),
         new KeptTogether(), new DataWithoutBehaviour(), new StateAskedAcrossMethods(),
         new ConditionRepeated(), new VisitorHandedParts(), new AcceptedManyWays(),
-        new PluralName());
+        new PluralName(), new KeptByIndex());
   }
 }
