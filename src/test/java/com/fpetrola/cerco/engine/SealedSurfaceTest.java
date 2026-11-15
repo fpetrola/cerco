@@ -81,6 +81,19 @@ class SealedSurfaceTest {
   }
 
   @Test
+  void whatAClassAlreadyOfferedWhenTheSealArrivesIsFrozenAndWhatItGrowsLaterIsRed(@TempDir Path root)
+      throws IOException {
+    write(root, "src/main/java/p/Box.java", "package p; class Box implements Shown { @Override public void show(String"
+        + " text) { } void old() { } }");
+    Engine engine = adopted(root);
+    Path box = write(root, "src/main/java/p/Box.java", "package p; class Box implements Shown { @Override public void"
+        + " show(String text) { } void old() { } void grown() { } }");
+    assertEquals(List.of("Box.grown (0 parameters) is promised by no interface Box implements"),
+        engine.run(whole(root)).fresh().stream().filter(finding -> finding.rule().equals("unpromised-member"))
+            .map(Finding::detail).toList());
+  }
+
+  @Test
   void aNewPublicMethodIsRedOnTheEditItself(@TempDir Path root) throws IOException {
     Engine engine = adopted(root);
     Path shown = write(root, "src/main/java/p/Shown.java",

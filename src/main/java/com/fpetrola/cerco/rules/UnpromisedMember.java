@@ -99,11 +99,6 @@ public final class UnpromisedMember extends ProjectRule<UnpromisedMember.Seen> {
   }
 
   @Override
-  public boolean baselined() {
-    return false;
-  }
-
-  @Override
   protected Seen start() {
     return new Seen(new ArrayList<>(), new ArrayList<>());
   }

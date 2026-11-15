@@ -647,3 +647,9 @@ la siguiente ya no hay nada que recordar. Por eso va dentro de `plural-name`: un
 plural se sigue reportando aunque no tenga señales. `Rule.alsoAnswers()` deja que `plural-name` responda por el id
 `frozen-name-kept`, y así la autopsia se cierra.
 
+
+**2026-11-15, cerco 0.31.0: `unpromised-member` se congela al llegar.** Pedido de Fernando para prender el sello en
+oozx: con `interfaces`/`promises` la regla daba 8775 hallazgos sobre el código existente, que no se podían congelar
+ni exceptuar, así que el proyecto quedaba en rojo para siempre. Ahora la regla tiene línea de base: lo que había al
+adoptar el sello queda congelado y sólo baja; un miembro nuevo sin interfaz que lo prometa es rojo. En un proyecto
+nuevo se congela vacía, así que nada cambia ahí.
