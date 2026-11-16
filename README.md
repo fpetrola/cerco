@@ -31,7 +31,7 @@ Eso es todo. En un proyecto multi-módulo va en el pom raíz y corre en cada mó
 La primera vez que corre, no hay línea de base: el plugin recorre todo el reactor, anota cada violación y cada
 archivo o método que excede el techo, y lo guarda bajo `.cerco/baseline/`, un archivo de texto por regla, legible en
 un diff. Hay que **commitear `.cerco/`**: a partir de ahí lo que está anotado se tolera, lo nuevo no, y cuando una
-violación congelada desaparece el plugin la borra de la línea de base solo, también cuando desaparece el archivo
+violación congelada desaparece el plugin la borra de la línea de base solo (si es que no se mudó: un hallazgo congelado cuyo archivo se movió sigue congelado bajo la ruta nueva, y no cuenta como arreglado ni pide autopsia), también cuando desaparece el archivo
 entero (eso lo ve una corrida completa, no el `quick` de un archivo). Nunca la agranda.
 
 Para conectarlo a Claude Code, una vez por proyecto:

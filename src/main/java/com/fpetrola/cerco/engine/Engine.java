@@ -53,9 +53,11 @@ public final class Engine {
   private final Feed feed = new Feed(new Parser(), new Generated());
   private final Reconciler reconciler = new Reconciler();
   private final CeilingReconciler ceilings = new CeilingReconciler();
+  private final Path root;
 
   public Engine(Settings settings, Path root, String projectVersion, Clock clock) {
     this.settings = settings;
+    this.root = root;
     this.rules = new Rules(settings, root);
     this.store = new BaselineStore(root.resolve(".cerco").resolve("baseline"));
     this.exemptionsFile = new ExemptionsFile(root.resolve(".cerco").resolve("exemptions.yaml"), rules.ids(),
@@ -107,7 +109,7 @@ public final class Engine {
     List<Solved> solved = new ArrayList<>();
     List<Finding> unbaselined = unbaselined(active, runs);
     for (Rule rule : active.stream().filter(Rule::baselined).toList()) {
-      Kept kept = new Kept(inScope, scope.full(), signed, rule.id());
+      Kept kept = new Kept(inScope, scope.full(), signed, rule.id(), root);
       rule.asBudget().ifPresentOrElse(
           budget -> tally.add(reconcile(budget, runs.measures(budget), inScope, kept, solved)),
           () -> tally.add(reconcile(rule, runs.findings(rule), inScope, kept, solved)));
@@ -251,12 +253,11 @@ public final class Engine {
     }
     Multiset stored = store.read(rule.id());
     Multiset baseline = stored.where(kept::entry);
-    Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings)
-        .plusSolved(stored.where(kept::gone).total());
+    Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings, stored.where(kept::departed));
     if (store.exists() && !reconciliation.updated().sameAs(stored)) {
       store.write(rule.id(), reconciliation.updated());
-      solved.add(new Solved(rule.id(), stored.keys().stream()
-          .filter(key -> kept.gone(key) || baseline.count(key) > reconciliation.updated().count(key)).toList()));
+      solved.add(new Solved(rule.id(), reconciliation.solvedAmong(stored.where(key -> kept.entry(key)
+          || kept.departed(key)))));
     }
     return reconciliation;
   }
@@ -301,7 +302,7 @@ public final class Engine {
    * Which frozen entries of one rule stay in the baseline for this run. In a full run an entry whose file is gone
    * is solved, and one a signed exemption covers is released, to come back as a finding that exemption covers.
    */
-  private record Kept(Set<String> inScope, boolean full, Signed signed, String ruleId) {
+  private record Kept(Set<String> inScope, boolean full, Signed signed, String ruleId, Path root) {
 
     boolean entry(String key) {
       String file = new Key(key).file();
@@ -310,6 +311,11 @@ public final class Engine {
 
     boolean gone(String key) {
       return full && !inScope.contains(new Key(key).file());
+    }
+
+    /** Whether the entry's file is gone: out of a whole run, or off the disk for a run over a few files. */
+    boolean departed(String key) {
+      return full ? gone(key) : !java.nio.file.Files.exists(root.resolve(new Key(key).file()));
     }
   }
 
