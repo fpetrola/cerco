@@ -21,7 +21,7 @@ class ReconcilerTest {
     baseline.add("b/B.java|k9", 1);
     Reconciliation result = new Reconciler().reconcile(baseline, Set.of("a/A.java"),
         List.of(at("a/A.java|k1", 30), at("a/A.java|k1", 10), at("a/A.java|k1", 20), at("a/A.java|k3", 5)),
-        new Multiset());
+        new Multiset(), (frozen, spot) -> false);
     assertEquals(List.of(at("a/A.java|k3", 5), at("a/A.java|k1", 30)), result.fresh());
     assertEquals(1, result.solved());
     assertEquals(2, result.frozen());
@@ -37,7 +37,7 @@ class ReconcilerTest {
     departed.add("old/A.java|A.k1", 1);
     departed.add("old/A.java|A.k2", 1);
     Reconciliation result = new Reconciler().reconcile(baseline, Set.of("new/A.java"),
-        List.of(at("new/A.java|A.k1", 3), at("new/A.java|A.k3", 4)), departed);
+        List.of(at("new/A.java|A.k1", 3), at("new/A.java|A.k3", 4)), departed, (frozen, spot) -> false);
     assertEquals(List.of(at("new/A.java|A.k3", 4)), result.fresh());
     assertEquals(1, result.frozen());
     assertEquals(1, result.updated().count("new/A.java|A.k1"));

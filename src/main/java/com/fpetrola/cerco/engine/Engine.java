@@ -253,11 +253,11 @@ public final class Engine {
     }
     Multiset stored = store.read(rule.id());
     Multiset baseline = stored.where(kept::entry);
-    Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings, stored.where(kept::departed));
+    Reconciliation reconciliation = reconciler.reconcile(baseline, inScope, findings, stored.where(kept::departed),
+        rule::narrows);
     if (store.exists() && !reconciliation.updated().sameAs(stored)) {
       store.write(rule.id(), reconciliation.updated());
-      solved.add(new Solved(rule.id(), reconciliation.solvedAmong(stored.where(key -> kept.entry(key)
-          || kept.departed(key)))));
+      solved.add(new Solved(rule.id(), reconciliation.solvedAmong(stored.where(kept::entry))));
     }
     return reconciliation;
   }
@@ -276,7 +276,7 @@ public final class Engine {
     if (store.exists() && !outcome.updated().equals(stored)) {
       store.writeCeilings(rule.id(), outcome.updated());
       solved.add(new Solved(rule.id(), stored.keySet().stream()
-          .filter(key -> kept.gone(key) || (baseline.containsKey(key) && !outcome.updated().containsKey(key)))
+          .filter(key -> baseline.containsKey(key) && !outcome.updated().containsKey(key))
           .toList()));
     }
     return outcome;

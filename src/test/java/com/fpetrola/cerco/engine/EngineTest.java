@@ -238,10 +238,39 @@ class EngineTest {
     Outcome full = engine.run(scope(root, true));
     assertTrue(full.fresh().isEmpty() && full.problems().isEmpty(), full.toString());
     assertEquals(1, full.solved());
-    assertEquals(1, full.owed().size(), "code that is gone owes an autopsy too");
+    assertEquals(0, full.owed().size(), "code that left the project owes no autopsy: nothing was fixed");
     assertEquals(1, full.frozen());
     assertEquals(1, engine.store().read("no-switch").total());
     assertTrue(engine.store().read("no-switch").keys().iterator().next().startsWith("src/main/java/p/A.java"));
+  }
+
+  @Test
+  void aFrozenPackageCycleThatShrinksStaysFrozenAndOwesNothing(@TempDir Path root) throws IOException {
+    Path c = root.resolve("src/main/java/c/C.java");
+    for (String[] unit : new String[][]{{"a", "A", "b.B"}, {"b", "B", "c.C"}, {"c", "C", "a.A"}}) {
+      Path file = root.resolve("src/main/java/" + unit[0] + "/" + unit[1] + ".java");
+      Files.createDirectories(file.getParent());
+      Files.writeString(file, "package " + unit[0] + "; import " + unit[2] + "; class " + unit[1] + " { }");
+    }
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true));
+    Files.writeString(root.resolve("src/main/java/b/B.java"), "package b; import a.A; class B { }");
+    Files.delete(c);
+    Outcome shrunk = engine.run(scope(root, true));
+    assertTrue(shrunk.fresh().isEmpty() && shrunk.owed().isEmpty(), shrunk.toString());
+  }
+
+  @Test
+  void aProjectFindingThatLosesItsEvidenceWithFilesThatLeftOwesNothing(@TempDir Path root) throws IOException {
+    write(root, "A.java", "package p; class A { int sides() { return 0; } }");
+    write(root, "B.java", "package p; class B { int sides() { return 0; } }");
+    Path c = write(root, "C.java", "package p; class C { int sides() { return 0; } }");
+    Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
+    engine.freeze(scope(root, true));
+    assertTrue(engine.store().read("no-cloned-methods").total() > 0);
+    Files.delete(c);
+    Outcome left = engine.run(scope(root, true));
+    assertTrue(left.fresh().isEmpty() && left.owed().isEmpty(), left.toString());
   }
 
   @Test

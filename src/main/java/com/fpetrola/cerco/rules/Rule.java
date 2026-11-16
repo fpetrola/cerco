@@ -65,6 +65,14 @@ public interface Rule {
     return true;
   }
 
+  /**
+   * Whether a finding at this spot is a frozen one at that spot grown smaller, so it stays frozen: what a rule whose
+   * finding names a whole group (a package cycle) says when the group lost members. Plain findings never narrow.
+   */
+  default boolean narrows(String frozenSpot, String spot) {
+    return false;
+  }
+
   /** The rule as a budget rule when it measures sizes against ceilings; empty for a plain rule. */
   default Optional<BudgetRule> asBudget() {
     return Optional.empty();

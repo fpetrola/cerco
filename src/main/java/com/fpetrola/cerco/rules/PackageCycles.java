@@ -111,6 +111,12 @@ public final class PackageCycles extends ProjectRule<PackageCycles.Graph> {
     }
   }
 
+  @Override
+  public boolean narrows(String frozenSpot, String spot) {
+    return frozenSpot.startsWith("cycle:") && spot.startsWith("cycle:")
+        && List.of(frozenSpot.substring(6).split(",")).containsAll(List.of(spot.substring(6).split(",")));
+  }
+
   private String parentOf(String name) {
     int dot = name.lastIndexOf('.');
     return dot < 0 ? "" : name.substring(0, dot);

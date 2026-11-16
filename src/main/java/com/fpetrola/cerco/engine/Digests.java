@@ -36,6 +36,11 @@ final class Digests {
     return files;
   }
 
+  /** Whether a file kept in those digests was not read now: it left the project. */
+  boolean lostSince(Map<String, String> before) {
+    return !byFile.keySet().containsAll(before.keySet());
+  }
+
   /** One digest of everything read. */
   String ofAll() {
     return Digest.of(byFile.toString()).hex();

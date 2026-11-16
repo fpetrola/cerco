@@ -41,14 +41,17 @@ public final class Witness {
   /**
    * The solved keys whose code changed. The others are recorded as loosened: a per-file finding whose file has the
    * digest it had, a project-wide one when no file of the project changed since the last full run, and any finding
-   * of a file that is now generated, since saying a tool wrote it is no fix and a person accepts it.
+   * of a file that is now generated, since saying a tool wrote it is no fix and a person accepts it. A project-wide
+   * finding gone in a run that lost files (they left the project, for another repository) is neither: its other half
+   * left with them, and nothing was fixed.
    */
   List<Solved> fixedInCode(List<Solved> solved, Digests digests, boolean full) {
     Map<String, String> before = read(DIGESTS);
     boolean projectSame = full && digests.ofAll().equals(read(SELF).get(PROJECT));
+    boolean filesLeft = full && digests.lostSince(before);
     List<String> loosened = new ArrayList<>(store.lines(LOOSENED));
     List<Solved> fixed = new ArrayList<>();
-    for (Solved one : solved) {
+    for (Solved one : solved.stream().filter(one -> !(filesLeft && projectWide.contains(one.ruleId()))).toList()) {
       Map<Boolean, List<String>> untouched = one.keys().stream().collect(Collectors.partitioningBy(key ->
           digests.isGenerated(new Key(key).file()) || (projectWide.contains(one.ruleId()) ? projectSame
               : digests.sameAsIn(before, new Key(key).file()))));
