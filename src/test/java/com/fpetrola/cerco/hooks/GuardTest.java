@@ -23,7 +23,7 @@ class GuardTest {
     assertFalse(decide("ls -la .cerco .cerco/baseline && wc -l .cerco/baseline/* 2>/dev/null").denied());
     assertFalse(decide("find .cerco -type f | sort").denied());
     assertFalse(decide("git commit -m 'freeze .cerco/baseline\n\nCo-Authored-By: X <x@example.com>'").denied());
-    assertFalse(decide("mvn -q -B -o com.fpetrola:cerco-maven-plugin:install-hooks && cat .claude/settings.json")
+    assertFalse(decide("mvn -q -B -o com.github.fpetrola:cerco:install-hooks && cat .claude/settings.json")
         .denied());
     assertFalse(decide("mvn -q verify").denied());
     assertFalse(decide("rm -rf target && cat .cerco/baseline/frozen").denied());

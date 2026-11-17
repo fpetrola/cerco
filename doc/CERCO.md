@@ -294,7 +294,7 @@ el classpath del plugin.
 - `quick`: si fue un `Edit`/`Write` de algo que no es `.java`, sale en 0. Si fue `Bash`, lee el comando con
   `ShellCommand` y sólo si **escribe algo** lanza Maven; un comando que sólo lee cuesta 60 ms.
 - `audit`: lanza Maven.
-- Maven se lanza como `mvn -q -o -B -f <root>/pom.xml -Dcerco.hook=true com.fpetrola:cerco-maven-plugin:<goal>`
+- Maven se lanza como `mvn -q -o -B -f <root>/pom.xml -Dcerco.hook=true com.github.fpetrola:cerco:<goal>`
   con `MAVEN_OPTS=-Xmx1g` y el JSON del hook por stdin (`MavenRun`). Exit distinto de 0 → `MavenOutput` limpia el
   ruido de Maven/JVM y el hook sale con **2** y el reporte en stderr.
 - JSON ilegible en la entrada → deja pasar (exit 0) con un aviso: un hook roto no debe trabar al agente.

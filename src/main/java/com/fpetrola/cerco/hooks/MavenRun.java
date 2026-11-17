@@ -16,7 +16,7 @@ public record MavenRun(String maven, Path root, String goal, String stdin) {
 
   public int run(PrintStream err) {
     List<String> command = List.of(maven, "-q", "-o", "-B", "-f", root.resolve("pom.xml").toString(),
-        "-Dcerco.hook=true", "com.fpetrola:cerco-maven-plugin:" + goal);
+        "-Dcerco.hook=true", "com.github.fpetrola:cerco:" + goal);
     try {
       ProcessBuilder builder = new ProcessBuilder(command).directory(root.toFile()).redirectErrorStream(true);
       builder.environment().put("MAVEN_OPTS", "-Xmx1g");

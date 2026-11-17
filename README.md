@@ -11,11 +11,22 @@ Todo el código es Java. No hay scripts.
 
 ## Instalar
 
+Se publica en [JitPack](https://jitpack.io/#fpetrola/cerco): cada tag es una versión.
+
+```xml
+<pluginRepositories>
+  <pluginRepository>
+    <id>jitpack</id>
+    <url>https://jitpack.io</url>
+  </pluginRepository>
+</pluginRepositories>
+```
+
 ```xml
 <plugin>
-  <groupId>com.fpetrola</groupId>
-  <artifactId>cerco-maven-plugin</artifactId>
-  <version>0.4.0</version>
+  <groupId>com.github.fpetrola</groupId>
+  <artifactId>cerco</artifactId>
+  <version>0.34.1</version>
   <executions>
     <execution>
       <goals>
@@ -37,7 +48,7 @@ entero (eso lo ve una corrida completa, no el `quick` de un archivo). Nunca la a
 Para conectarlo a Claude Code, una vez por proyecto:
 
 ```
-mvn com.fpetrola:cerco-maven-plugin:install-hooks
+mvn com.github.fpetrola:cerco:install-hooks
 ```
 
 Eso escribe en `.claude/settings.json`, sin tocar lo que ya hubiera: un hook `PreToolUse` que niega los comandos de
@@ -86,7 +97,7 @@ decide por la escritura real, no por la mención.
 | `file-length` | cohesión | un archivo de más de 400 líneas; los congelados sólo pueden achicarse |
 | `method-length` | cohesión | un método o constructor de más de 40 líneas; los congelados sólo pueden achicarse |
 
-`mvn com.fpetrola:cerco-maven-plugin:explain` imprime cada regla con su principio, su remedio, los modelos que su smell
+`mvn com.github.fpetrola:cerco:explain` imprime cada regla con su principio, su remedio, los modelos que su smell
 suele esconder y cuánto de ella está congelado.
 
 Cada regla de diseño trae un **diagnóstico**: los modelos que suelen faltar detrás de su smell (de un vocabulario
@@ -102,7 +113,7 @@ que aprendió la última corrida completa (`target/cerco/project.json`). La lect
 del hallazgo ni cambia ningún veredicto.
 
 Las reglas **candidatas** (hoy doce, cada una con su ficha en `doc/reglas/`) no frenan: se miden con `survey` y entran al catálogo cuando su
-ficha en `doc/reglas/` muestra que encuentran casos reales más allá del que las originó. `mvn help:describe -Dplugin=com.fpetrola:cerco-maven-plugin -Ddetail` describe los parámetros.
+ficha en `doc/reglas/` muestra que encuentran casos reales más allá del que las originó. `mvn help:describe -Dplugin=com.github.fpetrola:cerco -Ddetail` describe los parámetros.
 
 Las nueve reglas que no son de polimorfismo clásico ni de tamaño nacieron de un experimento: un agente al que se le
 pidió un framework nuevo sobre un proyecto con el cerco 0.1.0 instalado leyó las reglas del bytecode y diseñó contra
@@ -161,7 +172,7 @@ menos 20 caracteres, una `category` (`false-positive`, `migration` o `decision`)
 - `untilVersion`: una versión del proyecto; al llegar, muere.
 - `budget`: cuántos hallazgos puede cubrir como máximo; uno más y es rojo.
 
-`mvn com.fpetrola:cerco-maven-plugin:explain` imprime un archivo de ejemplo completo con estas reglas.
+`mvn com.github.fpetrola:cerco:explain` imprime un archivo de ejemplo completo con estas reglas.
 
 Una excepción firmada también alcanza a lo que ya estaba congelado: en la siguiente corrida completa, los hallazgos
 de la línea de base que cubre salen de ella y pasan a exceptuados. Así la deuda tolerada se convierte en decisión
@@ -174,7 +185,7 @@ son una señal de que la regla, no el código, es lo que hay que arreglar.
 El archivo no vale hasta que una persona lo firma:
 
 ```
-mvn com.fpetrola:cerco-maven-plugin:approve
+mvn com.github.fpetrola:cerco:approve
 ```
 
 `approve` exige una terminal interactiva. Un agente corriendo en un shell sin terminal no puede ejecutarlo: le
@@ -214,7 +225,7 @@ cerco no puede juzgar el análisis, pero sí obligar a que exista y a que mire a
 | `Candidate rule` | `rule: <id>` de una regla **nueva**, con qué detectaría y un ejemplo `ruta:línea`; o `covered-by: <id>` de una regla que ya existe y alcanzó; o `same-as: <id>` de una autopsia archivada; o `none:` y por qué ninguna regla podría |
 
 Cuando el formulario está completo, la siguiente corrida lo mueve a `.cerco/autopsies/` y salda la deuda. El catálogo va a
-git: es el registro de por qué el código tenía la forma que tenía. `mvn com.fpetrola:cerco-maven-plugin:autopsies`
+git: es el registro de por qué el código tenía la forma que tenía. `mvn com.github.fpetrola:cerco:autopsies`
 lista las reglas candidatas ordenadas por cuántas autopsias las piden (`same-as` cuenta para la regla de la autopsia
 que nombra): una regla que vuelve desde arreglos que no tienen nada que ver es la próxima regla de cerco.
 
