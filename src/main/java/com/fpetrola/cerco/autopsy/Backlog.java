@@ -40,7 +40,7 @@ public final class Backlog {
   /** The rules asked for that this cerco does not have and nobody declined, each owed with what building it takes. */
   public List<Owed> unbuilt(Set<String> known, List<String> declined) {
     return wanted().stream().filter(one -> !known.contains(one.ruleId()) && !declined.contains(one.ruleId()))
-        .map(one -> new Owed("rule-" + one.ruleId(), one.ruleId(), "autopsies/" + one.autopsies().get(0) + ".md",
+        .map(one -> new Owed("rule-" + one.ruleId(), one.ruleId(), ".cerco/autopsies/" + one.autopsies().get(0) + ".md",
             List.of(building(one)))).toList();
   }
 

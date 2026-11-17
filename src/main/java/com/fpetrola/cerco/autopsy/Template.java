@@ -10,7 +10,7 @@ final class Template {
         + "<!-- Findings went away. That is the symptom gone, not the cause understood. Read the code around the fix\n"
         + "and answer: what was missing from the model that let this shape appear, where else it shows, and what\n"
         + "rule would stop it next time. cerco stays red until every section is filled; then it files this form in\n"
-        + "autopsies/ by itself. Places are written path:line, relative to the project root, and must exist. -->\n\n"
+        + ".cerco/autopsies/ by itself. Places are written path:line, relative to the project root, and must exist. -->\n\n"
         + "## " + Form.SYMPTOM + "\n\n"
         + "## " + Form.CAUSE + "\n\n"
         + "<!-- Not what the rule says, but why the code was written that way: the concept, responsibility or\n"

@@ -22,8 +22,8 @@ public final class Autopsies {
   private final FormCheck check;
 
   public Autopsies(Path root, Set<String> rules, BaselineStore frozen) {
-    this.ledger = new Ledger(root.resolve(".cerco").resolve("autopsies"));
-    this.catalog = new Catalog(root.resolve("autopsies"));
+    this.ledger = new Ledger(new com.fpetrola.cerco.model.Layout(root).owed());
+    this.catalog = new Catalog(new com.fpetrola.cerco.model.Layout(root).autopsies());
     this.check = new FormCheck(new References(root), catalog, rules, frozen);
   }
 
@@ -60,7 +60,7 @@ public final class Autopsies {
       Form form = Form.parse(catalog.read(file));
       List<String> missing = missing(form, entry, awaiting);
       if (!missing.isEmpty()) {
-        owed.add(new Owed(entry.id(), entry.ruleId(), "autopsies/pending/" + entry.id() + ".md", missing));
+        owed.add(new Owed(entry.id(), entry.ruleId(), ".cerco/autopsies/pending/" + entry.id() + ".md", missing));
         continue;
       }
       (form.declines() ? awaiting : complete).add(entry.id());

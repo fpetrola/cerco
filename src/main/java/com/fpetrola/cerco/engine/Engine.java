@@ -15,6 +15,7 @@ import com.fpetrola.cerco.exemptions.Digest;
 import com.fpetrola.cerco.exemptions.Exempting;
 import com.fpetrola.cerco.exemptions.ExemptionsFile;
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.Layout;
 import com.fpetrola.cerco.model.Measure;
 import com.fpetrola.cerco.model.Settings;
 import com.fpetrola.cerco.model.SourceFile;
@@ -59,14 +60,14 @@ public final class Engine {
     this.settings = settings;
     this.root = root;
     this.rules = new Rules(settings, root);
-    this.store = new BaselineStore(root.resolve(".cerco").resolve("baseline"));
-    this.exemptionsFile = new ExemptionsFile(root.resolve(".cerco").resolve("exemptions.yaml"), rules.ids(),
+    this.store = new BaselineStore(new Layout(root).baseline());
+    this.exemptionsFile = new ExemptionsFile(new Layout(root).exemptions(), rules.ids(),
         settings.maxExemptions());
-    this.approvalFile = root.resolve(".cerco").resolve("approved");
+    this.approvalFile = new Layout(root).approved();
     this.projectVersion = projectVersion;
     this.clock = clock;
     this.autopsies = new Autopsies(root, rules.ids(), store);
-    this.proposal = new Proposal(root, new Seal(root.resolve(".cerco").resolve("surface")));
+    this.proposal = new Proposal(root, new Seal(new Layout(root).seal()));
     this.recall = new Recall(root.resolve("target").resolve("cerco").resolve("project.json"));
   }
 
@@ -182,7 +183,7 @@ public final class Engine {
       notes.addAll(missing);
       return List.of();
     }
-    problems.add("surface/pending/proposal.md is complete: a person reads it and signs with `mvn cerco:approve`, "
+    problems.add(".cerco/surface/pending/proposal.md is complete: a person reads it and signs with `mvn cerco:approve`, "
         + "or says no and the new members are taken back. Not yours; tell them and stop.");
     return unsigned;
   }
@@ -237,7 +238,7 @@ public final class Engine {
     }
     autopsies.owe(solved, LocalDate.now(clock));
     Autopsies.Settled settled = autopsies.settle();
-    settled.awaiting().forEach(id -> problems.add("the autopsy autopsies/pending/" + id + ".md says no rule could "
+    settled.awaiting().forEach(id -> problems.add("the autopsy .cerco/autopsies/pending/" + id + ".md says no rule could "
         + "catch its case (`none:`), and only a person accepts that: read it and sign with `mvn cerco:approve`, or "
         + "have it propose a rule"));
     List<Owed> owed = new ArrayList<>(settled.owed());

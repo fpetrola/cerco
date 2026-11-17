@@ -28,7 +28,7 @@ class AutopsiesTest {
   private static final String CLEAN = "package p;\nclass A {\n  int f(int x) {\n    return x;\n  }\n}\n";
   private static final String OTHER = "package p;\nclass B {\n  int g(int x) {\n    return x + 1;\n  }\n}\n";
   private static final String FORM_ID = "2026-11-10-no-switch";
-  private static final String PENDING = "autopsies/pending/" + FORM_ID + ".md";
+  private static final String PENDING = ".cerco/autopsies/pending/" + FORM_ID + ".md";
   private static final String CAUSE = "The value x stood for a kind of thing that the model never had as a type, so "
       + "every place that needed to behave differently per kind asked the integer what it was instead of asking an "
       + "object to do it.";
@@ -88,14 +88,14 @@ class AutopsiesTest {
     assertEquals("no-switch", owed.ruleId());
     String form = Files.readString(root.resolve(PENDING));
     assertTrue(form.contains("src/main/java/p/A.java|"), form);
-    assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".owed")));
+    assertTrue(Files.exists(root.resolve(".cerco/sealed/autopsies/" + FORM_ID + ".owed")));
 
     write(root, PENDING, filled(CAUSE, covered("no-switch")));
     Outcome done = engine.run(scope(root));
     assertTrue(done.green(), done.toString());
-    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".md")));
     assertFalse(Files.exists(root.resolve(PENDING)));
-    assertFalse(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".owed")));
+    assertFalse(Files.exists(root.resolve(".cerco/sealed/autopsies/" + FORM_ID + ".owed")));
   }
 
   @Test
@@ -121,7 +121,7 @@ class AutopsiesTest {
     write(root, PENDING, complete);
     engine.run(scope(root));
     assertEquals(java.util.Map.of("no-switch", java.util.Map.of("variation-as-data", 1L)),
-        new Catalog(root.resolve("autopsies")).modelsByRule());
+        new Catalog(root.resolve(".cerco/autopsies")).modelsByRule());
   }
 
   @Test
@@ -149,7 +149,7 @@ class AutopsiesTest {
   @Test
   void aCauseCopiedFromAFiledAutopsyAndAnUnknownSameAsAreRefused(@TempDir Path root) throws IOException {
     Engine engine = fixedOnce(root, Settings.DEFAULTS);
-    write(root, "autopsies/2026-11-01-no-cast.md", filled(CAUSE, proposing("kind-without-type")));
+    write(root, ".cerco/autopsies/2026-11-01-no-cast.md", filled(CAUSE, proposing("kind-without-type")));
     engine.run(scope(root));
     write(root, PENDING, filled(CAUSE, "same-as: 2026-10-01-nothing"));
     List<String> missing = engine.run(scope(root)).owed().get(0).missing();
@@ -158,7 +158,7 @@ class AutopsiesTest {
     write(root, PENDING, filled(CAUSE.replace("never had", "did not have"), "same-as: 2026-11-01-no-cast"));
     assertEquals(List.of("kind-without-type"), engine.run(scope(root)).owed().stream().map(Owed::ruleId).toList());
     assertEquals(List.of(new Backlog.Wanted("kind-without-type", List.of("2026-11-01-no-cast", FORM_ID))),
-        new Backlog(new Catalog(root.resolve("autopsies"))).wanted());
+        new Backlog(new Catalog(root.resolve(".cerco/autopsies"))).wanted());
   }
 
   @Test
@@ -179,7 +179,7 @@ class AutopsiesTest {
     }
     write(root, PENDING, filled(CAUSE, covered("no-switch")));
     assertTrue(engine.run(scope(root)).green());
-    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".md")));
   }
 
   @Test
@@ -189,10 +189,10 @@ class AutopsiesTest {
     write(root, PENDING, filled(CAUSE, proposing("kind-without-type")));
     Outcome filed = engine.run(scope(root));
     assertFalse(filed.green());
-    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".md")));
     Owed rule = filed.owed().get(0);
     assertEquals("kind-without-type", rule.ruleId());
-    assertEquals("autopsies/" + FORM_ID + ".md", rule.form());
+    assertEquals(".cerco/autopsies/" + FORM_ID + ".md", rule.form());
     assertTrue(rule.missing().get(0).contains(FORM_ID), rule.missing().toString());
 
     Settings declining = new Settings(400, 40, Settings.DEFAULTS.utilitySuffixes(), Settings.DEFAULTS.factoryPrefixes(),
@@ -226,7 +226,7 @@ class AutopsiesTest {
     Engine engine = fixedOnce(root, off);
     Outcome outcome = engine.run(scope(root));
     assertTrue(outcome.owed().isEmpty());
-    assertFalse(Files.exists(root.resolve("autopsies")));
+    assertFalse(Files.exists(root.resolve(".cerco/autopsies")));
   }
 
   private static final String NONE = "none: the shape is a choice of the hardware being emulated, read off a manual "
@@ -241,10 +241,10 @@ class AutopsiesTest {
     assertFalse(waiting.green(), waiting.toString());
     assertTrue(waiting.owed().isEmpty() && waiting.fresh().isEmpty(), "the agent owes nothing more: a person does");
     assertTrue(waiting.problems().get(0).contains(PENDING), waiting.problems().toString());
-    assertFalse(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    assertFalse(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".md")));
 
     engine.autopsies().accept(engine.autopsies().settle().awaiting());
-    assertTrue(Files.exists(root.resolve("autopsies/" + FORM_ID + ".md")));
+    assertTrue(Files.exists(root.resolve(".cerco/autopsies/" + FORM_ID + ".md")));
     assertTrue(engine.run(scope(root)).green());
   }
 
@@ -256,7 +256,7 @@ class AutopsiesTest {
     String key = "src/main/java/p/A.java|A.f|x";
     autopsies.owe(List.of(new Solved("no-switch", List.of(key)), new Solved("no-cast", List.of(key))),
         LocalDate.of(2026, 11, 10));
-    write(root, "autopsies/pending/2026-11-10-no-cast.md", filled(CAUSE, NONE));
+    write(root, ".cerco/autopsies/pending/2026-11-10-no-cast.md", filled(CAUSE, NONE));
     write(root, PENDING, filled(CAUSE.replace("never had", "did not have"), NONE));
 
     Autopsies.Settled first = autopsies.settle();
@@ -271,7 +271,7 @@ class AutopsiesTest {
   @Test
   void sameAsMustJoinARuleAlreadyAskedFor(@TempDir Path root) throws IOException {
     Engine engine = fixedOnce(root, Settings.DEFAULTS);
-    write(root, "autopsies/2026-11-01-hardware.md", filled(CAUSE.replace("never had", "had no"), NONE));
+    write(root, ".cerco/autopsies/2026-11-01-hardware.md", filled(CAUSE.replace("never had", "had no"), NONE));
     engine.run(scope(root));
     write(root, PENDING, filled(CAUSE, "same-as: 2026-11-01-hardware"));
     List<String> missing = engine.run(scope(root)).owed().get(0).missing();

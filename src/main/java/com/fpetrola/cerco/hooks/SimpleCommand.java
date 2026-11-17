@@ -26,6 +26,12 @@ public record SimpleCommand(List<String> words, List<String> redirectTargets) {
         || redirectTargets.stream().anyMatch(word -> word.contains(path));
   }
 
+  /** Names the directory itself, not something inside it. */
+  public boolean names(String dir) {
+    return words.stream().map(word -> word.replaceAll("/+$", ""))
+        .anyMatch(word -> word.equals(dir) || word.endsWith("/" + dir));
+  }
+
   public boolean changesDirectoryInto(String path) {
     return head().equals("cd") && mentions(path);
   }

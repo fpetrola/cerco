@@ -10,8 +10,8 @@ public final class AutopsiesMojo extends AbstractCercoMojo {
 
   @Override
   protected void run() {
-    Catalog catalog = new Catalog(root().resolve("autopsies"));
-    StringBuilder out = new StringBuilder("cerco autopsies: " + catalog.done().size() + " filed in autopsies/\n");
+    Catalog catalog = new Catalog(new com.fpetrola.cerco.model.Layout(root()).autopsies());
+    StringBuilder out = new StringBuilder("cerco autopsies: " + catalog.done().size() + " filed in .cerco/autopsies/\n");
     new Backlog(catalog).wanted().forEach(wanted -> out.append("\n").append(wanted.ruleId()).append("  asked by ")
         .append(wanted.autopsies().size()).append(": ").append(String.join(", ", wanted.autopsies())));
     out.append("\n\nEach one is a cause found while fixing a finding. A rule asked for by unrelated fixes is the gate's "

@@ -28,12 +28,12 @@ public final class Rules {
     this.settings = settings;
     this.signedSurface = settings.sealedSurface().flatMap(Reach::from).stream()
         .flatMap(reach -> surface(root, reach).stream()).toList();
-    this.baseline = java.util.Optional.of(root.resolve(".cerco").resolve("baseline"));
+    this.baseline = java.util.Optional.of(new com.fpetrola.cerco.model.Layout(root).baseline());
   }
 
   /** With the surface sealed, what a module offers is signed, and what a class offers is promised by interfaces. */
   private List<Rule> surface(Path root, Reach reach) {
-    Seal seal = new Seal(root.resolve(".cerco").resolve("surface"));
+    Seal seal = new Seal(new com.fpetrola.cerco.model.Layout(root).seal());
     return List.of(new SealedSurface(seal, reach), new UnpromisedMember(seal, reach));
   }
 

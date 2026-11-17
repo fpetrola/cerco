@@ -48,11 +48,11 @@ public final class ConsoleReport {
       outcome.notes().forEach(note -> out.append("  - ").append(note).append('\n'));
     }
     if (!outcome.fresh().isEmpty()) {
-      out.append("Exemptions are a human's decision, signed with `mvn cerco:approve` at a terminal; .cerco/ is not "
+      out.append("Exemptions are a human's decision, signed with `mvn cerco:approve` at a terminal; .cerco/sealed/ is not "
           + "yours to edit, and the baseline only shrinks. Fix the code.\n");
     } else if (!outcome.problems().isEmpty() && outcome.owed().isEmpty()) {
       out.append("No new finding: what remains is a human's to settle (`mvn cerco:approve` at a terminal, or editing "
-          + ".cerco/exemptions.yaml). Not yours; tell them and carry on.\n");
+          + ".cerco/sealed/exemptions.yaml). Not yours; tell them and carry on.\n");
     }
     return out.toString();
   }
@@ -74,7 +74,7 @@ public final class ConsoleReport {
         .append("  Findings went away: the symptom is gone, the cause is not understood yet. Fill each form below: the\n")
         .append("  model that was missing, the places around the fix you read, where else the same cause shows, the\n")
         .append("  principle, and the rule that would catch it next time. cerco files a complete form in autopsies/ by\n")
-        .append("  itself; until then it stays red, and .cerco/autopsies keeps the debt even if the form is deleted.\n")
+        .append("  itself; until then it stays red, and .cerco/sealed/autopsies keeps the debt even if the form is deleted.\n")
         .append("  A rule a filed autopsy proposes is owed the same way until the running cerco has it.\n");
     owed.forEach(one -> out.append(one.told()));
     return out.toString();

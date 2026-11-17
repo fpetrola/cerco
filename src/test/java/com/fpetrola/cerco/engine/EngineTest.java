@@ -126,7 +126,7 @@ class EngineTest {
     engine.freeze(scope(root, true));
     engine.store().extendFrozen(List.of("no-goto"));
     engine.store().write("no-goto", Multiset.of(List.of("src/main/java/p/A.java|p.A|goto")));
-    Path self = root.resolve(".cerco/baseline/self");
+    Path self = root.resolve(".cerco/sealed/baseline/self");
     Files.writeString(self, Files.readString(self).replaceFirst("[0-9a-f]{64}\tdefaults", "0\tdefaults"));
 
     Outcome gone = engine.run(scope(root, true));
@@ -158,7 +158,7 @@ class EngineTest {
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
     engine.freeze(scope(root, true));
     write(root, "A.java", SWITCHY);
-    Path yaml = root.resolve(".cerco/exemptions.yaml");
+    Path yaml = root.resolve(".cerco/sealed/exemptions.yaml");
     Files.writeString(yaml, """
         exemptions:
           - rule: no-switch
@@ -199,8 +199,8 @@ class EngineTest {
     Path a = write(root, "A.java", "package p; class A { Object f(Object o) { return (String) o; } }");
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
     engine.freeze(scope(root, true));
-    Files.writeString(root.resolve(".cerco/baseline/frozen"), "2026-11-01\nno-switch\n");
-    Files.deleteIfExists(root.resolve(".cerco/baseline/no-cast.txt"));
+    Files.writeString(root.resolve(".cerco/sealed/baseline/frozen"), "2026-11-01\nno-switch\n");
+    Files.deleteIfExists(root.resolve(".cerco/sealed/baseline/no-cast.txt"));
 
     Outcome partial = engine.run(new Scope("quick", List.of(new SourceFile(root, a)), false));
     assertTrue(partial.green(), partial.toString());
@@ -278,7 +278,7 @@ class EngineTest {
     write(root, "A.java", SWITCHY);
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
     engine.freeze(scope(root, true));
-    Path yaml = root.resolve(".cerco/exemptions.yaml");
+    Path yaml = root.resolve(".cerco/sealed/exemptions.yaml");
     Files.writeString(yaml, """
         exemptions:
           - rule: no-switch

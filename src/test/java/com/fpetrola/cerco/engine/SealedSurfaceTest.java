@@ -51,8 +51,8 @@ class SealedSurfaceTest {
   }
 
   private List<String> seal(Path root, String module) throws IOException {
-    assertTrue(Files.isRegularFile(root.resolve(".cerco/surface").resolve(module + ".yaml")));
-    return new Seal(root.resolve(".cerco/surface")).signed(module);
+    assertTrue(Files.isRegularFile(root.resolve(".cerco/sealed/surface").resolve(module + ".yaml")));
+    return new Seal(root.resolve(".cerco/sealed/surface")).signed(module);
   }
 
   private Engine adopted(Path root) throws IOException {
@@ -76,8 +76,8 @@ class SealedSurfaceTest {
     engine.run(whole(root));
     engine.run(only(root, other));
     assertTrue(seal(root, "_root").contains("p.Shown#show(String): void"));
-    assertTrue(Files.readString(root.resolve("surface/pending/proposal.md")).contains("p.Other#go(): void"));
-    assertEquals(List.of(), new Seal(root.resolve(".cerco/surface")).dropped());
+    assertTrue(Files.readString(root.resolve(".cerco/surface/pending/proposal.md")).contains("p.Other#go(): void"));
+    assertEquals(List.of(), new Seal(root.resolve(".cerco/sealed/surface")).dropped());
   }
 
   @Test
@@ -150,7 +150,7 @@ class SealedSurfaceTest {
     Engine engine = new Engine(Settings.DEFAULTS, root, "1.0", clock);
     engine.freeze(whole(root));
     engine.run(whole(root));
-    assertFalse(Files.exists(root.resolve(".cerco/surface")));
+    assertFalse(Files.exists(root.resolve(".cerco/sealed/surface")));
   }
 
   private Path grown(Path root) throws IOException {
@@ -160,7 +160,7 @@ class SealedSurfaceTest {
 
   private void complete(Path root) throws IOException {
     write(root, "src/test/java/p/ShownContract.java", "package p; abstract class ShownContract { void hidden(Shown shown) { shown.hide(); } }");
-    Path proposal = root.resolve("surface/pending/proposal.md");
+    Path proposal = root.resolve(".cerco/surface/pending/proposal.md");
     String text = Files.readString(proposal);
     Files.writeString(proposal, text
         .replaceFirst("(## Need\\n\\n)<!--.*?-->", "$1" + "A view has to take its text away again when the data it "
@@ -177,7 +177,7 @@ class SealedSurfaceTest {
     grown(root);
     Outcome run = engine.run(whole(root));
     assertEquals(1, unsigned(run).size());
-    assertTrue(Files.readString(root.resolve("surface/pending/proposal.md")).contains("`p.Shown#hide(): void`"));
+    assertTrue(Files.readString(root.resolve(".cerco/surface/pending/proposal.md")).contains("`p.Shown#hide(): void`"));
     assertTrue(run.notes().stream().anyMatch(note -> note.contains("Need")), run.notes().toString());
     assertTrue(run.awaitingSignature().isEmpty());
   }
@@ -192,14 +192,11 @@ class SealedSurfaceTest {
     assertEquals(List.of(), unsigned(run));
     assertEquals(1, run.awaitingSignature().size());
     assertTrue(run.problems().stream().anyMatch(problem -> problem.contains("is complete")), run.problems().toString());
-    Seal seal = new Seal(root.resolve(".cerco/surface"));
-    write(root, "surface/0001.md", "# Surface proposal, signed before 0.24");
+    Seal seal = new Seal(root.resolve(".cerco/sealed/surface"));
     new Proposal(root, seal).sign(run.awaitingSignature(), "a person", LocalDate.of(2026, 11, 13));
     assertTrue(seal(root, "_root").contains("p.Shown#hide(): void"));
-    assertFalse(Files.exists(root.resolve("surface/pending/proposal.md")));
-    assertTrue(Files.readString(root.resolve(".cerco/surface/signed/0001.md")).contains("signed before 0.24"));
-    assertTrue(Files.readString(root.resolve(".cerco/surface/signed/0002.md")).contains("signed by a person on 2026-11-13"));
-    assertFalse(Files.exists(root.resolve("surface/0001.md")));
+    assertFalse(Files.exists(root.resolve(".cerco/surface/pending/proposal.md")));
+    assertTrue(Files.readString(root.resolve(".cerco/sealed/surface/signed/0001.md")).contains("signed by a person on 2026-11-13"));
     Outcome after = engine.run(whole(root));
     assertEquals(List.of(), unsigned(after));
     assertTrue(after.awaitingSignature().isEmpty());
@@ -210,7 +207,7 @@ class SealedSurfaceTest {
     Engine engine = adopted(root);
     write(root, "src/main/java/p/Shown.java", "package p; public interface Shown { }");
     engine.run(whole(root));
-    Seal seal = new Seal(root.resolve(".cerco/surface"));
+    Seal seal = new Seal(root.resolve(".cerco/sealed/surface"));
     assertEquals(List.of(": p.Shown#show(String): void"), seal.dropped());
     seal.grow("", List.of());
     assertEquals(List.of(), seal.dropped());
@@ -222,20 +219,20 @@ class SealedSurfaceTest {
     grown(root);
     engine.run(whole(root));
     complete(root);
-    Path proposal = root.resolve("surface/pending/proposal.md");
+    Path proposal = root.resolve(".cerco/surface/pending/proposal.md");
     Files.writeString(proposal, Files.readString(proposal).replace("p.Shown#show", "p.Shown#paint"));
     assertTrue(engine.run(whole(root)).notes().stream().anyMatch(note -> note.contains("Considered")));
   }
 
   @Test
   void aFirstDesignHasNothingSealedToConsider(@TempDir Path root) throws IOException {
-    write(root, ".cerco/surface/_root.txt", "");
+    write(root, ".cerco/sealed/surface/_root.txt", "");
     Engine engine = new Engine(sealing, root, "1.0", clock);
     write(root, "m2/src/main/java/q/Other.java", "package q; public interface Other { void go(); }");
     engine.freeze(whole(root));
     engine.run(whole(root));
     write(root, "src/test/java/p/OtherContract.java", "package p; abstract class OtherContract { void went(q.Other other) { other.go(); } }");
-    Path proposal = root.resolve("surface/pending/proposal.md");
+    Path proposal = root.resolve(".cerco/surface/pending/proposal.md");
     String filled = Files.readString(proposal)
         .replaceFirst("(## Need\\n\\n)<!--.*?-->", "$1" + "x".repeat(160))
         .replaceFirst("(## Removes\\n\\n)<!--.*?-->", "$1none")

@@ -21,6 +21,23 @@ public final class ShellCommand {
     return simples.stream().anyMatch(simple -> simple.mentions(path));
   }
 
+  /**
+   * A write to the directory as a whole, any write after a {@code cd} into it, or an {@code xargs} writer fed by a
+   * command that named it: what it holds goes with it.
+   */
+  public boolean writesWhole(String dir) {
+    boolean inside = false;
+    boolean named = false;
+    for (SimpleCommand simple : simples) {
+      inside = inside || simple.changesDirectoryInto(dir);
+      if (simple.writes() && (inside || simple.names(dir)) || (named && simple.writesWhatItIsFed())) {
+        return true;
+      }
+      named = named || simple.names(dir);
+    }
+    return false;
+  }
+
   public boolean writesAnything() {
     return simples.stream().anyMatch(SimpleCommand::writes);
   }

@@ -71,7 +71,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   private List<String> disabledRules;
 
   /**
-   * Whether a fixed finding owes an autopsy (default true): a form in autopsies/pending saying what model was missing
+   * Whether a fixed finding owes an autopsy (default true): a form in .cerco/autopsies/pending saying what model was missing
    * and which rule would catch it, without which the gate stays red. Switching it off needs a signature (approve).
    */
   @Parameter
@@ -97,6 +97,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
       getLog().warn("cerco: skipped by cerco.skip, the design gate did not run");
       return;
     }
+    new com.fpetrola.cerco.model.Layout(root()).migrate();
     run();
   }
 
@@ -161,10 +162,10 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
   }
 
   protected void failIfBaselineDeleted(Engine engine) throws MojoFailureException {
-    if (!engine.store().exists() && new GitTree(root()).tracksInHead(".cerco/baseline/frozen")) {
-      throw new MojoFailureException("cerco: the baseline under .cerco/baseline is in git's HEAD but not on disk. "
+    if (!engine.store().exists() && new GitTree(root()).tracksInHead(com.fpetrola.cerco.model.Layout.SEALED + "/baseline/frozen")) {
+      throw new MojoFailureException("cerco: the baseline under .cerco/sealed/baseline is in git's HEAD but not on disk. "
           + "It was deleted, and a fresh freeze would silently accept everything that is wrong today. Restore it "
-          + "with `git checkout -- .cerco/baseline` and fix the findings instead.");
+          + "with `git checkout -- .cerco/sealed/baseline` and fix the findings instead.");
     }
   }
 
@@ -172,7 +173,7 @@ public abstract class AbstractCercoMojo extends AbstractMojo {
     if (!engine.store().exists()) {
       int frozen = engine.freeze(reactor());
       getLog().warn("cerco: no baseline existed, so the project was frozen as it stands: " + frozen
-          + " findings and oversize measures across the reactor are now the baseline under .cerco/baseline. "
+          + " findings and oversize measures across the reactor are now the baseline under .cerco/sealed/baseline. "
           + "Commit that directory. From now on anything new is red, and the baseline only shrinks.");
     }
   }

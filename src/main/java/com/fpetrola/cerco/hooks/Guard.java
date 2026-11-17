@@ -8,7 +8,7 @@ import java.util.List;
  * them, and only those: reading, diffing or listing the gate's files is nobody's business to stop.
  */
 public final class Guard {
-  private static final List<String> PROTECTED = List.of(".cerco", ".claude/settings.json");
+  private static final List<String> PROTECTED = List.of(com.fpetrola.cerco.model.Layout.SEALED, ".claude/settings.json");
 
   public Decision decide(HookInput input) {
     String command = input.command();
@@ -20,8 +20,8 @@ public final class Guard {
           + "it reports instead. If a rule is wrong here, a human decides that with an exemption (mvn cerco:approve).");
     }
     ShellCommand shell = new ShellCommand(command);
-    if (PROTECTED.stream().anyMatch(shell::writesTo)) {
-      return Decision.of("This command writes to the gate's own files (.cerco/ or .claude/settings.json). The "
+    if (PROTECTED.stream().anyMatch(shell::writesTo) || shell.writesWhole(com.fpetrola.cerco.model.Layout.HOME)) {
+      return Decision.of("This command writes to the gate's own files (.cerco/sealed/ or .claude/settings.json). The "
           + "baseline only shrinks through the gate itself, exemptions are approved by a human in a terminal "
           + "(mvn cerco:approve), and the hooks stay as installed. Fix the code the gate complained about.");
     }

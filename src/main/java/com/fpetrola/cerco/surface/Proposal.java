@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The one open proposal to grow the seal: surface/pending/proposal.md. cerco writes what grows, again on every whole
+ * The one open proposal to grow the seal: .cerco/surface/pending/proposal.md. cerco writes what grows, again on every whole
  * run; the agent writes why: what the sealed surface cannot do, what sealed member it considered, what the proposal
  * takes away, and the test that says what the new members promise. A person reads it and signs with approve.
  */
@@ -39,7 +39,7 @@ public final class Proposal {
   public Proposal(Path root, Seal seal) {
     this.root = root;
     this.seal = seal;
-    this.file = root.resolve("surface").resolve("pending").resolve("proposal.md");
+    this.file = new com.fpetrola.cerco.model.Layout(root).proposal();
   }
 
   /** Rewrites what grows from a whole run's unsigned findings, keeping what the agent wrote; gone when none. */
@@ -60,7 +60,7 @@ public final class Proposal {
   /** What the form still lacks to be read by a person; empty when it is complete. */
   public List<String> missing() {
     if (!Files.isRegularFile(file)) {
-      return List.of("surface/pending/proposal.md does not exist yet: a whole run (mvn cerco:audit) writes it");
+      return List.of(".cerco/surface/pending/proposal.md does not exist yet: a whole run (mvn cerco:audit) writes it");
     }
     Map<String, String> form = sections(read());
     List<String> missing = new ArrayList<>();
@@ -85,7 +85,7 @@ public final class Proposal {
         .filter(signature -> !seal.had(signature)).filter(signature -> !new Named(signature).in(said)).forEach(signature -> missing.add(CONTRACT
             + ": no test it lists names `" + signature + "`; a member no test asks for is speculation: take it "
             + "back, or write the test that needs it"));
-    return missing.stream().map(item -> "surface/pending/proposal.md, " + item).toList();
+    return missing.stream().map(item -> ".cerco/surface/pending/proposal.md, " + item).toList();
   }
 
   /**
@@ -114,18 +114,15 @@ public final class Proposal {
   }
 
   /**
-   * Grows the seal by what is unsigned now and files the proposal, signed, as .cerco/surface/signed/<NNNN>.md, where
-   * an agent cannot edit it; the ones versions before 0.24 filed in surface/ move there too.
+   * Grows the seal by what is unsigned now and files the proposal, signed, as .cerco/sealed/surface/signed/<NNNN>.md,
+   * where an agent cannot edit it.
    */
   public void sign(List<Finding> unsigned, String signer, LocalDate day) {
     Map<String, String> written = sections(read());
     byModule(unsigned).forEach(seal::grow);
     try {
-      Path archive = root.resolve(".cerco").resolve("surface").resolve("signed");
+      Path archive = new com.fpetrola.cerco.model.Layout(root).seal().resolve("signed");
       Files.createDirectories(archive);
-      for (Path old : filed(file.getParent().getParent())) {
-        Files.move(old, archive.resolve(old.getFileName()));
-      }
       Path signed = archive.resolve(String.format("%04d.md", filed(archive).size() + 1));
       Files.writeString(signed, text("# Surface proposal, signed by " + signer + " on " + day, unsigned, written),
           StandardCharsets.UTF_8);

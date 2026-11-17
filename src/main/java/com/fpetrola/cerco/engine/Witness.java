@@ -95,7 +95,7 @@ public final class Witness {
     List<String> loosened = store.lines(LOOSENED);
     if (!loosened.isEmpty()) {
       problems.add(loosened.size() + " frozen finding(s) left the baseline while their code stayed the same, or "
-          + "because their file is now generated, so a rule or a marking changed, not the code (.cerco/baseline/" + LOOSENED + ", the first: " + loosened.get(0) + "). A "
+          + "because their file is now generated, so a rule or a marking changed, not the code (.cerco/sealed/baseline/" + LOOSENED + ", the first: " + loosened.get(0) + "). A "
           + "person reviews that change of cerco and accepts it with `mvn cerco:approve`");
     }
     return problems;

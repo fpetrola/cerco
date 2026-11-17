@@ -44,7 +44,7 @@ class GitTreeTest {
   void outsideGitNothingIsChangedOrTracked() {
     GitTree tree = new GitTree(dir);
     assertEquals(List.of(), tree.changedJava());
-    assertFalse(tree.tracksInHead(".cerco/baseline/frozen"));
+    assertFalse(tree.tracksInHead(".cerco/sealed/baseline/frozen"));
   }
 
   private static void git(Path where, String... arguments) throws IOException, InterruptedException {

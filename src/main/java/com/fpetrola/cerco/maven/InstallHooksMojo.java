@@ -34,7 +34,7 @@ public final class InstallHooksMojo extends AbstractCercoMojo {
         new HookSpec("PostToolUse", Optional.of("Edit|Write|MultiEdit|Bash"), launcher + "quick" + maven, 240,
             "HookMain quick"),
         new HookSpec("Stop", Optional.empty(), launcher + "audit" + maven, 900, "HookMain audit"));
-    List<String> denies = List.of("Edit(.cerco/**)", "Edit(.claude/settings.json)", "Bash(*-Dcerco.skip*)");
+    List<String> denies = List.of("Edit(.cerco/sealed/**)", "Edit(.claude/settings.json)", "Bash(*-Dcerco.skip*)");
     Path settings = root().resolve(".claude").resolve("settings.json");
     try {
       String existing = Files.exists(settings) ? Files.readString(settings, StandardCharsets.UTF_8) : "";
@@ -45,7 +45,7 @@ public final class InstallHooksMojo extends AbstractCercoMojo {
     }
     getLog().info("cerco: hooks installed in " + settings + ": guard on every Bash call, quick after every edit "
         + "and after every shell command that writes, "
-        + "audit before the agent stops; .cerco/ and the settings are denied to the agent's editor. Commit it.");
+        + "audit before the agent stops; .cerco/sealed/ and the settings are denied to the agent's editor. Commit it.");
   }
 
   private String quoted(String text) {

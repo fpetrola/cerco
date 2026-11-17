@@ -29,8 +29,8 @@ Todo el código es Java. No hay scripts.
 Eso es todo. En un proyecto multi-módulo va en el pom raíz y corre en cada módulo durante `verify`.
 
 La primera vez que corre, no hay línea de base: el plugin recorre todo el reactor, anota cada violación y cada
-archivo o método que excede el techo, y lo guarda bajo `.cerco/baseline/`, un archivo de texto por regla, legible en
-un diff. Hay que **commitear `.cerco/`**: a partir de ahí lo que está anotado se tolera, lo nuevo no, y cuando una
+archivo o método que excede el techo, y lo guarda bajo `.cerco/sealed/baseline/`, un archivo de texto por regla, legible en
+un diff. Hay que **commitear `.cerco/`**. Todo lo de cerco vive ahí: en `.cerco/sealed/` lo que sólo escriben el cerco y una persona (línea de base, excepciones, firma, sello, autopsias debidas), protegido por el guard; al lado, lo que escribe el agente (`.cerco/autopsies/`, `.cerco/surface/pending/proposal.md`). Un proyecto con la disposición anterior a 0.34 se muda solo en la primera corrida, sin tocar el contenido, y la firma sigue valiendo: a partir de ahí lo que está anotado se tolera, lo nuevo no, y cuando una
 violación congelada desaparece el plugin la borra de la línea de base solo (si es que no se mudó: un hallazgo congelado cuyo archivo se movió sigue congelado bajo la ruta nueva, y no cuenta como arreglado ni pide autopsia; un archivo que deja el proyecto, por ejemplo porque se fue a otro repositorio, no pide autopsia por lo que se lleva, ni por los hallazgos de reglas de proyecto que se quedan sin su otra mitad; un ciclo de paquetes congelado que pierde paquetes sigue congelado), también cuando desaparece el archivo
 entero (eso lo ve una corrida completa, no el `quick` de un archivo). Nunca la agranda.
 
@@ -45,10 +45,10 @@ shell que intentan escribir los archivos del cerco o apagarlo, un hook `PostTool
 después de cada edición de un `.java` **y después de cada comando de shell que escribe algo** (un heredoc, un
 `sed -i`, un script de Python: ahí el alcance son los `.java` que git ve cambiados), un hook `Stop` que corre la
 auditoría completa antes de que el agente pueda dar por terminado el trabajo, y reglas `deny` para que el editor del
-agente no pueda tocar `.cerco/` ni los hooks. Cuando el cerco está rojo, el agente recibe el reporte como instrucción
+agente no pueda tocar `.cerco/sealed/` ni los hooks. Cuando el cerco está rojo, el agente recibe el reporte como instrucción
 y no puede seguir hasta arreglarlo. Si lo único rojo es algo que sólo una persona puede resolver (un archivo de
 excepciones sin firma, una configuración sin firma), el hook lo informa y deja terminar: no hay código que arreglar
-y `.cerco/` no es del agente; el build, en cambio, sigue en rojo hasta que alguien firme. Un comando de shell que sólo lee (`cat`, `git diff`, `ls`, `find`, `2>/dev/null`)
+y `.cerco/sealed/` no es del agente; el build, en cambio, sigue en rojo hasta que alguien firme. Un comando de shell que sólo lee (`cat`, `git diff`, `ls`, `find`, `2>/dev/null`)
 pasa, aunque nombre los archivos del cerco: el guard lee la línea como el shell, comando simple por comando simple, y
 decide por la escritura real, no por la mención.
 
@@ -120,7 +120,7 @@ hallazgos, unos dos tercios protocolos reales (HALT e interrupciones repartidos 
 **Cuando una regla nueva llega a un proyecto que ya tiene línea de base**, la siguiente corrida completa (`audit`, o
 el `check` de un proyecto de un módulo) congela sus hallazgos actuales y lo anota en el reporte; las corridas
 parciales (`quick`, `check` de un módulo) la saltan hasta entonces, con una nota, para no tomar un módulo por el
-proyecto. El archivo `.cerco/baseline/frozen` lleva la fecha y la lista de reglas congeladas.
+proyecto. El archivo `.cerco/sealed/baseline/frozen` lleva la fecha y la lista de reglas congeladas.
 
 cerco no lee nada de afuera del proyecto: ni jars, ni `~/.m2`, ni otros repos. Cuando una regla necesita saber quién
 usa algo (`unused-member`, `constant-argument`), cuenta main y los tests: el uso que hace un consumidor de afuera se
@@ -138,7 +138,7 @@ escribir la anotación: lo que genera la próxima vez ya llega marcado.
 
 ## Las excepciones
 
-Una excepción es una decisión humana, explícita y con fecha de vencimiento. Viven en `.cerco/exemptions.yaml`:
+Una excepción es una decisión humana, explícita y con fecha de vencimiento. Viven en `.cerco/sealed/exemptions.yaml`:
 
 ```yaml
 exemptions:
@@ -179,12 +179,12 @@ mvn com.fpetrola:cerco-maven-plugin:approve
 
 `approve` exige una terminal interactiva. Un agente corriendo en un shell sin terminal no puede ejecutarlo: le
 contesta que eso es tarea de un humano. La firma, un hash del archivo de excepciones y de la configuración, queda en
-`.cerco/approved`; si el archivo cambia, la firma deja de coincidir y ninguna excepción aplica hasta que alguien
+`.cerco/sealed/approved`; si el archivo cambia, la firma deja de coincidir y ninguna excepción aplica hasta que alguien
 vuelva a firmar. Lo mismo vale para la configuración del plugin: cualquier diferencia respecto de los valores por
 defecto (techos, reglas apagadas, sufijos) es un aflojamiento y necesita firma.
 
 Tres capas evitan que el agente se tiente con la salida fácil: las reglas `deny` de Claude Code le niegan el editor
-sobre `.cerco/` y sobre los hooks; el `guard` le niega el shell para escribir esos archivos (`rm`, `mv`, `tee`,
+sobre `.cerco/sealed/` y sobre los hooks; el `guard` le niega el shell para escribir esos archivos (`rm`, `mv`, `tee`,
 redirecciones, `sed -i`, intérpretes, `git checkout`, `find -delete`, `xargs rm`, o cualquier escritura tras un `cd`
 adentro) o para pasar `-Dcerco.skip`; y si la línea de base aparece borrada pero está en el `HEAD` de git, el plugin
 se niega a recongelar y pide restaurarla. Además, cada reporte en rojo le dice al agente, con todas las letras, que
@@ -196,8 +196,8 @@ Arreglar un hallazgo hace desaparecer el síntoma, no explica la causa. Casi sie
 que faltaba, y ese mismo hueco aparece en otros lugares como olores que parecen no tener relación. Por eso, cada vez
 que una corrida saca entradas de la línea de base, cerco deja anotada una **autopsia** pendiente por regla:
 
-- la deuda queda en `.cerco/autopsies/<id>.owed`, donde el agente no puede escribir;
-- el formulario a completar queda en `autopsies/pending/<id>.md`, con el síntoma ya escrito: qué hallazgos se fueron.
+- la deuda queda en `.cerco/sealed/autopsies/<id>.owed`, donde el agente no puede escribir;
+- el formulario a completar queda en `.cerco/autopsies/pending/<id>.md`, con el síntoma ya escrito: qué hallazgos se fueron.
 
 Mientras haya una autopsia pendiente o incompleta, cerco está en rojo: lo dice el `quick` después de cada edición, lo
 bloquea el hook `Stop` y falla `verify`. Si se borra el formulario, vuelve a aparecer. Un segundo arreglo de la misma
@@ -213,7 +213,7 @@ cerco no puede juzgar el análisis, pero sí obligar a que exista y a que mire a
 | `Principle` | el principio de diseño en juego |
 | `Candidate rule` | `rule: <id>` de una regla **nueva**, con qué detectaría y un ejemplo `ruta:línea`; o `covered-by: <id>` de una regla que ya existe y alcanzó; o `same-as: <id>` de una autopsia archivada; o `none:` y por qué ninguna regla podría |
 
-Cuando el formulario está completo, la siguiente corrida lo mueve a `autopsies/` y salda la deuda. El catálogo va a
+Cuando el formulario está completo, la siguiente corrida lo mueve a `.cerco/autopsies/` y salda la deuda. El catálogo va a
 git: es el registro de por qué el código tenía la forma que tenía. `mvn com.fpetrola:cerco-maven-plugin:autopsies`
 lista las reglas candidatas ordenadas por cuántas autopsias las piden (`same-as` cuenta para la regla de la autopsia
 que nombra): una regla que vuelve desde arreglos que no tienen nada que ver es la próxima regla de cerco.
@@ -245,7 +245,7 @@ proyecto entero en la última corrida completa y el de sus propios valores por d
 acepta `approve`:
 
 - un hallazgo congelado que se va mientras su código sigue igual (por archivo, el digest del archivo; para las reglas
-  de proyecto, el del proyecto): cambió la regla, no el código. No pide autopsia; queda en `.cerco/baseline/loosened`;
+  de proyecto, el del proyecto): cambió la regla, no el código. No pide autopsia; queda en `.cerco/sealed/baseline/loosened`;
 - una regla congelada que el cerco que corre ya no tiene;
 - valores por defecto distintos de aquellos con que se guardó la línea de base.
 
@@ -269,7 +269,7 @@ Los reportes también quedan en `target/cerco/<alcance>.json`.
 No hace falta. Si un proyecto necesita apartarse de los valores por defecto, va en el `<configuration>` del plugin y
 requiere firma (`approve`): `fileCeiling` (400), `methodCeiling` (40), `utilitySuffixes`, `factoryPrefixes`,
 `generated` (globs de código generado), `maxExemptions` (10), `includeTests` (false), `disabledRules`,
-`autopsies` (true), `declinedRules` (reglas propuestas por autopsias que una persona decidió no construir), `sealedSurface` (ninguno: `interfaces`, `promises` (interfaces de cualquier apertura y los constructores y métodos estáticos públicos de clases públicas), `public` o `all` sella la superficie de cada módulo en `.cerco/surface/<módulo>.yaml`, agrupada por tipo (los `.txt` de antes de 0.23 se leen y pasan a YAML en la siguiente corrida completa); todo miembro que otros pueden usar y una persona no firmó es un hallazgo que no se congela ni se exceptúa; la salida es quitarlo o completar `surface/pending/proposal.md`, que cerco escribe con lo que crece y que `approve` firma, agrandando el sello y archivándola en `.cerco/surface/signed/NNNN.md`, donde el agente no puede editarla; la propuesta está completa sólo si los tests de Contract nombran cada miembro que crece. Un proyecto sin código queda sellado vacío en su primera corrida completa. Con el sello prendido corre también `unpromised-member`: un método, componente de record o campo no privado de una clase que ninguna interfaz de su jerarquía declara, o un constructor público o método estático que el sello no tiene; lo que el código ya ofrecía cuando llegó el sello se congela como cualquier regla nueva y sólo puede bajar, lo que crece después es rojo).
+`autopsies` (true), `declinedRules` (reglas propuestas por autopsias que una persona decidió no construir), `sealedSurface` (ninguno: `interfaces`, `promises` (interfaces de cualquier apertura y los constructores y métodos estáticos públicos de clases públicas), `public` o `all` sella la superficie de cada módulo en `.cerco/surface/<módulo>.yaml`, agrupada por tipo (los `.txt` de antes de 0.23 se leen y pasan a YAML en la siguiente corrida completa); todo miembro que otros pueden usar y una persona no firmó es un hallazgo que no se congela ni se exceptúa; la salida es quitarlo o completar `.cerco/surface/pending/proposal.md`, que cerco escribe con lo que crece y que `approve` firma, agrandando el sello y archivándola en `.cerco/surface/signed/NNNN.md`, donde el agente no puede editarla; la propuesta está completa sólo si los tests de Contract nombran cada miembro que crece. Un proyecto sin código queda sellado vacío en su primera corrida completa. Con el sello prendido corre también `unpromised-member`: un método, componente de record o campo no privado de una clase que ninguna interfaz de su jerarquía declara, o un constructor público o método estático que el sello no tiene; lo que el código ya ofrecía cuando llegó el sello se congela como cualquier regla nueva y sólo puede bajar, lo que crece después es rojo).
 
 ## Medido sobre zx-lift (38 módulos, 1577 archivos analizados, 52 MB de fuentes en el repo)
 

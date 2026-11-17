@@ -32,19 +32,29 @@ class GuardTest {
 
   @Test
   void writingTheGateFilesIsRefused() {
-    assertTrue(decide("rm -rf .cerco/baseline").denied());
-    assertTrue(decide("echo '' > .cerco/exemptions.yaml").denied());
-    assertTrue(decide("echo x 2> .cerco/approved").denied());
-    assertTrue(decide("cat <<EOF >> .cerco/exemptions.yaml\nfoo\nEOF").denied());
-    assertTrue(decide("cd x && sed -i 's/a/b/' .cerco/approved").denied());
-    assertTrue(decide("git checkout -- .cerco/baseline/frozen").denied());
-    assertTrue(decide("python3 -c \"open('.cerco/approved','w')\"").denied());
+    assertTrue(decide("rm -rf .cerco/sealed/baseline").denied());
+    assertTrue(decide("echo '' > .cerco/sealed/exemptions.yaml").denied());
+    assertTrue(decide("echo x 2> .cerco/sealed/approved").denied());
+    assertTrue(decide("cat <<EOF >> .cerco/sealed/exemptions.yaml\nfoo\nEOF").denied());
+    assertTrue(decide("cd x && sed -i 's/a/b/' .cerco/sealed/approved").denied());
+    assertTrue(decide("git checkout -- .cerco/sealed/baseline/frozen").denied());
+    assertTrue(decide("python3 -c \"open('.cerco/sealed/approved','w')\"").denied());
     assertTrue(decide("jq '.hooks={}' .claude/settings.json > tmp && mv tmp .claude/settings.json").denied());
-    assertTrue(decide("cd .cerco && rm -f approved").denied());
+    assertTrue(decide("cd .cerco/sealed && rm -f approved").denied());
     assertTrue(decide("find .cerco -name '*.txt' -delete").denied());
-    assertTrue(decide("FOO=1 sudo rm .cerco/approved").denied());
+    assertTrue(decide("FOO=1 sudo rm .cerco/sealed/approved").denied());
     assertTrue(decide("find .cerco -name '*.txt' | xargs rm").denied());
-    assertTrue(decide("ls .cerco/baseline | xargs -I{} rm .cerco/baseline/{}").denied());
+    assertTrue(decide("ls .cerco/sealed/baseline | xargs -I{} rm .cerco/sealed/baseline/{}").denied());
+    assertTrue(decide("rm -rf .cerco").denied());
+    assertTrue(decide("mv .cerco/ /tmp/x").denied());
+    assertTrue(decide("cd .cerco && rm -rf sealed").denied());
+  }
+
+  @Test
+  void theAgentWritesItsAutopsiesAndProposalBesideTheSealedPart() {
+    assertFalse(decide("rm .cerco/autopsies/pending/2026-11-17-no-switch.md").denied());
+    assertFalse(decide("echo x > .cerco/surface/pending/proposal.md").denied());
+    assertFalse(decide("mkdir -p .cerco/autopsies/pending").denied());
   }
 
   @Test

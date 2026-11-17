@@ -5,6 +5,7 @@ import com.fpetrola.cerco.exemptions.Approval;
 import com.fpetrola.cerco.exemptions.Loaded;
 import com.fpetrola.cerco.hooks.Terminal;
 import com.fpetrola.cerco.model.Finding;
+import com.fpetrola.cerco.model.Layout;
 import com.fpetrola.cerco.surface.Proposal;
 import com.fpetrola.cerco.surface.Seal;
 import java.io.Console;
@@ -47,8 +48,8 @@ public final class ApproveMojo extends AbstractCercoMojo {
     console.printf("  configuration: %s%n", settings().isDefault() ? "defaults" : settings().fingerprint());
     engine.witness().problems().forEach(problem -> console.printf("  and accept: %s%n", problem));
     List<String> awaiting = engine.autopsies().settle().awaiting();
-    awaiting.forEach(id -> console.printf("  and file, as no rule could catch it: autopsies/pending/%s.md%n", id));
-    Seal seal = new Seal(root().resolve(".cerco").resolve("surface"));
+    awaiting.forEach(id -> console.printf("  and file, as no rule could catch it: .cerco/autopsies/pending/%s.md%n", id));
+    Seal seal = new Seal(new Layout(root()).seal());
     List<Finding> unsigned = surfaceToSign(engine, console, seal);
     String answer = Optional.ofNullable(console.readLine("Type 'yes' to approve: ")).orElse("");
     if (!answer.strip().equalsIgnoreCase("yes")) {
@@ -70,11 +71,11 @@ public final class ApproveMojo extends AbstractCercoMojo {
   private List<Finding> surfaceToSign(Engine engine, Console console, Seal seal) throws MojoFailureException {
     List<Finding> unsigned = engine.run(reactor()).awaitingSignature();
     if (!unsigned.isEmpty()) {
-      console.printf("  and grow the sealed surface, as surface/pending/proposal.md asks:%n%s%n",
+      console.printf("  and grow the sealed surface, as .cerco/surface/pending/proposal.md asks:%n%s%n",
           proposalText().replaceAll("(?s)<!--.*?-->", ""));
     }
-    if (unsigned.isEmpty() && Files.isRegularFile(root().resolve("surface").resolve("pending").resolve("proposal.md"))) {
-      console.printf("  but not surface/pending/proposal.md, which is not complete; the seal stays as it is:%n");
+    if (unsigned.isEmpty() && Files.isRegularFile(new Layout(root()).proposal())) {
+      console.printf("  but not .cerco/surface/pending/proposal.md, which is not complete; the seal stays as it is:%n");
       new Proposal(root(), seal).missing().forEach(item -> console.printf("    - %s%n", item));
     }
     seal.dropped().forEach(gone -> console.printf("  noting what left the seal since the last signature: %s%n", gone));
@@ -83,9 +84,9 @@ public final class ApproveMojo extends AbstractCercoMojo {
 
   private String proposalText() throws MojoFailureException {
     try {
-      return Files.readString(root().resolve("surface").resolve("pending").resolve("proposal.md"));
+      return Files.readString(new Layout(root()).proposal());
     } catch (IOException e) {
-      throw new MojoFailureException("cerco: could not read surface/pending/proposal.md", e);
+      throw new MojoFailureException("cerco: could not read .cerco/surface/pending/proposal.md", e);
     }
   }
 
