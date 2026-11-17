@@ -10,12 +10,12 @@ import org.junit.jupiter.api.Test;
 class ClaudeSettingsTest {
   private final String existing = """
       {"hooks":{"PostToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo verdicts","timeout":10}]}]},
-       "permissions":{"deny":["Bash(*--no-verify*)"]}}
+       "permissions":{"deny":["Bash(*--no-verify*)", "Edit(.cerco/**)"]}}
       """;
   private final List<HookSpec> hooks = List.of(
       new HookSpec("PreToolUse", Optional.of("Bash"), "java HookMain guard", 20, "HookMain guard"),
       new HookSpec("Stop", Optional.empty(), "java HookMain audit", 900, "HookMain audit"));
-  private final List<String> denies = List.of("Edit(.cerco/**)", "Bash(*--no-verify*)");
+  private final List<String> denies = List.of("Edit(.cerco/sealed/**)", "Bash(*--no-verify*)");
 
   @Test
   void keepsWhatWasThereAndAddsWhatWasNot() {
@@ -23,7 +23,8 @@ class ClaudeSettingsTest {
     assertTrue(merged.contains("echo verdicts"));
     assertTrue(merged.contains("java HookMain guard"));
     assertTrue(merged.contains("java HookMain audit"));
-    assertTrue(merged.contains("Edit(.cerco/**)"));
+    assertTrue(merged.contains("Edit(.cerco/sealed/**)"));
+    assertTrue(!merged.contains("Edit(.cerco/**)"), "the deny of versions before 0.34 would keep the agent from its autopsies");
     assertEquals(1, merged.split("no-verify").length - 1);
   }
 

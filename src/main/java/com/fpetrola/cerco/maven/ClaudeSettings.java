@@ -12,6 +12,8 @@ import java.util.List;
  * is there. Running it twice leaves the file as it was: a hook is found again by its marker and replaced in place.
  */
 public final class ClaudeSettings {
+  /** What versions before 0.34 denied, when all of .cerco was the gate's: now it keeps the agent from its part. */
+  private static final String RETIRED = ("Edit(.cerco/**)");
   private final ObjectMapper mapper = new ObjectMapper();
 
   public String merged(String existing, List<HookSpec> hooks, List<String> denies) {
@@ -21,6 +23,11 @@ public final class ClaudeSettings {
       install(hookGroups.withArray(hook.event()), hook);
     }
     ArrayNode deny = root.withObject("/permissions").withArray("deny");
+    for (int i = deny.size() - 1; i >= 0; i--) {
+      if (RETIRED.equals(deny.get(i).asText())) {
+        deny.remove(i);
+      }
+    }
     for (String rule : denies) {
       if (!contains(deny, rule)) {
         deny.add(rule);
